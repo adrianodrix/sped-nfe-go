@@ -5,7 +5,6 @@ package utils
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/adrianodrix/sped-nfe-go/errors"

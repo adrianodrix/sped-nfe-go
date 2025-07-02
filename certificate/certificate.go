@@ -122,17 +122,17 @@ func ValidateCertificate(cert *x509.Certificate, config *Config) error {
 	// Check validity period
 	if !config.AllowExpired {
 		if now.Before(cert.NotBefore) {
-			return errors.NewCertificateError("certificate not yet valid", cert.NotBefore)
+			return errors.NewCertificateError("certificate not yet valid", nil)
 		}
 		if now.After(cert.NotAfter) {
-			return errors.NewCertificateError("certificate has expired", cert.NotAfter)
+			return errors.NewCertificateError("certificate has expired", nil)
 		}
 	}
 
 	// Check key usage
 	if config.RequiredKeyUsage != 0 {
 		if cert.KeyUsage&config.RequiredKeyUsage == 0 {
-			return errors.NewCertificateError("certificate missing required key usage", cert.KeyUsage)
+			return errors.NewCertificateError("certificate missing required key usage", nil)
 		}
 	}
 
@@ -151,17 +151,17 @@ func ValidateCertificate(cert *x509.Certificate, config *Config) error {
 			}
 		}
 		if !found {
-			return errors.NewCertificateError("certificate missing required extended key usage", cert.ExtKeyUsage)
+			return errors.NewCertificateError("certificate missing required extended key usage", nil)
 		}
 	}
 
 	// Validate that it's an RSA certificate with adequate key size
 	if rsaPubKey, ok := cert.PublicKey.(*rsa.PublicKey); ok {
 		if rsaPubKey.Size() < 256 { // Less than 2048 bits
-			return errors.NewCertificateError("RSA key size too small, minimum 2048 bits required", rsaPubKey.Size()*8)
+			return errors.NewCertificateError("RSA key size too small, minimum 2048 bits required", nil)
 		}
 	} else {
-		return errors.NewCertificateError("certificate must use RSA keys", cert.PublicKeyAlgorithm.String())
+		return errors.NewCertificateError("certificate must use RSA keys", nil)
 	}
 
 	return nil

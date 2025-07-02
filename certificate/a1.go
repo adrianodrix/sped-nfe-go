@@ -8,14 +8,13 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"io"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/adrianodrix/sped-nfe-go/errors"
-	"software.sslmate.com/src/go-pkcs12"
+	"golang.org/x/crypto/pkcs12"
 )
 
 // A1Certificate represents a software-based certificate (A1 type) loaded from .pfx/.p12 files
@@ -69,7 +68,8 @@ func (loader *A1CertificateLoader) LoadFromBytes(p12Data []byte, password string
 	}
 
 	// Parse PKCS#12 data
-	privateKey, certificate, caCerts, err := pkcs12.DecodeChain(p12Data, password)
+	privateKey, certificate, err := pkcs12.Decode(p12Data, password)
+	var caCerts []*x509.Certificate // golang.org/x/crypto/pkcs12 doesn't return CA certs directly
 	if err != nil {
 		return nil, errors.NewCertificateError("failed to decode PKCS#12 certificate", err)
 	}
@@ -87,7 +87,7 @@ func (loader *A1CertificateLoader) LoadFromBytes(p12Data []byte, password string
 	// Ensure it's an RSA private key
 	rsaKey, ok := privateKey.(*rsa.PrivateKey)
 	if !ok {
-		return nil, errors.NewCertificateError("certificate must use RSA private key", fmt.Sprintf("found %T", privateKey))
+		return nil, errors.NewCertificateError("certificate must use RSA private key", nil)
 	}
 
 	// Create A1 certificate instance
@@ -162,7 +162,7 @@ func (loader *A1CertificateLoader) LoadFromPEM(certPEM, keyPEM []byte, keyPasswo
 	// Ensure it's an RSA private key
 	rsaKey, ok := privateKey.(*rsa.PrivateKey)
 	if !ok {
-		return nil, errors.NewCertificateError("certificate must use RSA private key", fmt.Sprintf("found %T", privateKey))
+		return nil, errors.NewCertificateError("certificate must use RSA private key", nil)
 	}
 
 	// Create A1 certificate instance
@@ -336,21 +336,10 @@ func (a1 *A1Certificate) Close() error {
 }
 
 // ExportToPKCS12 exports the certificate and private key to PKCS#12 format
+// Note: PKCS#12 encoding is not supported by golang.org/x/crypto/pkcs12
+// This is a placeholder for future implementation or use of external tools
 func (a1 *A1Certificate) ExportToPKCS12(password string) ([]byte, error) {
-	a1.mutex.RLock()
-	defer a1.mutex.RUnlock()
-
-	if a1.certificate == nil || a1.privateKey == nil {
-		return nil, errors.NewCertificateError("certificate or private key not available", nil)
-	}
-
-	// Use the go-pkcs12 library to encode
-	p12Data, err := pkcs12.Encode(rand.Reader, a1.privateKey, a1.certificate, a1.chain, password)
-	if err != nil {
-		return nil, errors.NewCertificateError("failed to encode certificate to PKCS#12", err)
-	}
-
-	return p12Data, nil
+	return nil, errors.NewCertificateError("PKCS#12 encoding not supported in current implementation", nil)
 }
 
 // ExportCertificateToPEM exports only the certificate to PEM format

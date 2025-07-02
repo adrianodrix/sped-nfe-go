@@ -67,11 +67,50 @@ func (loader *A1CertificateLoader) LoadFromBytes(p12Data []byte, password string
 		return nil, errors.NewValidationError("certificate data cannot be empty", "p12Data", "")
 	}
 
-	// Parse PKCS#12 data
+	// Parse PKCS#12 data - try Decode first, fallback to ToPEM
 	privateKey, certificate, err := pkcs12.Decode(p12Data, password)
-	var caCerts []*x509.Certificate // golang.org/x/crypto/pkcs12 doesn't return CA certs directly
+	var caCerts []*x509.Certificate
+	
 	if err != nil {
-		return nil, errors.NewCertificateError("failed to decode PKCS#12 certificate", err)
+		// If Decode fails, try ToPEM method (works with more PKCS#12 structures)
+		blocks, pemErr := pkcs12.ToPEM(p12Data, password)
+		if pemErr != nil {
+			return nil, errors.NewCertificateError("failed to decode PKCS#12 certificate", err)
+		}
+		
+		// Extract certificate and private key from PEM blocks
+		for _, block := range blocks {
+			switch block.Type {
+			case "CERTIFICATE":
+				if certificate == nil { // Use first certificate as main cert
+					cert, parseErr := x509.ParseCertificate(block.Bytes)
+					if parseErr == nil {
+						certificate = cert
+					}
+				} else {
+					// Additional certificates go to CA chain
+					cert, parseErr := x509.ParseCertificate(block.Bytes)
+					if parseErr == nil {
+						caCerts = append(caCerts, cert)
+					}
+				}
+			case "PRIVATE KEY":
+				if privateKey == nil { // Use first private key
+					key, parseErr := x509.ParsePKCS8PrivateKey(block.Bytes)
+					if parseErr != nil {
+						// Try PKCS#1 format
+						key, parseErr = x509.ParsePKCS1PrivateKey(block.Bytes)
+					}
+					if parseErr == nil {
+						privateKey = key
+					}
+				}
+			}
+		}
+		
+		if certificate == nil || privateKey == nil {
+			return nil, errors.NewCertificateError("failed to extract certificate or private key from PKCS#12 data", err)
+		}
 	}
 
 	// Ensure we have a certificate

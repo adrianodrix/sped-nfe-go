@@ -1,0 +1,174 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# Build output
+bin/
+build/
+dist/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files
+refs/
+tmp/
+temp/
+*.tmp
+
+# Certificate files (common in NFe projects)
+*.p12
+*.pfx
+*.key
+*.crt
+*.pem
+*.cer
+*.p7b
+*.p7c
+
+# Configuration files with sensitive data
+config.json
+config.yaml
+config.yml
+secrets.json
+credentials.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Coverage reports
+coverage.txt
+coverage.html
+coverage.xml
+
+# Profiling data
+*.prof
+*.pprof
+
+# Air live reload (if used)
+tmp/
+
+# Local development files
+.local/
+local/
+
+# Documentation build
+docs/build/
+docs/_build/
+
+# Test data that shouldn't be committed
+testdata/temp/
+testdata/output/
+
+# Generated files
+generated/
+gen/
+
+# Cache directories
+.cache/
+cache/
+
+# Node modules (if any frontend tools are used)
+node_modules/
+
+# Python virtual environments (if any Python tools are used)
+venv/
+env/
+.venv/
+.env/
+
+# Java artifacts (if any Java tools are used)
+*.class
+*.jar
+target/
+
+# Rust artifacts (if any Rust tools are used)
+target/
+Cargo.lock
+
+# Terraform (if any infrastructure code)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Local development certificates
+*.local.crt
+*.local.key
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/workspace.xml
+.idea/tasks.xml
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+*.lnk
+
+# Linux
+*~
+
+# Project specific
+# Ignore any generated NFe files or test outputs
+*.xml.out
+*.json.out
+test_output/
+output/ 

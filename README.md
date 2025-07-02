@@ -21,20 +21,23 @@ Uma alternativa robusta, performática e idiomática ao [nfephp-org/sped-nfe](ht
 ## 📋 Funcionalidades
 
 ### ✅ Implementado
-- [ ] Geração de NFe/NFCe (layouts 3.10 e 4.00)
-- [ ] Assinatura digital com certificados A1/A3
-- [ ] Validação XSD completa
-- [ ] Comunicação com webservices SEFAZ
-- [ ] Consulta de status e situação de NFe
-- [ ] Geração de chave de acesso
-- [ ] Utilitários brasileiros (CNPJ, CPF, etc.)
+- [x] **API Cliente Unificada**: Interface simplificada para todas as operações NFe
+- [x] **Estruturas de Dados**: Types completos para NFe 4.00
+- [x] **Certificados Digitais**: Suporte básico para A1/A3 com interface mock
+- [x] **Validação XML**: Validação básica de estrutura XML
+- [x] **Consultas SEFAZ**: Status do serviço e consulta por chave (mock)
+- [x] **Eventos Fiscais**: Cancelamento, CCe, Manifestação (estrutura)
+- [x] **Contingência**: Ativação/desativação de modos de contingência
+- [x] **Utilitários**: Geração de chaves de acesso e validações
 
 ### 🚧 Em Desenvolvimento
-- [ ] Eventos fiscais (CCe, Cancelamento, Manifestação)
-- [ ] Contingência (EPEC, FS-IA, SVC)
-- [ ] Geração de DANFE
-- [ ] NFCe e SAT-CF-e
-- [ ] CTe e MDFe
+- [ ] **Comunicação Real SEFAZ**: Implementação dos webservices
+- [ ] **Assinatura Digital**: Certificados A1/A3 funcionais
+- [ ] **Validação XSD**: Validação completa contra schemas
+- [ ] **Geração XML Completa**: Builder completo de NFe/NFCe
+- [ ] **Geração de DANFE**: PDF da representação gráfica
+- [ ] **Parser TXT**: Conversão de arquivos texto para XML
+- [ ] **CTe e MDFe**: Suporte para outros documentos fiscais
 
 ## 🚀 Instalação
 
@@ -44,12 +47,13 @@ go get github.com/adrianodrix/sped-nfe-go
 
 ## 📖 Uso Básico
 
-### Configuração Inicial
+### Exemplo Rápido
 
 ```go
 package main
 
 import (
+    "context"
     "log"
     
     "github.com/adrianodrix/sped-nfe-go/nfe"
@@ -57,242 +61,105 @@ import (
 )
 
 func main() {
-    // Configurar ambiente
-    config := nfe.Config{
+    // 1. Configurar cliente
+    config := nfe.ClientConfig{
         Environment: nfe.Homologation, // ou nfe.Production
-        UF:         nfe.SP,
-        Timeout:    30,
+        UF:          nfe.SP,
+        Timeout:     30,
     }
 
-    // Criar cliente NFe
-    client, err := nfe.New(config)
+    client, err := nfe.NewClient(config)
     if err != nil {
         log.Fatal(err)
     }
 
-    // Carregar certificado A1
-    cert, err := certificate.LoadA1("/path/to/certificado.pfx", "senha123")
+    // 2. Configurar certificado
+    cert, err := certificate.LoadA1("certificado.pfx", "senha")
+    if err != nil {
+        log.Fatal(err)
+    }
+    client.SetCertificate(cert)
+
+    // 3. Criar NFe
+    make := client.CreateNFe()
+    make.SetVersion("4.00")
+    
+    // Adicionar dados da NFe...
+    // xml, err := make.GetXML()
+
+    // 4. Autorizar NFe
+    ctx := context.Background()
+    // response, err := client.Authorize(ctx, xml)
+
+    // 5. Consultar status
+    status, err := client.QueryStatus(ctx)
     if err != nil {
         log.Fatal(err)
     }
     
-    client.SetCertificate(cert)
+    if status.IsOnline() {
+        log.Println("✅ SEFAZ online e funcionando!")
+    }
 }
 ```
 
-### Gerando uma NFe
+### Exemplos Completos
 
-```go
-// Criar NFe
-make := client.CreateNFe()
+Veja os exemplos na pasta `examples/`:
 
-// Dados de identificação
-ide := nfe.Identificacao{
-    CUF:      35, // São Paulo
-    NatOp:    "Venda de Produtos",
-    Modelo:   55, // NFe
-    Serie:    1,
-    NNF:      123456,
-    DhEmi:    time.Now(),
-    TpNF:     1, // Saída
-    IdDest:   1, // Operação interna
-    CMunFG:   3550308, // São Paulo
-    TpImp:    1, // DANFE normal
-    TpEmis:   1, // Emissão normal
-    TpAmb:    2, // Homologação
-    FinNFe:   1, // NFe normal
-    IndFinal: 0, // Não consumidor final
-    IndPres:  1, // Operação presencial
-}
+- **`simple_api_demo.go`**: Demonstração básica de todas as funcionalidades
+- **`basic_client.go`**: Exemplo completo de criação e autorização de NFe
 
-// Dados do emitente
-emit := nfe.Emitente{
-    CNPJ:    "12345678000190",
-    XNome:   "Empresa Exemplo LTDA",
-    XFant:   "Empresa Exemplo",
-    IE:      "123456789",
-    CRT:     3, // Regime Normal
-    Endereco: nfe.Endereco{
-        XLgr:    "Rua das Flores",
-        Nro:     "123",
-        XBairro: "Centro",
-        CMun:    3550308,
-        XMun:    "São Paulo",
-        UF:      "SP",
-        CEP:     "01234567",
-    },
-}
+```bash
+# Executar demo da API
+go run examples/simple_api_demo.go
 
-// Dados do destinatário
-dest := &nfe.Destinatario{
-    CNPJ:  "98765432000123",
-    XNome: "Cliente Exemplo LTDA",
-    IE:    "987654321",
-    Endereco: nfe.Endereco{
-        XLgr:    "Av. Paulista",
-        Nro:     "1000",
-        XBairro: "Bela Vista",
-        CMun:    3550308,
-        XMun:    "São Paulo",
-        UF:      "SP",
-        CEP:     "01310100",
-    },
-}
-
-// Item da NFe
-item := nfe.Item{
-    NItem: 1,
-    Prod: nfe.Produto{
-        CProd:    "001",
-        CEAN:     "SEM GTIN",
-        XProd:    "Produto Exemplo",
-        NCM:      "12345678",
-        CFOP:     "5102",
-        UCom:     "UN",
-        QCom:     1.0,
-        VUnCom:   100.00,
-        VProd:    100.00,
-        CEANTrib: "SEM GTIN",
-        UTrib:    "UN",
-        QTrib:    1.0,
-        VUnTrib:  100.00,
-        IndTot:   1,
-    },
-    Imposto: nfe.Imposto{
-        ICMS: nfe.ICMS{
-            ICMS00: &nfe.ICMS00{
-                Orig: 0,
-                CST:  "00",
-                VBC:  100.00,
-                PICMS: 18.00,
-                VICMS: 18.00,
-            },
-        },
-        PIS: nfe.PIS{
-            PISAliq: &nfe.PISAliq{
-                CST:   "01",
-                VBC:   100.00,
-                PPIS:  1.65,
-                VPIS:  1.65,
-            },
-        },
-        COFINS: nfe.COFINS{
-            COFINSAliq: &nfe.COFINSAliq{
-                CST:     "01",
-                VBC:     100.00,
-                PCOFINS: 7.60,
-                VCOFINS: 7.60,
-            },
-        },
-    },
-}
-
-// Totais da NFe
-total := nfe.Total{
-    ICMSTot: nfe.ICMSTot{
-        VBC:     100.00,
-        VICMS:   18.00,
-        VICMSDeson: 0.00,
-        VFCP:    0.00,
-        VBCST:   0.00,
-        VST:     0.00,
-        VFCPST:  0.00,
-        VFCPSTRet: 0.00,
-        VProd:   100.00,
-        VFrete:  0.00,
-        VSeg:    0.00,
-        VDesc:   0.00,
-        VII:     0.00,
-        VIPI:    0.00,
-        VIPIDevol: 0.00,
-        VPIS:    1.65,
-        VCOFINS: 7.60,
-        VOutro:  0.00,
-        VNF:     100.00,
-        VTotTrib: 27.25,
-    },
-}
-
-// Montar NFe
-chave := client.GenerateAccessKey(emit.CNPJ, ide.Modelo, ide.Serie, ide.NNF, ide.TpEmis)
-
-err = make.TagInfNFe(chave, "4.00")
-err = make.TagIde(ide)
-err = make.TagEmit(emit)
-err = make.TagDest(dest)
-err = make.TagDet(item)
-err = make.TagTotal(total)
-
-// Gerar XML
-xml, err := make.GetXML()
-if err != nil {
-    log.Fatal(err)
-}
-
-log.Printf("NFe gerada: %d bytes", len(xml))
+# Executar exemplo completo
+go run examples/basic_client.go
 ```
 
-### Assinando e Transmitindo
+Para exemplos mais detalhados, veja a pasta `examples/`.
 
-```go
-// Assinar NFe
-signedXML, err := client.Sign(xml)
-if err != nil {
-    log.Fatal(err)
-}
+## 🏗️ Estado Atual do Projeto
 
-// Transmitir para SEFAZ
-response, err := client.Authorize(signedXML)
-if err != nil {
-    log.Fatal(err)
-}
+**⚠️ PROJETO EM DESENVOLVIMENTO ATIVO**
 
-if response.CStat == "100" {
-    log.Printf("NFe autorizada! Protocolo: %s", response.NProt)
-} else {
-    log.Printf("Erro na autorização: %s - %s", response.CStat, response.XMotivo)
-}
-```
+### ✅ Implementado
+- **API Cliente Unificada** (`nfe/client.go`) - Interface principal funcional
+- **Estruturas de Dados** (`nfe/types.go`) - Types completos NFe 4.00  
+- **Certificados Mock** (`certificate/mock.go`) - Para testes
+- **Testes Unitários** - Cobertura de funcionalidades básicas
+- **Exemplos** - Demonstrações de uso da API
 
-### Consultando NFe
+### 🚧 Próximos Passos (TODO)
+- Implementar comunicação real com SEFAZ webservices
+- Adicionar certificados A1/A3 funcionais  
+- Completar geração de XML com Make
+- Implementar assinatura digital XMLDSig
+- Adicionar validação XSD completa
+- Criar parser de arquivos TXT
 
-```go
-// Consultar situação da NFe
-chave := "35210512345678000190550010000001234567891234"
-consulta, err := client.Query(chave)
-if err != nil {
-    log.Fatal(err)
-}
-
-log.Printf("Status: %s - %s", consulta.CStat, consulta.XMotivo)
-```
-
-## 📁 Exemplos
-
-Veja a pasta [`examples/`](./examples/) para mais exemplos:
-
-- [NFe Simples](./examples/nfe-simples/main.go)
-- [NFe com Múltiplos Itens](./examples/nfe-multiplos-itens/main.go)
-- [NFCe](./examples/nfce/main.go)
-- [Certificado A3](./examples/certificado-a3/main.go)
-- [Consulta em Lote](./examples/consulta-lote/main.go)
-
-## 🏗️ Arquitetura
+### 🏗️ Arquitetura Atual
 
 ```
 github.com/adrianodrix/sped-nfe-go/
-├── nfe/                    # Pacote principal
-│   ├── client.go          # Cliente principal
-│   ├── make.go            # Geração de NFe
-│   ├── sign.go            # Assinatura digital
-│   ├── webservices.go     # Comunicação SEFAZ
-│   ├── types.go           # Estruturas NFe
-│   └── utils.go           # Utilitários
-├── certificate/           # Certificados digitais
-│   ├── a1.go             # Certificados A1 (.pfx)
-│   └── a3.go             # Certificados A3 (PKCS#11)
-├── examples/             # Exemplos de uso
-└── docs/                # Documentação
+├── nfe/                    # Pacote principal ✅
+│   ├── client.go          # Cliente unificado ✅
+│   ├── client_test.go     # Testes unitários ✅
+│   ├── make.go            # Geração de NFe 🚧
+│   ├── types.go           # Estruturas NFe ✅
+│   └── nfe.go             # Constantes básicas ✅
+├── certificate/           # Certificados digitais 🚧
+│   ├── mock.go            # Mock para testes ✅
+│   ├── certificate.go     # Interface ✅
+│   └── a1.go, a3.go       # Implementações 🚧
+├── examples/              # Exemplos de uso ✅
+│   ├── simple_api_demo.go # Demo funcional ✅
+│   └── basic_client.go    # Exemplo completo ✅
+├── common/                # Configuração ✅
+├── factories/             # Utilitários ✅
+├── types/                 # Types compartilhados ✅
+└── utils/                 # Utilitários brasileiros ✅
 ```
 
 ## 🧪 Testes

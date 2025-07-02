@@ -145,7 +145,6 @@ type Destinatario struct {
 
 // Endereco represents address information
 type Endereco struct {
-	XMLName xml.Name `xml:"enderEmit"`                                       // Will be overridden by parent
 	XLgr    string   `xml:"xLgr" validate:"required,min=2,max=60"`          // Street name
 	Nro     string   `xml:"nro" validate:"required,min=1,max=60"`           // Number
 	XCpl    string   `xml:"xCpl,omitempty" validate:"omitempty,max=60"`     // Complement
@@ -161,7 +160,6 @@ type Endereco struct {
 
 // Local represents pickup or delivery location
 type Local struct {
-	XMLName xml.Name `xml:"retirada"`                                       // Will be overridden by parent
 	CNPJ    string   `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`
 	CPF     string   `xml:"CPF,omitempty" validate:"omitempty,len=11"`
 	XNome   string   `xml:"xNome,omitempty" validate:"omitempty,min=2,max=60"`

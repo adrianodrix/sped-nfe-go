@@ -115,11 +115,23 @@ type ICMS40 struct {
 	MotDesICMS string   `xml:"motDesICMS,omitempty" validate:"omitempty,oneof=1 3 4 5 6 7 8 9 10 11 16 90"` // ICMS relief reason
 }
 
-// ICMS41 - Non-taxed (CST 41) - same structure as ICMS40
-type ICMS41 = ICMS40
+// ICMS41 - Non-taxed (CST 41)
+type ICMS41 struct {
+	XMLName    xml.Name `xml:"ICMS41"`
+	Orig       string   `xml:"orig" validate:"required,oneof=0 1 2 3 4 5 6 7 8"` // Origin
+	CST        string   `xml:"CST" validate:"required,eq=41"`                    // Tax situation
+	VICMSDeson string   `xml:"vICMSDeson,omitempty"`                             // ICMS relief value
+	MotDesICMS string   `xml:"motDesICMS,omitempty" validate:"omitempty,oneof=1 3 4 5 6 7 8 9 10 11 16 90"` // ICMS relief reason
+}
 
-// ICMS50 - Suspended (CST 50) - same structure as ICMS40
-type ICMS50 = ICMS40
+// ICMS50 - Suspended (CST 50)
+type ICMS50 struct {
+	XMLName    xml.Name `xml:"ICMS50"`
+	Orig       string   `xml:"orig" validate:"required,oneof=0 1 2 3 4 5 6 7 8"` // Origin
+	CST        string   `xml:"CST" validate:"required,eq=50"`                    // Tax situation
+	VICMSDeson string   `xml:"vICMSDeson,omitempty"`                             // ICMS relief value
+	MotDesICMS string   `xml:"motDesICMS,omitempty" validate:"omitempty,oneof=1 3 4 5 6 7 8 9 10 11 16 90"` // ICMS relief reason
+}
 
 // ICMS51 - Deferred (CST 51)
 type ICMS51 struct {
@@ -257,8 +269,12 @@ type ICMSSN102 struct {
 	CSOSN   string   `xml:"CSOSN" validate:"required,oneof=102 103 300 400"`     // Simples Nacional tax situation
 }
 
-// ICMSSN103 - Simples Nacional exempt - same structure as ICMSSN102
-type ICMSSN103 = ICMSSN102
+// ICMSSN103 - Simples Nacional exempt
+type ICMSSN103 struct {
+	XMLName xml.Name `xml:"ICMSSN103"`
+	Orig    string   `xml:"orig" validate:"required,oneof=0 1 2 3 4 5 6 7 8"`    // Origin
+	CSOSN   string   `xml:"CSOSN" validate:"required,eq=103"`                    // Simples Nacional tax situation
+}
 
 // ICMSSN201 - Simples Nacional with ST permitted credit
 type ICMSSN201 struct {
@@ -294,14 +310,35 @@ type ICMSSN202 struct {
 	VFCPST    string   `xml:"vFCPST,omitempty"`                                  // ST FCP value
 }
 
-// ICMSSN203 - Simples Nacional with ST exempt - same structure as ICMSSN202
-type ICMSSN203 = ICMSSN202
+// ICMSSN203 - Simples Nacional with ST exempt
+type ICMSSN203 struct {
+	XMLName   xml.Name `xml:"ICMSSN203"`
+	Orig      string   `xml:"orig" validate:"required,oneof=0 1 2 3 4 5 6 7 8"`  // Origin
+	CSOSN     string   `xml:"CSOSN" validate:"required,eq=203"`                  // Simples Nacional tax situation
+	ModBCST   string   `xml:"modBCST" validate:"required,oneof=0 1 2 3 4 5 6"`  // ST tax base modality
+	PMVAST    string   `xml:"pMVAST,omitempty"`                                  // ST value added margin
+	PRedBCST  string   `xml:"pRedBCST,omitempty"`                                // ST tax base reduction
+	VBCST     string   `xml:"vBCST" validate:"required"`                         // ST tax base value
+	PICMSST   string   `xml:"pICMSST" validate:"required"`                       // ST ICMS rate
+	VICMSST   string   `xml:"vICMSST" validate:"required"`                       // ST ICMS value
+	VBCFCPST  string   `xml:"vBCFCPST,omitempty"`                                // ST FCP tax base
+	PFCPST    string   `xml:"pFCPST,omitempty"`                                  // ST FCP rate
+	VFCPST    string   `xml:"vFCPST,omitempty"`                                  // ST FCP value
+}
 
-// ICMSSN300 - Simples Nacional immunity - same structure as ICMSSN102
-type ICMSSN300 = ICMSSN102
+// ICMSSN300 - Simples Nacional immunity
+type ICMSSN300 struct {
+	XMLName xml.Name `xml:"ICMSSN300"`
+	Orig    string   `xml:"orig" validate:"required,oneof=0 1 2 3 4 5 6 7 8"`    // Origin
+	CSOSN   string   `xml:"CSOSN" validate:"required,eq=300"`                    // Simples Nacional tax situation
+}
 
-// ICMSSN400 - Simples Nacional not taxed - same structure as ICMSSN102
-type ICMSSN400 = ICMSSN102
+// ICMSSN400 - Simples Nacional not taxed
+type ICMSSN400 struct {
+	XMLName xml.Name `xml:"ICMSSN400"`
+	Orig    string   `xml:"orig" validate:"required,oneof=0 1 2 3 4 5 6 7 8"`    // Origin
+	CSOSN   string   `xml:"CSOSN" validate:"required,eq=400"`                    // Simples Nacional tax situation
+}
 
 // ICMSSN500 - Simples Nacional retido por ST
 type ICMSSN500 struct {

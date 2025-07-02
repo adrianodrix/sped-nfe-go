@@ -172,8 +172,8 @@ func TestTipoAmbienteConstants(t *testing.T) {
 }
 
 func TestAllStatesAreCovered(t *testing.T) {
-	// Test that we have all 26 states + DF + EX
-	expectedCount := 28
+	// Test that we have all 26 states + DF + EX + centralizing systems (AN, SVAN, SVRS, SVCAN, SVCRS)
+	expectedCount := 33
 	actualCount := 0
 
 	// Count valid UFs

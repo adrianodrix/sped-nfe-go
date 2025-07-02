@@ -12,6 +12,16 @@ const (
 	Homologation Environment = 2
 )
 
+// Ambiente represents the SEFAZ environment for webservices
+type Ambiente int
+
+const (
+	// AmbienteProducao represents production environment
+	AmbienteProducao Ambiente = 1
+	// AmbienteHomologacao represents testing environment
+	AmbienteHomologacao Ambiente = 2
+)
+
 // String returns the string representation of Environment
 func (e Environment) String() string {
 	switch e {
@@ -27,6 +37,23 @@ func (e Environment) String() string {
 // IsValid returns true if the environment value is valid
 func (e Environment) IsValid() bool {
 	return e == Production || e == Homologation
+}
+
+// String returns the string representation of Ambiente
+func (a Ambiente) String() string {
+	switch a {
+	case AmbienteProducao:
+		return "producao"
+	case AmbienteHomologacao:
+		return "homologacao"
+	default:
+		return "unknown"
+	}
+}
+
+// IsValid returns true if the ambiente value is valid
+func (a Ambiente) IsValid() bool {
+	return a == AmbienteProducao || a == AmbienteHomologacao
 }
 
 // UF represents Brazilian states with their official codes
@@ -72,6 +99,13 @@ const (
 
 	// Especiais
 	EX UF = 99 // Exterior (para operações de exportação)
+	
+	// Autoridades e Sistemas Centralizados
+	AN   UF = 91 // Ambiente Nacional (Receita Federal)
+	SVAN UF = 92 // Sistema Virtual do Ambiente Nacional 
+	SVRS UF = 93 // Sistema Virtual do Rio Grande do Sul
+	SVCAN UF = 94 // Sistema Virtual de Contingência do Ambiente Nacional
+	SVCRS UF = 95 // Sistema Virtual de Contingência do Rio Grande do Sul
 )
 
 // String returns the string representation of UF
@@ -133,6 +167,16 @@ func (uf UF) String() string {
 		return "TO"
 	case EX:
 		return "EX"
+	case AN:
+		return "AN"
+	case SVAN:
+		return "SVAN"
+	case SVRS:
+		return "SVRS"
+	case SVCAN:
+		return "SVCAN"
+	case SVCRS:
+		return "SVCRS"
 	default:
 		return "Unknown"
 	}
@@ -143,6 +187,7 @@ func (uf UF) IsValid() bool {
 	validUFs := []UF{
 		AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG,
 		PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO, EX,
+		AN, SVAN, SVRS, SVCAN, SVCRS,
 	}
 	for _, valid := range validUFs {
 		if uf == valid {

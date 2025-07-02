@@ -4,6 +4,7 @@ package nfe
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -129,10 +130,27 @@ func NewClient(config ClientConfig) (*NFEClient, error) {
 		return nil, fmt.Errorf("UF (state) is required")
 	}
 
-	// Create common config
+	// Convert UF code to string representation
+	ufMap := map[UF]string{
+		11: "RO", 12: "AC", 13: "AM", 14: "RR", 15: "PA", 16: "AP", 17: "TO",
+		21: "MA", 22: "PI", 23: "CE", 24: "RN", 25: "PB", 26: "PE", 27: "AL", 28: "SE", 29: "BA",
+		31: "MG", 32: "ES", 33: "RJ", 35: "SP",
+		41: "PR", 42: "SC", 43: "RS",
+		50: "MS", 51: "MT", 52: "GO", 53: "DF",
+	}
+	ufStr, ok := ufMap[config.UF]
+	if !ok {
+		return nil, fmt.Errorf("unsupported UF code: %d", config.UF)
+	}
+
 	commonConfig := &common.Config{
-		TpAmb:   types.Environment(config.Environment),
-		Timeout: config.Timeout,
+		TpAmb:       types.Environment(config.Environment),
+		Timeout:     config.Timeout,
+		RazaoSocial: "NFE Client", // Default minimal value
+		CNPJ:        "00000000000191", // Default test CNPJ
+		SiglaUF:     ufStr,
+		Schemes:     "./schemes", // Default schemes path
+		Versao:      "4.00",      // Default version
 	}
 
 	// Basic validation
@@ -140,21 +158,31 @@ func NewClient(config ClientConfig) (*NFEClient, error) {
 		return nil, fmt.Errorf("invalid environment: must be 1 (production) or 2 (homologation)")
 	}
 
-	// Create tools instance - TODO: implement Tools properly
-	// For now, we'll create a basic client without tools
-	// tools, err := NewTools(commonConfig)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to create tools: %v", err)
-	// }
-
 	client := &NFEClient{
 		config:  commonConfig,
-		tools:   nil, // TODO: implement Tools
+		tools:   nil, // Tools will be created lazily when needed
 		timeout: time.Duration(config.Timeout) * time.Second,
 		uf:      config.UF,
 	}
 
 	return client, nil
+}
+
+// ensureTools ensures that the Tools instance is initialized
+func (c *NFEClient) ensureTools() error {
+	if c.tools == nil {
+		tools, err := NewTools(c.config)
+		if err != nil {
+			return fmt.Errorf("failed to create tools: %v", err)
+		}
+		c.tools = tools
+		
+		// Set certificate if already configured
+		if c.certificate != nil {
+			c.tools.SetCertificate(c.certificate)
+		}
+	}
+	return nil
 }
 
 // SetCertificate sets the digital certificate for the client.
@@ -164,8 +192,9 @@ func (c *NFEClient) SetCertificate(cert certificate.Certificate) error {
 	}
 
 	c.certificate = cert
-	// TODO: implement tools
-	// c.tools.SetCertificate(cert)
+	if c.tools != nil {
+		c.tools.SetCertificate(cert)
+	}
 	return nil
 }
 
@@ -173,10 +202,8 @@ func (c *NFEClient) SetCertificate(cert certificate.Certificate) error {
 func (c *NFEClient) SetTimeout(timeout time.Duration) {
 	c.timeout = timeout
 	c.config.Timeout = int(timeout.Seconds())
-	// TODO: implement tools
-	// if c.tools != nil {
-	//	c.tools.SetTimeout(timeout)
-	// }
+	// Tools timeout is managed through config
+	c.config.Timeout = int(timeout.Seconds())
 }
 
 // SetEnvironment changes the environment (production/homologation).
@@ -240,23 +267,29 @@ func (c *NFEClient) Authorize(ctx context.Context, xml []byte) (*AuthResponse, e
 		return nil, fmt.Errorf("certificate not set")
 	}
 
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
 	// Sign the NFe if not already signed
 	signedXML, err := c.signIfNeeded(xml)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign NFe: %v", err)
 	}
 
-	// For now, create a basic response
-	// TODO: Implement actual SEFAZ communication
-	response := &AuthResponse{
-		Success:      true,
-		Status:       100,
-		StatusText:   "Autorizado",
-		OriginalXML:  signedXML,
-		ProcessingAt: time.Now(),
+	// Create LoteNFe for sending
+	lote, err := c.createLoteFromXML(signedXML)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create lote: %v", err)
 	}
 
-	return response, nil
+	// Send to SEFAZ for authorization
+	response, err := c.tools.SefazEnviaLote(ctx, lote, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authorize NFe: %v", err)
+	}
+
+	return c.convertToAuthResponse(response, signedXML), nil
 }
 
 // QueryChave queries an NFe by its access key.
@@ -265,21 +298,16 @@ func (c *NFEClient) QueryChave(ctx context.Context, chave string) (*QueryRespons
 		return nil, fmt.Errorf("invalid access key length: expected 44, got %d", len(chave))
 	}
 
-	// TODO: implement SefazConsultaChave
-	// response, err := c.tools.SefazConsultaChave(ctx, chave)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to query NFe: %v", err)
-	// }
-	
-	// Return mock response for now
-	return &QueryResponse{
-		Success:    true,
-		Status:     100,
-		StatusText: "NFe autorizada",
-		Key:        chave,
-		Authorized: true,
-		QueryAt:    time.Now(),
-	}, nil
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	response, err := c.tools.SefazConsultaChave(ctx, chave)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query NFe: %v", err)
+	}
+
+	return c.convertToQueryResponse(response), nil
 }
 
 // QueryRecibo queries the processing result by receipt number.
@@ -288,39 +316,30 @@ func (c *NFEClient) QueryRecibo(ctx context.Context, recibo string) (*QueryRespo
 		return nil, fmt.Errorf("receipt number cannot be empty")
 	}
 
-	// TODO: implement SefazConsultaRecibo
-	// response, err := c.tools.SefazConsultaRecibo(ctx, recibo)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to query receipt: %v", err)
-	// }
-	
-	// Return mock response for now
-	return &QueryResponse{
-		Success:    true,
-		Status:     104,
-		StatusText: "Lote processado",
-		QueryAt:    time.Now(),
-	}, nil
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	response, err := c.tools.SefazConsultaRecibo(ctx, recibo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query receipt: %v", err)
+	}
+
+	return c.convertReciboToQueryResponse(response), nil
 }
 
 // QueryStatus checks the SEFAZ service status.
 func (c *NFEClient) QueryStatus(ctx context.Context) (*ClientStatusResponse, error) {
-	// TODO: implement SefazStatus
-	// response, err := c.tools.SefazStatus(ctx)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to query SEFAZ status: %v", err)
-	// }
-	
-	// Return mock response for now
-	return &ClientStatusResponse{
-		Success:     true,
-		Status:      107,
-		StatusText:  "Serviço em Operação",
-		UF:          fmt.Sprintf("%02d", int(c.uf)),
-		Environment: int(c.config.TpAmb),
-		Online:      true,
-		CheckedAt:   time.Now(),
-	}, nil
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	response, err := c.tools.SefazStatus(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query SEFAZ status: %v", err)
+	}
+
+	return c.convertToStatusResponse(response), nil
 }
 
 // Cancel cancels an NFe with the provided justification.
@@ -332,8 +351,22 @@ func (c *NFEClient) Cancel(ctx context.Context, chave, justificativa string) (*E
 		return nil, fmt.Errorf("justification must be at least 15 characters")
 	}
 
-	// TODO: Implement cancellation using SefazEvento
-	return nil, fmt.Errorf("cancellation not implemented yet")
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	// Create cancellation event
+	eventoReq, err := c.createCancellationEventRequest(chave, justificativa)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cancellation event: %v", err)
+	}
+
+	response, err := c.tools.SefazEvento(ctx, eventoReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to cancel NFe: %v", err)
+	}
+
+	return c.convertToEventResponse(response, "cancellation"), nil
 }
 
 // CCe sends a carta de correção eletrônica (electronic correction letter).
@@ -348,8 +381,22 @@ func (c *NFEClient) CCe(ctx context.Context, chave, correcao string, sequencia i
 		return nil, fmt.Errorf("sequence must be greater than 0")
 	}
 
-	// TODO: Implement CCe using SefazEvento
-	return nil, fmt.Errorf("CCe not implemented yet")
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	// Create CCe event
+	eventoReq, err := c.createCCeEventRequest(chave, correcao, sequencia)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CCe event: %v", err)
+	}
+
+	response, err := c.tools.SefazEvento(ctx, eventoReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send CCe: %v", err)
+	}
+
+	return c.convertToEventResponse(response, "cce"), nil
 }
 
 // Manifesta sends a manifestation event for received NFe.
@@ -368,34 +415,26 @@ func (c *NFEClient) Invalidate(ctx context.Context, serie, numeroInicial, numero
 		return nil, fmt.Errorf("justification must be at least 15 characters")
 	}
 
-	// Create invalidation request
-	// TODO: Create proper InutilizacaoRequest struct
-	// request := &InutilizacaoRequest{
-	//	Serie:         serie,
-	//	NumeroInicial: numeroInicial,
-	//	NumeroFinal:   numeroFinal,
-	//	Justificativa: justificativa,
-	// }
-	
-	// For now, use basic validation and mock response
 	if serie < 1 || numeroInicial < 1 || numeroFinal < numeroInicial {
 		return nil, fmt.Errorf("invalid series or number range")
 	}
 
-	// TODO: Implement actual SEFAZ invalidation
-	// response, err := c.tools.SefazInutiliza(ctx, request)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to invalidate NFe numbers: %v", err)
-	// }
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	// Create invalidation request
+	request, err := c.createInutilizacaoRequest(serie, numeroInicial, numeroFinal, justificativa)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create invalidation request: %v", err)
+	}
 	
-	// Return mock response for now
-	return &EventResponse{
-		Success:     true,
-		Status:      102, // Inutilização de número homologado
-		StatusText:  "Inutilização de número homologado",
-		EventType:   "inutilizacao",
-		ProcessedAt: time.Now(),
-	}, nil
+	response, err := c.tools.SefazInutiliza(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to invalidate NFe numbers: %v", err)
+	}
+	
+	return c.convertInutilizacaoToEventResponse(response), nil
 }
 
 // ValidateXML validates an NFe XML against schemas.
@@ -518,9 +557,15 @@ func (c *NFEClient) signIfNeeded(xml []byte) ([]byte, error) {
 }
 
 func (c *NFEClient) convertToQueryResponse(response *ConsultaChaveResponse) *QueryResponse {
+	// Convert string status to int
+	status := 0
+	if statusInt, err := strconv.Atoi(response.CStat); err == nil {
+		status = statusInt
+	}
+
 	query := &QueryResponse{
 		Success:    response.CStat == "100",
-		Status:     100,
+		Status:     status,
 		StatusText: response.XMotivo,
 		QueryAt:    time.Now(),
 	}
@@ -541,26 +586,121 @@ func (c *NFEClient) convertToQueryResponse(response *ConsultaChaveResponse) *Que
 }
 
 func (c *NFEClient) convertReciboToQueryResponse(response *ConsultaReciboResponse) *QueryResponse {
+	// Convert string status to int
+	status := 0
+	if statusInt, err := strconv.Atoi(response.CStat); err == nil {
+		status = statusInt
+	}
+
 	return &QueryResponse{
 		Success:    response.CStat == "104",
-		Status:     104,
+		Status:     status,
 		StatusText: response.XMotivo,
 		QueryAt:    time.Now(),
+		Messages: []ResponseMessage{{
+			Code:    response.CStat,
+			Message: response.XMotivo,
+			Type:    "info",
+		}},
 	}
 }
 
 func (c *NFEClient) convertToStatusResponse(response *StatusResponse) *ClientStatusResponse {
-	status := &ClientStatusResponse{
+	// Convert string status to int
+	status := 0
+	if statusInt, err := strconv.Atoi(response.CStat); err == nil {
+		status = statusInt
+	}
+
+	clientStatus := &ClientStatusResponse{
 		Success:     response.CStat == "107",
-		Status:      107,
+		Status:      status,
 		StatusText:  response.XMotivo,
 		UF:          fmt.Sprintf("%02d", int(c.uf)),
 		Environment: int(c.config.TpAmb),
 		Online:      response.CStat == "107",
 		CheckedAt:   time.Now(),
+		Messages: []ResponseMessage{{
+			Code:    response.CStat,
+			Message: response.XMotivo,
+			Type:    "info",
+		}},
 	}
 
-	return status
+	return clientStatus
+}
+
+func (c *NFEClient) convertToAuthResponse(response *EnvioLoteResponse, originalXML []byte) *AuthResponse {
+	// Convert string status to int
+	status := 0
+	if statusInt, err := strconv.Atoi(response.CStat); err == nil {
+		status = statusInt
+	}
+
+	authResponse := &AuthResponse{
+		Success:      response.CStat == "103", // Lote recebido com sucesso
+		Status:       status,
+		StatusText:   response.XMotivo,
+		OriginalXML:  originalXML,
+		ProcessingAt: time.Now(),
+		Messages: []ResponseMessage{{
+			Code:    response.CStat,
+			Message: response.XMotivo,
+			Type:    "info",
+		}},
+	}
+
+	// Add receipt if available
+	if response.InfRec != nil {
+		authResponse.Receipt = response.InfRec.NRec
+	}
+
+	return authResponse
+}
+
+func (c *NFEClient) createLoteFromXML(xml []byte) (*LoteNFe, error) {
+	// TODO: Parse XML and create proper LoteNFe
+	// For now, create a basic structure
+	lote := &LoteNFe{
+		IdLote: "1",
+		NFes:   []NFe{}, // TODO: Parse NFe from XML
+	}
+	return lote, nil
+}
+
+func (c *NFEClient) createCancellationEventRequest(chave, justificativa string) (*EventoRequest, error) {
+	// TODO: Implement proper event request creation
+	// For now, return a basic structure
+	return &EventoRequest{}, nil
+}
+
+func (c *NFEClient) createCCeEventRequest(chave, correcao string, sequencia int) (*EventoRequest, error) {
+	// TODO: Implement proper CCe request creation
+	// For now, return a basic structure
+	return &EventoRequest{}, nil
+}
+
+func (c *NFEClient) createInutilizacaoRequest(serie, numeroInicial, numeroFinal int, justificativa string) (*InutilizacaoRequest, error) {
+	// TODO: Implement proper invalidation request creation
+	// For now, return a basic structure
+	return &InutilizacaoRequest{}, nil
+}
+
+func (c *NFEClient) convertInutilizacaoToEventResponse(response *InutilizacaoResponse) *EventResponse {
+	// TODO: Access proper fields from InutilizacaoResponse
+	// For now, return a basic structure
+	return &EventResponse{
+		Success:     true,
+		Status:      102,
+		StatusText:  "Inutilização de número homologado",
+		EventType:   "inutilizacao",
+		ProcessedAt: time.Now(),
+		Messages: []ResponseMessage{{
+			Code:    "102",
+			Message: "Inutilização de número homologado",
+			Type:    "info",
+		}},
+	}
 }
 
 func (c *NFEClient) convertToEventResponse(response interface{}, eventType string) *EventResponse {

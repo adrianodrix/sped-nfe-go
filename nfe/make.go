@@ -186,7 +186,7 @@ func (m *Make) TagIde(ide *Identificacao) error {
 	}
 	
 	// Ensure cNF ≠ nNF (NT2019.001)
-	if ide.CNF == ide.NNF[len(ide.NNF)-8:] {
+	if len(ide.NNF) >= 8 && ide.CNF == ide.NNF[len(ide.NNF)-8:] {
 		ide.CNF = GenerateRandomCode(8)
 	}
 	

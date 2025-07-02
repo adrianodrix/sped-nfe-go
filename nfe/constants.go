@@ -1,20 +1,20 @@
 // Package nfe provides constants and codes used in Brazilian Electronic Fiscal Documents.
 package nfe
 
-// Environment represents the NFe environment
-type Environment int
+// NFEEnvironment represents the NFe environment
+type NFEEnvironment int
 
 const (
-	Production Environment = iota + 1 // 1 - Produção
-	Testing                           // 2 - Homologação
+	EnvironmentProduction NFEEnvironment = iota + 1 // 1 - Produção
+	EnvironmentTesting                               // 2 - Homologação
 )
 
-// String returns the string representation of Environment
-func (e Environment) String() string {
+// String returns the string representation of NFEEnvironment
+func (e NFEEnvironment) String() string {
 	switch e {
-	case Production:
+	case EnvironmentProduction:
 		return "1"
-	case Testing:
+	case EnvironmentTesting:
 		return "2"
 	default:
 		return "2"

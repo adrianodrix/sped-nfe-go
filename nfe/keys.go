@@ -4,7 +4,6 @@ package nfe
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 )
 

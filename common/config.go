@@ -19,25 +19,25 @@ import (
 type Config struct {
 	// Ambiente de operação (1=Produção, 2=Homologação)
 	TpAmb types.Environment `json:"tpAmb" validate:"required,oneof=1 2"`
-	
+
 	// Dados da empresa
 	RazaoSocial string `json:"razaosocial" validate:"required,min=1"`
 	CNPJ        string `json:"cnpj" validate:"required,min=11,max=14,numeric"`
 	SiglaUF     string `json:"siglaUF" validate:"required,len=2"`
-	
+
 	// Configurações técnicas
 	Schemes string `json:"schemes" validate:"required"`
 	Versao  string `json:"versao" validate:"required,oneof=3.10 4.00"`
-	
+
 	// Configurações opcionais
 	Atualizacao *string `json:"atualizacao,omitempty"`
 	TokenIBPT   *string `json:"tokenIBPT,omitempty"`
 	CSC         *string `json:"CSC,omitempty"`
 	CSCId       *string `json:"CSCid,omitempty"`
-	
+
 	// Configurações de proxy
 	ProxyConf *ProxyConfig `json:"aProxyConf,omitempty"`
-	
+
 	// Configurações adicionais (não presentes no schema original)
 	Timeout int `json:"timeout,omitempty"`
 }
@@ -143,7 +143,7 @@ func ValidateClientConfig(config *ClientConfig) error {
 	// Validate timeout
 	minTimeout := time.Duration(types.MinTimeoutSeconds) * time.Second
 	maxTimeout := time.Duration(types.MaxTimeoutSeconds) * time.Second
-	
+
 	if config.Timeout < minTimeout || config.Timeout > maxTimeout {
 		return errors.NewConfigError(
 			fmt.Sprintf("timeout must be between %v and %v", minTimeout, maxTimeout),
@@ -260,7 +260,7 @@ func (c *Config) GetUF() (types.UF, error) {
 func validateCNPJ(cnpj string) error {
 	// Remove non-numeric characters
 	cnpjClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(cnpj, "")
-	
+
 	// Check length (11 for CPF, 14 for CNPJ)
 	if len(cnpjClean) != 11 && len(cnpjClean) != 14 {
 		return fmt.Errorf("CNPJ/CPF must have 11 or 14 digits, got %d", len(cnpjClean))
@@ -279,20 +279,20 @@ func validateUF(uf string) error {
 	if len(uf) != 2 {
 		return fmt.Errorf("UF must have exactly 2 characters")
 	}
-	
+
 	validUFs := []string{
 		"AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
 		"MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
 		"RS", "RO", "RR", "SC", "SP", "SE", "TO", "EX",
 	}
-	
+
 	ufUpper := strings.ToUpper(uf)
 	for _, validUF := range validUFs {
 		if ufUpper == validUF {
 			return nil
 		}
 	}
-	
+
 	return fmt.Errorf("invalid UF: %s", uf)
 }
 

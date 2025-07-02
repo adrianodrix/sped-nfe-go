@@ -10,19 +10,19 @@ import (
 var (
 	// ErrConfig represents configuration-related errors
 	ErrConfig = &ErrorType{Code: "CONFIG", Message: "Configuration error"}
-	
+
 	// ErrValidation represents validation-related errors
 	ErrValidation = &ErrorType{Code: "VALIDATION", Message: "Validation error"}
-	
+
 	// ErrNetwork represents network/communication errors
 	ErrNetwork = &ErrorType{Code: "NETWORK", Message: "Network error"}
-	
+
 	// ErrCertificate represents certificate-related errors
 	ErrCertificate = &ErrorType{Code: "CERTIFICATE", Message: "Certificate error"}
-	
+
 	// ErrXML represents XML processing errors
 	ErrXML = &ErrorType{Code: "XML", Message: "XML processing error"}
-	
+
 	// ErrSEFAZ represents SEFAZ webservice errors
 	ErrSEFAZ = &ErrorType{Code: "SEFAZ", Message: "SEFAZ error"}
 )

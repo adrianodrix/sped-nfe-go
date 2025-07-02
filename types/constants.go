@@ -189,47 +189,47 @@ type TipoEvento int
 
 const (
 	// Event types from Tools.php
-	EvtConfirmacao                TipoEvento = 210200 // Confirmação da Operação
-	EvtCiencia                    TipoEvento = 210210 // Ciência da Operação
-	EvtDesconhecimento            TipoEvento = 210220 // Desconhecimento da Operação
-	EvtNaoRealizada               TipoEvento = 210240 // Operação não Realizada
-	EvtCCe                        TipoEvento = 110110 // Carta de Correção Eletrônica
-	EvtCancela                    TipoEvento = 110111 // Cancelamento
-	EvtCancelaSubstituicao        TipoEvento = 110112 // Cancelamento por Substituição
-	EvtEPEC                       TipoEvento = 110140 // EPEC
-	EvtAtorInteressado            TipoEvento = 110150 // Ator Interessado
-	EvtComprovanteEntrega         TipoEvento = 110130 // Comprovante de Entrega
-	EvtCancelamentoCompEntrega    TipoEvento = 110131 // Cancelamento Comprovante Entrega
-	EvtProrrogacao1               TipoEvento = 111500 // Prorrogação ICMS
-	EvtProrrogacao2               TipoEvento = 111501 // Prorrogação IPI
-	EvtCancelaProrrogacao1        TipoEvento = 111502 // Cancela Prorrogação ICMS
-	EvtCancelaProrrogacao2        TipoEvento = 111503 // Cancela Prorrogação IPI
-	EvtInsucessoEntrega           TipoEvento = 110192 // Insucesso na Entrega
-	EvtCancelaInsucessoEntrega    TipoEvento = 110193 // Cancela Insucesso Entrega
-	EvtConciliacao                TipoEvento = 110750 // Conciliação
-	EvtCancelaConciliacao         TipoEvento = 110751 // Cancela Conciliação
+	EvtConfirmacao             TipoEvento = 210200 // Confirmação da Operação
+	EvtCiencia                 TipoEvento = 210210 // Ciência da Operação
+	EvtDesconhecimento         TipoEvento = 210220 // Desconhecimento da Operação
+	EvtNaoRealizada            TipoEvento = 210240 // Operação não Realizada
+	EvtCCe                     TipoEvento = 110110 // Carta de Correção Eletrônica
+	EvtCancela                 TipoEvento = 110111 // Cancelamento
+	EvtCancelaSubstituicao     TipoEvento = 110112 // Cancelamento por Substituição
+	EvtEPEC                    TipoEvento = 110140 // EPEC
+	EvtAtorInteressado         TipoEvento = 110150 // Ator Interessado
+	EvtComprovanteEntrega      TipoEvento = 110130 // Comprovante de Entrega
+	EvtCancelamentoCompEntrega TipoEvento = 110131 // Cancelamento Comprovante Entrega
+	EvtProrrogacao1            TipoEvento = 111500 // Prorrogação ICMS
+	EvtProrrogacao2            TipoEvento = 111501 // Prorrogação IPI
+	EvtCancelaProrrogacao1     TipoEvento = 111502 // Cancela Prorrogação ICMS
+	EvtCancelaProrrogacao2     TipoEvento = 111503 // Cancela Prorrogação IPI
+	EvtInsucessoEntrega        TipoEvento = 110192 // Insucesso na Entrega
+	EvtCancelaInsucessoEntrega TipoEvento = 110193 // Cancela Insucesso Entrega
+	EvtConciliacao             TipoEvento = 110750 // Conciliação
+	EvtCancelaConciliacao      TipoEvento = 110751 // Cancela Conciliação
 )
 
 // TipoEmissao represents emission types
 type TipoEmissao int
 
 const (
-	TeNormal              TipoEmissao = 1 // Emissão normal
-	TeContingenciaFS      TipoEmissao = 2 // Contingência FS-IA
-	TeContingenciaSCAN    TipoEmissao = 3 // Contingência SCAN (deprecated)
-	TeContingenciaDPEC    TipoEmissao = 4 // Contingência DPEC (deprecated)
-	TeContingenciaFSDA    TipoEmissao = 5 // Contingência FS-DA
-	TeContingenciaSVCAN   TipoEmissao = 6 // Contingência SVC-AN
-	TeContingenciaSVCRS   TipoEmissao = 7 // Contingência SVC-RS
-	TeOffline             TipoEmissao = 9 // Emissão offline NFCe
+	TeNormal            TipoEmissao = 1 // Emissão normal
+	TeContingenciaFS    TipoEmissao = 2 // Contingência FS-IA
+	TeContingenciaSCAN  TipoEmissao = 3 // Contingência SCAN (deprecated)
+	TeContingenciaDPEC  TipoEmissao = 4 // Contingência DPEC (deprecated)
+	TeContingenciaFSDA  TipoEmissao = 5 // Contingência FS-DA
+	TeContingenciaSVCAN TipoEmissao = 6 // Contingência SVC-AN
+	TeContingenciaSVCRS TipoEmissao = 7 // Contingência SVC-RS
+	TeOffline           TipoEmissao = 9 // Emissão offline NFCe
 )
 
 // TipoAmbiente represents the environment type in XML
 type TipoAmbiente int
 
 const (
-	TaProducao     TipoAmbiente = 1 // Produção
-	TaHomologacao  TipoAmbiente = 2 // Homologação
+	TaProducao    TipoAmbiente = 1 // Produção
+	TaHomologacao TipoAmbiente = 2 // Homologação
 )
 
 // ProcessoEmissao represents the emission process
@@ -237,22 +237,22 @@ type ProcessoEmissao int
 
 const (
 	PeAplicativoContribuinte ProcessoEmissao = 0 // Aplicativo do contribuinte
-	PeAvulsaFisco           ProcessoEmissao = 1 // Avulsa pelo Fisco
-	PeAvulsaContribuinte    ProcessoEmissao = 2 // Avulsa pelo contribuinte
-	PeContribuinte          ProcessoEmissao = 3 // Pelo contribuinte
+	PeAvulsaFisco            ProcessoEmissao = 1 // Avulsa pelo Fisco
+	PeAvulsaContribuinte     ProcessoEmissao = 2 // Avulsa pelo contribuinte
+	PeContribuinte           ProcessoEmissao = 3 // Pelo contribuinte
 )
 
 // Default values and limits
 const (
 	// ChaveAcessoLength is the fixed length of NFe access key
 	ChaveAcessoLength = 44
-	
+
 	// MaxTimeoutSeconds is the maximum allowed timeout
 	MaxTimeoutSeconds = 300
-	
+
 	// MinTimeoutSeconds is the minimum allowed timeout
 	MinTimeoutSeconds = 5
-	
+
 	// DefaultTimeoutSeconds is the default timeout
 	DefaultTimeoutSeconds = 30
 )

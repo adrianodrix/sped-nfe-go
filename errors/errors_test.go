@@ -57,15 +57,23 @@ func TestNewNetworkError(t *testing.T) {
 }
 
 func TestErrorIs(t *testing.T) {
-	err := NewConfigError("test", "field", "value")
+	err1 := NewConfigError("test", "field", "value")
+	err2 := NewValidationError("test", "field", "value")
 	
-	// Test Is method with ErrorType
-	if !err.Is(ErrConfig) {
-		t.Errorf("Error should be identified as ErrConfig")
+	// Test Is method with same error type
+	if !err1.Is(err1) {
+		t.Errorf("Error should be identified as itself")
 	}
 	
-	if err.Is(ErrValidation) {
-		t.Errorf("Error should not be identified as ErrValidation")
+	// Test Is method with different error type
+	if err1.Is(err2) {
+		t.Errorf("Config error should not be identified as validation error")
+	}
+	
+	// Create another config error to test type matching
+	err3 := NewConfigError("different message", "other", "other")
+	if !err1.Is(err3) {
+		t.Errorf("Config errors should be identified as same type")
 	}
 }
 

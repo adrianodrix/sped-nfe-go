@@ -57,8 +57,8 @@ func (e *NFError) Unwrap() error {
 
 // Is checks if the error matches a specific error type
 func (e *NFError) Is(target error) bool {
-	if t, ok := target.(*ErrorType); ok {
-		return e.Type.Code == t.Code
+	if t, ok := target.(*NFError); ok {
+		return e.Type.Code == t.Type.Code
 	}
 	return false
 }

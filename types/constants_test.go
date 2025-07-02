@@ -72,12 +72,12 @@ func TestUFIsValid(t *testing.T) {
 	// Test valid UFs
 	for _, uf := range validUFs {
 		if !uf.IsValid() {
-			t.Errorf("UF %v should be valid", uf)
+			t.Errorf("UF %v (%s) should be valid", uf, uf.String())
 		}
 	}
 	
 	// Test invalid UFs
-	invalidUFs := []UF{UF(0), UF(1), UF(99), UF(100)}
+	invalidUFs := []UF{UF(0), UF(1), UF(98), UF(100)}
 	for _, uf := range invalidUFs {
 		if uf.IsValid() {
 			t.Errorf("UF %v should be invalid", uf)

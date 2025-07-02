@@ -52,7 +52,7 @@ func TestUFString(t *testing.T) {
 		{MG, "MG"},
 		{AC, "AC"},
 		{EX, "EX"},
-		{UF(99), "Unknown"},
+		{UF(100), "Unknown"},
 	}
 	
 	for _, test := range tests {

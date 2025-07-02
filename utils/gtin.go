@@ -35,8 +35,8 @@ func ValidateGTIN(gtin string) error {
 		return errors.NewValidationError("GTIN must be 8, 12, 13, or 14 digits", "gtin", gtin)
 	}
 	
-	// Check if all digits are the same (invalid)
-	if isAllSameDigits(gtinClean) {
+	// Check if all digits are the same (invalid), except for all zeros
+	if isAllSameDigits(gtinClean) && gtinClean != strings.Repeat("0", len(gtinClean)) {
 		return errors.NewValidationError("GTIN cannot have all same digits", "gtin", gtin)
 	}
 	
@@ -129,16 +129,17 @@ func isValidGTINCheckDigit(gtin string) bool {
 func calculateGTINCheckDigit(partialGTIN string) int {
 	sum := 0
 	
-	// Pad with zeros to make it 13 digits (for calculation purposes)
-	padded := strings.Repeat("0", 13-len(partialGTIN)) + partialGTIN
-	
-	// Calculate weighted sum
-	for i, digit := range padded {
+	// Calculate weighted sum from right to left
+	// Odd positions (from right) get weight 3, even positions get weight 1
+	for i, digit := range partialGTIN {
 		digitValue, _ := strconv.Atoi(string(digit))
 		
-		// Even positions (0-indexed) get weight 1, odd positions get weight 3
+		// Position from right (1-indexed)
+		positionFromRight := len(partialGTIN) - i
+		
+		// Odd positions from right get weight 3, even positions get weight 1
 		weight := 1
-		if i%2 == 1 {
+		if positionFromRight%2 == 1 {
 			weight = 3
 		}
 		

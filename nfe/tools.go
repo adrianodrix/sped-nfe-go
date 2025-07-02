@@ -91,8 +91,9 @@ func (t *Tools) GetLastResponse() string {
 func (t *Tools) SefazStatus(ctx context.Context) (*StatusResponse, error) {
 	// Build status request
 	statusRequest := &StatusRequest{
+		Xmlns:  "http://www.portalfiscal.inf.br/nfe",
 		Versao: t.config.Versao,
-		TpAmb:  t.config.TpAmb,
+		TpAmb:  int(t.config.TpAmb),
 		CUF:    getStateCode(t.config.SiglaUF),
 		XServ:  "STATUS",
 	}
@@ -159,6 +160,7 @@ func (t *Tools) SefazEnviaLote(ctx context.Context, lote *LoteNFe, sincrono bool
 
 	// Build authorization request
 	envioLote := &EnvioLoteRequest{
+		Xmlns:   "http://www.portalfiscal.inf.br/nfe",
 		Versao:  t.config.Versao,
 		IdLote:  lote.IdLote,
 		IndSinc: indSinc,
@@ -219,8 +221,9 @@ func (t *Tools) SefazConsultaRecibo(ctx context.Context, nRec string) (*Consulta
 
 	// Build consultation request
 	consultaRecibo := &ConsultaReciboRequest{
+		Xmlns:  "http://www.portalfiscal.inf.br/nfe",
 		Versao: t.config.Versao,
-		TpAmb:  t.config.TpAmb,
+		TpAmb:  int(t.config.TpAmb),
 		NRec:   nRec,
 	}
 
@@ -280,8 +283,10 @@ func (t *Tools) SefazConsultaChave(ctx context.Context, chave string) (*Consulta
 
 	// Build consultation request
 	consultaChave := &ConsultaChaveRequest{
+		Xmlns:  "http://www.portalfiscal.inf.br/nfe",
 		Versao: t.config.Versao,
-		TpAmb:  t.config.TpAmb,
+		TpAmb:  int(t.config.TpAmb),
+		XServ:  "CONSULTAR",
 		ChNFe:  chave,
 	}
 
@@ -341,7 +346,7 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 
 	// Set common fields
 	inutilizacao.Versao = t.config.Versao
-	inutilizacao.TpAmb = t.config.TpAmb
+	inutilizacao.InfInut.TpAmb = int(t.config.TpAmb)
 
 	// Convert to XML
 	requestXML, err := xml.Marshal(inutilizacao)
@@ -467,7 +472,7 @@ func (t *Tools) SefazCancela(ctx context.Context, chave, protocolo, justificativ
 			{
 				InfEvento: InfEvento{
 					COrgao:      getStateCode(t.config.SiglaUF),
-					TpAmb:       t.config.TpAmb,
+					TpAmb:       int(t.config.TpAmb),
 					CNPJ:        t.config.CNPJ,
 					ChNFe:       chave,
 					DhEvento:    FormatDateTime(time.Now()),
@@ -509,7 +514,7 @@ func (t *Tools) SefazCCe(ctx context.Context, chave, correcao string, sequencia 
 			{
 				InfEvento: InfEvento{
 					COrgao:      getStateCode(t.config.SiglaUF),
-					TpAmb:       t.config.TpAmb,
+					TpAmb:       int(t.config.TpAmb),
 					CNPJ:        t.config.CNPJ,
 					ChNFe:       chave,
 					DhEvento:    FormatDateTime(time.Now()),

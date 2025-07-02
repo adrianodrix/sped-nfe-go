@@ -81,7 +81,7 @@ func (c *Client) GenerateAccessKey(cnpj string, modelo, serie, numero int, tipoE
 	uf := int(c.config.UF)
 	year := time.Now().Year() % 100 // last 2 digits
 	month := int(time.Now().Month())
-	
+
 	// Format: UF + YYMM + CNPJ + MODELO + SERIE + NUMERO + TIPO + COD + DV
 	// This is a placeholder implementation
 	return fmt.Sprintf("%02d%02d%02d%s%02d%03d%09d%d%08d%d",
@@ -93,10 +93,10 @@ func ValidateConfig(config Config) error {
 	if config.Environment != Production && config.Environment != Homologation {
 		return fmt.Errorf("invalid environment: must be Production (1) or Homologation (2)")
 	}
-	
+
 	if config.UF <= 0 {
 		return fmt.Errorf("invalid UF: must be a valid state code")
 	}
-	
+
 	return nil
 }

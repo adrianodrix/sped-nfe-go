@@ -286,6 +286,118 @@ Leia a estrutura do projeto e rastreie as dependencias de cada arquivo, e comece
 4. **Facilidade de uso** (API intuitiva)
 5. **Documentação** (GoDoc em todas as funções)
 
+## Workflow de Desenvolvimento das Issues
+
+### 🔄 Git Flow e Versionamento
+
+Para cada issue implementada, seguir rigorosamente este fluxo:
+
+#### 1. Iniciar Feature
+```bash
+# Criar feature branch para a issue
+git flow feature start issue-{numero}
+
+# Exemplo para issue #1:
+git flow feature start issue-1
+```
+
+#### 2. Assignar Issue
+- Assignar a issue para **adrianodrix** no GitHub
+- Mover issue para "In Progress" se usando Projects
+
+#### 3. Desenvolvimento
+- Implementar um arquivo por vez
+- **Commit individual** para cada arquivo finalizado
+- **Formato do commit**: `#{numero}: {descrição do arquivo/funcionalidade}`
+
+```bash
+# Exemplos de commits para issue #1:
+git commit -m "#1: Add basic error types and validation"
+git commit -m "#1: Implement Config struct with validation"
+git commit -m "#1: Add constants for environments and UF codes"
+git commit -m "#1: Add unit tests for config validation"
+```
+
+#### 4. Finalizar Feature
+```bash
+# Finalizar feature branch
+git flow feature finish issue-{numero}
+
+# Exemplo:
+git flow feature finish issue-1
+```
+
+#### 5. Fechar Issue
+- Fechar a issue no GitHub
+- Marcar como concluída com comentário do que foi implementado
+
+### 📋 Padrões de Commit
+
+#### Estrutura Obrigatória:
+```
+#{issue_number}: {descrição_clara}
+
+Exemplos:
+#1: Add Config struct with environment validation
+#1: Implement error types for better error handling
+#2: Add CNPJ validation function with unit tests
+#5: Create NFe struct with XML tags
+```
+
+#### Tipos de Commit:
+- **Arquivos principais**: `#{issue}: Add {filename} with {functionality}`
+- **Testes**: `#{issue}: Add tests for {functionality}`
+- **Documentação**: `#{issue}: Add documentation for {component}`
+- **Correções**: `#{issue}: Fix {problem} in {component}`
+
+### 🎯 Ordem de Implementação
+
+As issues devem ser implementadas na ordem de dependências:
+
+1. **Issue #1**: Base e configuração (sem dependências)
+2. **Issue #2**: Utilitários brasileiros (depende #1)
+3. **Issue #3**: Cliente SOAP (depende #1)
+4. **Issue #4**: Certificados digitais (depende #1)
+5. **Issue #5**: Estruturas de dados (depende #1, #2)
+6. **Issue #6**: Geração XML (depende #2, #5)
+7. **Issue #7**: Comunicação SEFAZ (depende #3, #4, #6)
+8. **Issue #8**: Conversão TXT (depende #5, #6)
+9. **Issue #9**: Funcionalidades complementares (depende #5, #7)
+10. **Issue #10**: Cliente principal (depende todas anteriores)
+
+### ✅ Critérios para Finalizar Issue
+
+Uma issue só pode ser finalizada quando:
+
+- [ ] Todos os arquivos especificados foram implementados
+- [ ] Todos os testes unitários passam
+- [ ] Cobertura de testes ≥ 80%
+- [ ] Código formatado com `go fmt`
+- [ ] Sem warnings de `go vet`
+- [ ] Documentação GoDoc completa
+- [ ] Commits seguem o padrão estabelecido
+
+### 🚀 Comandos de Verificação
+
+Antes de finalizar qualquer feature:
+
+```bash
+# Formatar código
+go fmt ./...
+
+# Verificar análise estática
+go vet ./...
+
+# Executar todos os testes
+go test ./...
+
+# Verificar cobertura
+go test -cover ./...
+
+# Build para verificar compilação
+go build ./...
+```
+
 ## Formato de Resposta
 
 Para cada arquivo convertido, forneça:

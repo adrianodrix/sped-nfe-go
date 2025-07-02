@@ -67,7 +67,7 @@ func TestIsProduction(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := Config{Environment: tt.environment, UF: SP}
 			client, _ := New(config)
-			
+
 			if client.IsProduction() != tt.expected {
 				t.Errorf("Expected IsProduction() = %v, got %v", tt.expected, client.IsProduction())
 			}
@@ -137,7 +137,7 @@ func TestGenerateAccessKey(t *testing.T) {
 	}
 
 	client, _ := New(config)
-	
+
 	cnpj := "12345678000190"
 	modelo := 55
 	serie := 1

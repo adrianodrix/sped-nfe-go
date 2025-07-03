@@ -4,6 +4,8 @@ package certificate
 import (
 	"crypto"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"math/big"
 	"time"
 )
 
@@ -15,7 +17,24 @@ type MockCertificate struct {
 
 // NewMockCertificate creates a new mock certificate for testing
 func NewMockCertificate() *MockCertificate {
-	return &MockCertificate{}
+	// Create a basic X509 certificate for testing
+	cert := &x509.Certificate{
+		SerialNumber: big.NewInt(123456789),
+		Subject: pkix.Name{
+			CommonName: "Mock Certificate",
+		},
+		Issuer: pkix.Name{
+			CommonName: "Mock Issuer",
+		},
+		NotBefore:    time.Now().Add(-24 * time.Hour),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	
+	return &MockCertificate{
+		cert: cert,
+	}
 }
 
 // Sign signs the given data using the certificate's private key
@@ -30,6 +49,11 @@ func (m *MockCertificate) GetPublicKey() crypto.PublicKey {
 		return m.cert.PublicKey
 	}
 	return nil
+}
+
+// GetPrivateKey returns the certificate's private key
+func (m *MockCertificate) GetPrivateKey() crypto.PrivateKey {
+	return m.privateKey
 }
 
 // GetCertificate returns the certificate

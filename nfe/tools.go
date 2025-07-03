@@ -562,11 +562,16 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 	// 8. Sign the XML if certificate is available
 	if t.certificate != nil {
 		if cert, ok := t.certificate.(Certificate); ok && cert != nil {
+			fmt.Printf("[DEBUG] Certificado encontrado, iniciando assinatura XMLDSig...\n")
+			
 			// Convert request to XML for signing
 			requestXML, err := xml.Marshal(request)
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal request for signing: %v", err)
 			}
+			
+			fmt.Printf("[DEBUG] XML antes da assinatura: %s\n", string(requestXML))
+			fmt.Printf("[DEBUG] ID do elemento para assinar: %s\n", idInut)
 
 			// Sign the XML using XMLDSig
 			signer := certificate.CreateXMLDSigSigner(cert)
@@ -575,19 +580,78 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 				return nil, fmt.Errorf("failed to sign inutilization XML: %v", err)
 			}
 
-			// Parse the signed XML back to request structure
-			var signedRequest InutilizacaoRequest
-			if err := xml.Unmarshal([]byte(signResult.SignedXML), &signedRequest); err != nil {
-				return nil, fmt.Errorf("failed to parse signed XML: %v", err)
-			}
-
-			// Use the signed request
-			request = &signedRequest
+			fmt.Printf("[DEBUG] XML após assinatura: %s\n", signResult.SignedXML)
+			
+			// Use the signed XML directly instead of unmarshaling/marshaling
+			// which would lose the signature
+			fmt.Printf("[DEBUG] Assinatura XMLDSig aplicada com sucesso!\n")
+			
+			// Call SefazInutiliza directly with signed XML string
+			return t.SefazInutilizaWithSignedXML(ctx, signResult.SignedXML)
+		} else {
+			fmt.Printf("[DEBUG] Certificado não é do tipo Certificate válido\n")
 		}
+	} else {
+		fmt.Printf("[DEBUG] Nenhum certificado configurado no Tools\n")
 	}
 
-	// 9. Call the base function
+	// 9. Call the base function (only reached if no certificate)
 	return t.SefazInutiliza(ctx, request)
+}
+
+// SefazInutilizaWithSignedXML invalidates numbers using pre-signed XML
+func (t *Tools) SefazInutilizaWithSignedXML(ctx context.Context, signedXML string) (*InutilizacaoResponse, error) {
+	if signedXML == "" {
+		return nil, fmt.Errorf("signed XML cannot be empty")
+	}
+
+	// Get webservice info using resolver for consistency
+	serviceInfo, err := t.getInutilizacaoServiceInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service URL: %v", err)
+	}
+
+	// Create SOAP request with signed XML directly
+	soapReq, err := soap.CreateNFeSOAPRequest(serviceInfo.URL, serviceInfo.Action, signedXML)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create SOAP request: %v", err)
+	}
+
+	// Store request for debugging
+	t.lastRequest = soapReq.Body
+
+	// Send request
+	soapResp, err := t.soapClient.Call(ctx, soapReq)
+	if err != nil {
+		return nil, fmt.Errorf("SOAP call failed: %v", err)
+	}
+
+	// Store response for debugging
+	t.lastResponse = soapResp.Body
+
+	// Extract body content
+	bodyContent, err := soap.ExtractBodyContent(soapResp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract body content: %v", err)
+	}
+
+	// Parse response - handle both direct and wrapped responses
+	var inutResponse InutilizacaoResponse
+
+	// Try direct parsing first
+	if err := xml.Unmarshal([]byte(bodyContent), &inutResponse); err != nil {
+		// If that fails, try parsing the wrapped response
+		var wrappedResponse struct {
+			XMLName xml.Name            `xml:"nfeResultMsg"`
+			Result  InutilizacaoResponse `xml:"retInutNFe"`
+		}
+		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
+			return nil, fmt.Errorf("failed to unmarshal inutilizacao response: %v (also tried wrapped format: %v)", err, err2)
+		}
+		inutResponse = wrappedResponse.Result
+	}
+
+	return &inutResponse, nil
 }
 
 // SefazInutiliza invalidates a range of NFe numbers
@@ -1158,18 +1222,19 @@ type InutilizacaoRequest struct {
 
 // InfInut represents invalidation information
 type InfInut struct {
-	Id     string `xml:"Id,attr" validate:"required,len=43"`
-	TpAmb  int    `xml:"tpAmb" validate:"required,oneof=1 2"`
-	XServ  string `xml:"xServ" validate:"required,eq=INUTILIZAR"`
-	CUF    string `xml:"cUF" validate:"required,len=2"`
-	Ano    string `xml:"ano" validate:"required,len=2"`
-	CNPJ   string `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`
-	CPF    string `xml:"CPF,omitempty" validate:"omitempty,len=11"`
-	Mod    string `xml:"mod" validate:"required,oneof=55 65"`
-	Serie  string `xml:"serie" validate:"required,min=0,max=999"`
-	NNFIni string `xml:"nNFIni" validate:"required,min=1,max=999999999"`
-	NNFFin string `xml:"nNFFin" validate:"required,min=1,max=999999999"`
-	XJust  string `xml:"xJust" validate:"required,min=15,max=255"`
+	Id        string      `xml:"Id,attr" validate:"required,len=43"`
+	TpAmb     int         `xml:"tpAmb" validate:"required,oneof=1 2"`
+	XServ     string      `xml:"xServ" validate:"required,eq=INUTILIZAR"`
+	CUF       string      `xml:"cUF" validate:"required,len=2"`
+	Ano       string      `xml:"ano" validate:"required,len=2"`
+	CNPJ      string      `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`
+	CPF       string      `xml:"CPF,omitempty" validate:"omitempty,len=11"`
+	Mod       string      `xml:"mod" validate:"required,oneof=55 65"`
+	Serie     string      `xml:"serie" validate:"required,min=0,max=999"`
+	NNFIni    string      `xml:"nNFIni" validate:"required,min=1,max=999999999"`
+	NNFFin    string      `xml:"nNFFin" validate:"required,min=1,max=999999999"`
+	XJust     string      `xml:"xJust" validate:"required,min=15,max=255"`
+	Signature interface{} `xml:"Signature,omitempty"` // XMLDSig signature
 }
 
 // InutilizacaoResponse represents a number invalidation response

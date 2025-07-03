@@ -38,7 +38,7 @@ func main() {
 	// 2. Carregar certificado real
 	fmt.Println("\n1. Carregando certificado real...")
 
-	certPath := "refs/certificates/cert-valido-jan-2026.pfx"
+	certPath := "refs/certificates/valid-certificate.pfx"
 	fmt.Printf("   Arquivo: %s\n", certPath)
 
 	cert, err := certificate.LoadA1FromFile(certPath, password)

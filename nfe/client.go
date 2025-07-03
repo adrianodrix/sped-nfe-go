@@ -3,6 +3,7 @@ package nfe
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"strconv"
 	"strings"
@@ -241,9 +242,65 @@ func (c *NFEClient) CreateNFCe() *Make {
 }
 
 // LoadFromXML loads an NFe from XML bytes.
-func (c *NFEClient) LoadFromXML(xml []byte) (*NFe, error) {
-	// TODO: Implement XML parsing to NFe struct
-	return nil, fmt.Errorf("LoadFromXML not implemented yet")
+func (c *NFEClient) LoadFromXML(xmlData []byte) (*NFe, error) {
+	if len(xmlData) == 0 {
+		return nil, fmt.Errorf("XML content cannot be empty")
+	}
+
+	var nfe NFe
+
+	// Parse XML into NFe structure
+	if err := xml.Unmarshal(xmlData, &nfe); err != nil {
+		return nil, fmt.Errorf("failed to parse XML: %v", err)
+	}
+
+	// Validate required fields
+	if err := c.validateParsedNFe(&nfe); err != nil {
+		return nil, fmt.Errorf("NFe validation failed: %v", err)
+	}
+
+	return &nfe, nil
+}
+
+// validateParsedNFe validates a parsed NFe structure
+func (c *NFEClient) validateParsedNFe(nfe *NFe) error {
+	if nfe == nil {
+		return fmt.Errorf("NFe cannot be nil")
+	}
+
+	// Validate InfNFe
+	if nfe.InfNFe.ID == "" {
+		return fmt.Errorf("NFe ID is required")
+	}
+
+	if nfe.InfNFe.Versao == "" {
+		return fmt.Errorf("NFe version is required")
+	}
+
+	// Validate identification
+	if nfe.InfNFe.Ide.CUF == "" {
+		return fmt.Errorf("state code (cUF) is required")
+	}
+
+	if nfe.InfNFe.Ide.CNF == "" {
+		return fmt.Errorf("random code (cNF) is required")
+	}
+
+	if nfe.InfNFe.Ide.NatOp == "" {
+		return fmt.Errorf("operation nature is required")
+	}
+
+	// Validate issuer
+	if nfe.InfNFe.Emit.XNome == "" {
+		return fmt.Errorf("issuer name is required")
+	}
+
+	// Validate at least one item
+	if len(nfe.InfNFe.Det) == 0 {
+		return fmt.Errorf("at least one item is required")
+	}
+
+	return nil
 }
 
 // LoadFromTXT loads an NFe from TXT format.
@@ -496,9 +553,45 @@ func (c *NFEClient) GenerateKey(cnpj string, modelo, serie, numero int, dhEmi ti
 
 // AddProtocol adds authorization protocol to an NFe XML.
 func (c *NFEClient) AddProtocol(nfe, protocolo []byte) ([]byte, error) {
-	// TODO: Implement protocol addition to create procNFe
-	// This should create the complete procNFe XML with protocol information
-	return nil, fmt.Errorf("not implemented yet")
+	if len(nfe) == 0 {
+		return nil, fmt.Errorf("NFe XML cannot be empty")
+	}
+
+	if len(protocolo) == 0 {
+		return nil, fmt.Errorf("protocol XML cannot be empty")
+	}
+
+	// Parse the NFe XML
+	var nfeData NFe
+	if err := xml.Unmarshal(nfe, &nfeData); err != nil {
+		return nil, fmt.Errorf("failed to parse NFe XML: %v", err)
+	}
+
+	// Parse the protocol XML
+	var protData ProtNFe
+	if err := xml.Unmarshal(protocolo, &protData); err != nil {
+		return nil, fmt.Errorf("failed to parse protocol XML: %v", err)
+	}
+
+	// Create the complete procNFe structure
+	procNFe := ProcNFe{
+		Xmlns:   "http://www.portalfiscal.inf.br/nfe",
+		Versao:  nfeData.InfNFe.Versao,
+		NFe:     nfeData,
+		ProtNFe: protData,
+	}
+
+	// Marshal to XML
+	procXML, err := xml.MarshalIndent(procNFe, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal procNFe XML: %v", err)
+	}
+
+	// Add XML declaration
+	xmlHeader := `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
+	result := xmlHeader + string(procXML)
+
+	return []byte(result), nil
 }
 
 // GetConfig returns the current client configuration.
@@ -556,7 +649,7 @@ func (c *NFEClient) IsContingencyActive() bool {
 
 func (c *NFEClient) signIfNeeded(xml []byte) ([]byte, error) {
 	// Check if already signed
-	if strings.Contains(string(xml), "<Signature") {
+	if strings.Contains(string(xml), "<Signature") || strings.Contains(string(xml), "<ds:Signature") {
 		return xml, nil
 	}
 
@@ -565,13 +658,13 @@ func (c *NFEClient) signIfNeeded(xml []byte) ([]byte, error) {
 		return nil, fmt.Errorf("certificate is required for XML signing")
 	}
 
-	// Create XML signer
+	// Create XML signer with SEFAZ-compatible configuration
 	signer := certificate.CreateXMLSigner(c.certificate)
 	
-	// Sign the XML
-	signedXML, _, err := signer.SignXML(string(xml))
+	// Sign the NFe XML specifically
+	signedXML, err := signer.SignNFeXML(string(xml))
 	if err != nil {
-		return nil, fmt.Errorf("failed to sign XML: %v", err)
+		return nil, fmt.Errorf("failed to sign NFe XML: %v", err)
 	}
 
 	return []byte(signedXML), nil

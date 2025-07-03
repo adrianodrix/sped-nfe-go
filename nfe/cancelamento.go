@@ -11,7 +11,7 @@ import (
 const (
 	// CancellationTimeoutHours defines the maximum hours after authorization to cancel NFe
 	CancellationTimeoutHours = 24
-	
+
 	// Minimum and maximum justification lengths
 	MinJustificationLength = 15
 	MaxJustificationLength = 255
@@ -19,25 +19,25 @@ const (
 
 // CancelamentoRequest represents a cancellation request structure
 type CancelamentoRequest struct {
-	ChaveNFe      string    `json:"chaveNFe" validate:"required,len=44"`
-	Justificativa string    `json:"justificativa" validate:"required,min=15,max=255"`
-	Protocolo     string    `json:"protocolo" validate:"required"`
+	ChaveNFe      string     `json:"chaveNFe" validate:"required,len=44"`
+	Justificativa string     `json:"justificativa" validate:"required,min=15,max=255"`
+	Protocolo     string     `json:"protocolo" validate:"required"`
 	DhEvento      *time.Time `json:"dhEvento,omitempty"`
-	Lote          string    `json:"lote,omitempty"`
+	Lote          string     `json:"lote,omitempty"`
 }
 
 // CancelamentoResponse represents a cancellation response structure
 type CancelamentoResponse struct {
-	Success       bool              `json:"success"`
-	Status        int               `json:"status"`
-	StatusText    string            `json:"statusText"`
-	Protocol      string            `json:"protocol,omitempty"`
-	Key           string            `json:"key"`
-	Sequence      int               `json:"sequence"`
-	Messages      []ResponseMessage `json:"messages,omitempty"`
-	XML           []byte            `json:"xml,omitempty"`
-	ProcessedAt   time.Time         `json:"processedAt"`
-	EventType     string            `json:"eventType"`
+	Success     bool              `json:"success"`
+	Status      int               `json:"status"`
+	StatusText  string            `json:"statusText"`
+	Protocol    string            `json:"protocol,omitempty"`
+	Key         string            `json:"key"`
+	Sequence    int               `json:"sequence"`
+	Messages    []ResponseMessage `json:"messages,omitempty"`
+	XML         []byte            `json:"xml,omitempty"`
+	ProcessedAt time.Time         `json:"processedAt"`
+	EventType   string            `json:"eventType"`
 }
 
 // DetEventoCancelamento represents the specific event details for cancellation
@@ -54,16 +54,16 @@ type CancellationStatus int
 const (
 	// Event registered and linked to NFe
 	CancellationStatusRegistered CancellationStatus = 135
-	
+
 	// Event already exists for this NFe
 	CancellationStatusAlreadyExists CancellationStatus = 573
-	
+
 	// Cancellation event approved
 	CancellationStatusApproved CancellationStatus = 155
-	
+
 	// Event rejected - outside deadline
 	CancellationStatusOutsideDeadline CancellationStatus = 218
-	
+
 	// Event rejected - NFe not found
 	CancellationStatusNFeNotFound CancellationStatus = 217
 )
@@ -95,7 +95,7 @@ func ValidarCancelamento(req *CancelamentoRequest) error {
 // ValidateNFeKey validates the NFe access key format and content
 func ValidateNFeKey(chave string) error {
 	chave = strings.TrimSpace(chave)
-	
+
 	if chave == "" {
 		return fmt.Errorf("chave cannot be empty")
 	}
@@ -130,7 +130,7 @@ func ValidateNFeKey(chave string) error {
 func ValidateJustification(justificativa string) error {
 	// Clean and trim the justification
 	justificativa = strings.TrimSpace(justificativa)
-	
+
 	if justificativa == "" {
 		return fmt.Errorf("justification cannot be empty")
 	}
@@ -161,8 +161,8 @@ func ValidarPrazoCancelamento(dhAutorizacao time.Time) error {
 	now := time.Now()
 
 	if now.After(deadline) {
-		return fmt.Errorf("cancellation deadline exceeded: NFe was authorized on %v, deadline was %v, current time is %v", 
-			dhAutorizacao.Format("2006-01-02 15:04:05"), 
+		return fmt.Errorf("cancellation deadline exceeded: NFe was authorized on %v, deadline was %v, current time is %v",
+			dhAutorizacao.Format("2006-01-02 15:04:05"),
 			deadline.Format("2006-01-02 15:04:05"),
 			now.Format("2006-01-02 15:04:05"))
 	}
@@ -191,10 +191,10 @@ func CanBeCancelled(authorized bool, cancelled bool, dhAutorizacao time.Time) (b
 func SanitizeJustification(justificativa string) string {
 	// Trim whitespace
 	justificativa = strings.TrimSpace(justificativa)
-	
+
 	// Replace multiple spaces with single space
 	justificativa = strings.Join(strings.Fields(justificativa), " ")
-	
+
 	// Remove or replace problematic characters
 	replacements := map[string]string{
 		"\n": " ",
@@ -261,8 +261,8 @@ func GetCancellationStatusText(status int) string {
 
 // IsCancellationSuccessful checks if a cancellation status indicates success
 func IsCancellationSuccessful(status int) bool {
-	return status == int(CancellationStatusRegistered) || 
-		   status == int(CancellationStatusApproved)
+	return status == int(CancellationStatusRegistered) ||
+		status == int(CancellationStatusApproved)
 }
 
 // Helper functions
@@ -270,11 +270,11 @@ func IsCancellationSuccessful(status int) bool {
 // validateUFCode validates if the UF code exists in Brazil
 func validateUFCode(ufCode string) error {
 	validUFs := map[string]string{
-		"12": "AC", "27": "AL", "16": "AP", "23": "AM", "29": "BA", 
-		"85": "CE", "53": "DF", "32": "ES", "52": "GO", "21": "MA", 
-		"51": "MT", "50": "MS", "31": "MG", "15": "PA", "25": "PB", 
-		"41": "PR", "26": "PE", "22": "PI", "33": "RJ", "20": "RN", 
-		"43": "RS", "11": "RO", "14": "RR", "42": "SC", "35": "SP", 
+		"12": "AC", "27": "AL", "16": "AP", "23": "AM", "29": "BA",
+		"85": "CE", "53": "DF", "32": "ES", "52": "GO", "21": "MA",
+		"51": "MT", "50": "MS", "31": "MG", "15": "PA", "25": "PB",
+		"41": "PR", "26": "PE", "22": "PI", "33": "RJ", "20": "RN",
+		"43": "RS", "11": "RO", "14": "RR", "42": "SC", "35": "SP",
 		"28": "SE", "17": "TO",
 	}
 
@@ -300,7 +300,7 @@ func validateDateInKey(dateStr string) error {
 
 	// Extract year and month
 	month := dateStr[2:4]
-	
+
 	// Validate month (01-12)
 	if month < "01" || month > "12" {
 		return fmt.Errorf("invalid month in date: %s", month)

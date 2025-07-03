@@ -972,7 +972,7 @@ func (c *NFEClient) convertToCancelamentoResponse(response *EventResponseNFe, ch
 			cancelResponse.Status = statusCode
 			cancelResponse.Success = IsCancellationSuccessful(statusCode)
 		}
-		
+
 		cancelResponse.StatusText = response.XMotivo
 		if cancelResponse.StatusText == "" {
 			cancelResponse.StatusText = GetCancellationStatusText(cancelResponse.Status)

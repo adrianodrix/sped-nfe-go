@@ -242,9 +242,9 @@ func TestCanBeCancelled(t *testing.T) {
 
 func TestSanitizeJustification(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		expected      string
+		name     string
+		input    string
+		expected string
 	}{
 		{
 			name:     "Normal text",

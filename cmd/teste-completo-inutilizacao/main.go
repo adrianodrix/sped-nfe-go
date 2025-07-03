@@ -82,10 +82,13 @@ func main() {
 	fmt.Printf("   ✅ Parâmetros validados\n")
 
 	// Lista de todos os estados brasileiros
+	// estados := []string{
+	// 	"AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+	// 	"MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+	// 	"RS", "RO", "RR", "SC", "SP", "SE", "TO",
+	// }
 	estados := []string{
-		"AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
-		"MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
-		"RS", "RO", "RR", "SC", "SP", "SE", "TO",
+		"AM", "PR",
 	}
 
 	fmt.Printf("\n🚀 ETAPA 3: Testando inutilização em TODOS os estados brasileiros...\n")
@@ -121,6 +124,9 @@ func main() {
 			errosOutros = append(errosOutros, uf+": "+err.Error())
 			continue
 		}
+
+		// Enable debug logging for these problematic states
+		tools.EnableDebug(true)
 
 		// Get service info
 		resolver := webservices.NewResolver()

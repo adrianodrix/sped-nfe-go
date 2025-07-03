@@ -257,52 +257,92 @@ func (c *SOAPClient) performHTTPRequestWithTLSFallback(req *http.Request) (*http
 
 	// Create a fallback configuration that's more permissive for bad certificates
 	originalTransport := c.httpClient.Transport.(*http.Transport)
-	fallbackConfig := &tls.Config{
-		MinVersion:         tls.VersionTLS10, // Allow older TLS versions
-		MaxVersion:         tls.VersionTLS13,
-		Renegotiation:      tls.RenegotiateFreelyAsClient,
-		InsecureSkipVerify: true, // Skip certificate verification for bad certs
-		CipherSuites: []uint16{
-			// Extended list with older cipher suites for maximum compatibility
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
-			tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+	
+	// Try multiple fallback configurations, progressively more permissive
+	fallbackConfigs := []*tls.Config{
+		// Fallback 1: Skip verification but keep modern TLS
+		{
+			MinVersion:         tls.VersionTLS12,
+			MaxVersion:         tls.VersionTLS13,
+			Renegotiation:      tls.RenegotiateFreelyAsClient,
+			InsecureSkipVerify: true,
+		},
+		
+		// Fallback 2: Allow older TLS versions
+		{
+			MinVersion:         tls.VersionTLS10,
+			MaxVersion:         tls.VersionTLS13,
+			Renegotiation:      tls.RenegotiateFreelyAsClient,
+			InsecureSkipVerify: true,
+		},
+		
+		// Fallback 3: Maximum compatibility with specific cipher suites
+		{
+			MinVersion:         tls.VersionTLS10,
+			MaxVersion:         tls.VersionTLS13,
+			Renegotiation:      tls.RenegotiateFreelyAsClient,
+			InsecureSkipVerify: true,
+			CipherSuites: []uint16{
+				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			},
 		},
 	}
+	
+	// Try each fallback configuration
+	for i, fallbackConfig := range fallbackConfigs {
+		if c.enableLogging {
+			logDebug("Trying fallback configuration %d/%d...", i+1, len(fallbackConfigs))
+		}
 
-	// Copy certificates from original config if they exist
-	if c.tlsConfig != nil && len(c.tlsConfig.Certificates) > 0 {
-		fallbackConfig.Certificates = c.tlsConfig.Certificates
+		// Copy certificates from original config if they exist
+		if c.tlsConfig != nil && len(c.tlsConfig.Certificates) > 0 {
+			fallbackConfig.Certificates = c.tlsConfig.Certificates
+		}
+
+		// Create a temporary transport with fallback config
+		fallbackTransport := &http.Transport{
+			TLSClientConfig:     fallbackConfig,
+			MaxIdleConns:        originalTransport.MaxIdleConns,
+			MaxIdleConnsPerHost: originalTransport.MaxIdleConnsPerHost,
+			IdleConnTimeout:     originalTransport.IdleConnTimeout,
+			DisableCompression:  originalTransport.DisableCompression,
+		}
+
+		// Create a temporary client with fallback transport
+		fallbackClient := &http.Client{
+			Timeout:   c.httpClient.Timeout,
+			Transport: fallbackTransport,
+		}
+
+		// Try this fallback configuration
+		resp, fallbackErr := fallbackClient.Do(req)
+		if fallbackErr == nil {
+			if c.enableLogging {
+				logDebug("Fallback configuration %d succeeded!", i+1)
+			}
+			return resp, nil
+		}
+
+		if c.enableLogging {
+			logDebug("Fallback configuration %d failed: %v", i+1, fallbackErr)
+		}
+
+		// If this is also a certificate error, try the next fallback
+		if !isCertificateError(fallbackErr) {
+			// If it's not a certificate error, return this error (might be progress)
+			return nil, fallbackErr
+		}
 	}
 
-	// Create a temporary transport with fallback config
-	fallbackTransport := &http.Transport{
-		TLSClientConfig:     fallbackConfig,
-		MaxIdleConns:        originalTransport.MaxIdleConns,
-		MaxIdleConnsPerHost: originalTransport.MaxIdleConnsPerHost,
-		IdleConnTimeout:     originalTransport.IdleConnTimeout,
-		DisableCompression:  originalTransport.DisableCompression,
-	}
-
-	// Create a temporary client with fallback transport
-	fallbackClient := &http.Client{
-		Timeout:   c.httpClient.Timeout,
-		Transport: fallbackTransport,
-	}
-
+	// If all fallbacks failed, return the original error
 	if c.enableLogging {
-		logDebug("Retrying with fallback TLS configuration (InsecureSkipVerify=true)...")
+		logDebug("All fallback configurations failed, returning original error")
 	}
-
-	// Try again with fallback configuration
-	return fallbackClient.Do(req)
+	return nil, err
 }
 
 // isCertificateError checks if an error is related to certificate validation
@@ -317,8 +357,16 @@ func isCertificateError(err error) bool {
 		"certificate verify failed",
 		"certificate has expired",
 		"certificate is not valid",
-		"x509: certificate",
+		"certificate signed by unknown authority",
 		"certificate authority",
+		"x509: certificate",
+		"x509:",
+		"bad certificate",
+		"unknown certificate authority",
+		"certificate name does not match",
+		"tls: handshake failure",
+		"tls: protocol version not supported",
+		"tls: unsupported certificate",
 	}
 	
 	for _, certErr := range certificateErrors {

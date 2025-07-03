@@ -405,6 +405,16 @@ func CreateNFeSOAPEnvelope(bodyContent string) (*SOAPEnvelope, error) {
 	return builder.Build()
 }
 
+// CreateSimpleNFeSOAPEnvelope creates a SOAP envelope without WS-Security for problematic SEFAZ servers
+func CreateSimpleNFeSOAPEnvelope(bodyContent string) (*SOAPEnvelope, error) {
+	builder := NewSOAP11EnvelopeBuilder()
+
+	// Set the NFe body content without security headers
+	builder.SetBodyContent(bodyContent)
+
+	return builder.Build()
+}
+
 // CreateNFeSOAPRequest creates a complete SOAP request for NFe operations
 func CreateNFeSOAPRequest(url, action, bodyContent string) (*SOAPRequest, error) {
 	if url == "" {
@@ -415,7 +425,17 @@ func CreateNFeSOAPRequest(url, action, bodyContent string) (*SOAPRequest, error)
 		return nil, errors.NewValidationError("body content cannot be empty", "bodyContent", "")
 	}
 
-	envelope, err := CreateNFeSOAPEnvelope(bodyContent)
+	// Determine which envelope type to use based on URL
+	var envelope *SOAPEnvelope
+	var err error
+	
+	// Some SEFAZ servers don't accept WS-Security timestamp - use simple envelope
+	if needsSimpleEnvelope(url) {
+		envelope, err = CreateSimpleNFeSOAPEnvelope(bodyContent)
+	} else {
+		envelope, err = CreateNFeSOAPEnvelope(bodyContent)
+	}
+	
 	if err != nil {
 		return nil, err
 	}
@@ -486,6 +506,24 @@ func CleanXMLContent(xmlContent string) string {
 func AddXMLDeclaration(xmlContent string) string {
 	cleaned := CleanXMLContent(xmlContent)
 	return xml.Header + cleaned
+}
+
+// needsSimpleEnvelope determines if a SEFAZ server needs a simple envelope without WS-Security
+func needsSimpleEnvelope(url string) bool {
+	// Known SEFAZ servers that don't accept WS-Security timestamp
+	problematicServers := []string{
+		"sefaz.am.gov.br",        // Amazonas: "Unexpected subelement Timestamp"
+		"nfe.sefaz.am.gov.br",   // Amazonas alternative
+		"nfce.sefaz.am.gov.br",  // Amazonas NFCe
+	}
+	
+	for _, server := range problematicServers {
+		if strings.Contains(url, server) {
+			return true
+		}
+	}
+	
+	return false
 }
 
 // Helper function to get minimum of two integers

@@ -612,10 +612,20 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 		return nil, fmt.Errorf("failed to extract body content: %v", err)
 	}
 
-	// Parse response
+	// Parse response - handle both direct and wrapped responses
 	var inutResponse InutilizacaoResponse
+
+	// Try direct parsing first
 	if err := xml.Unmarshal([]byte(bodyContent), &inutResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal inutilizacao response: %v", err)
+		// If that fails, try parsing the wrapped response
+		var wrappedResponse struct {
+			XMLName xml.Name            `xml:"nfeResultMsg"`
+			Result  InutilizacaoResponse `xml:"retInutNFe"`
+		}
+		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
+			return nil, fmt.Errorf("failed to unmarshal inutilizacao response: %v (also tried wrapped format: %v)", err, err2)
+		}
+		inutResponse = wrappedResponse.Result
 	}
 
 	return &inutResponse, nil

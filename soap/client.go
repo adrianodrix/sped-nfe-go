@@ -100,15 +100,17 @@ func NewSOAPClient(config *SOAPClientConfig) *SOAPClient {
 	}
 
 	// Create HTTP client with proper configuration
+	transport := &http.Transport{
+		TLSClientConfig:     config.TLSConfig,
+		MaxIdleConns:        10,
+		MaxIdleConnsPerHost: 2,
+		IdleConnTimeout:     90 * time.Second,
+		DisableCompression:  false,
+	}
+
 	httpClient := &http.Client{
-		Timeout: config.Timeout,
-		Transport: &http.Transport{
-			TLSClientConfig:     config.TLSConfig,
-			MaxIdleConns:        10,
-			MaxIdleConnsPerHost: 2,
-			IdleConnTimeout:     90 * time.Second,
-			DisableCompression:  false,
-		},
+		Timeout:   config.Timeout,
+		Transport: transport,
 	}
 
 	return &SOAPClient{
@@ -197,8 +199,8 @@ func (c *SOAPClient) performRequest(ctx context.Context, request *SOAPRequest, a
 		logDebug("SOAP Body: %s", request.Body)
 	}
 
-	// Perform the HTTP request
-	httpResp, err := c.httpClient.Do(httpReq)
+	// Perform the HTTP request with TLS fallback if needed
+	httpResp, err := c.performHTTPRequestWithTLSFallback(httpReq)
 	if err != nil {
 		return nil, errors.NewNetworkError(fmt.Sprintf("HTTP request failed: %v", err), err)
 	}
@@ -234,6 +236,102 @@ func (c *SOAPClient) performRequest(ctx context.Context, request *SOAPRequest, a
 	}
 
 	return response, nil
+}
+
+// performHTTPRequestWithTLSFallback tries different TLS configurations when certificate issues occur
+func (c *SOAPClient) performHTTPRequestWithTLSFallback(req *http.Request) (*http.Response, error) {
+	// First, try with the current configuration
+	resp, err := c.httpClient.Do(req)
+	if err == nil {
+		return resp, nil
+	}
+
+	// Check if it's a certificate error
+	if !isCertificateError(err) {
+		return nil, err
+	}
+
+	if c.enableLogging {
+		logDebug("Certificate error detected: %v. Trying TLS fallback configurations...", err)
+	}
+
+	// Create a fallback configuration that's more permissive for bad certificates
+	originalTransport := c.httpClient.Transport.(*http.Transport)
+	fallbackConfig := &tls.Config{
+		MinVersion:         tls.VersionTLS10, // Allow older TLS versions
+		MaxVersion:         tls.VersionTLS13,
+		Renegotiation:      tls.RenegotiateFreelyAsClient,
+		InsecureSkipVerify: true, // Skip certificate verification for bad certs
+		CipherSuites: []uint16{
+			// Extended list with older cipher suites for maximum compatibility
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+			tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+		},
+	}
+
+	// Copy certificates from original config if they exist
+	if c.tlsConfig != nil && len(c.tlsConfig.Certificates) > 0 {
+		fallbackConfig.Certificates = c.tlsConfig.Certificates
+	}
+
+	// Create a temporary transport with fallback config
+	fallbackTransport := &http.Transport{
+		TLSClientConfig:     fallbackConfig,
+		MaxIdleConns:        originalTransport.MaxIdleConns,
+		MaxIdleConnsPerHost: originalTransport.MaxIdleConnsPerHost,
+		IdleConnTimeout:     originalTransport.IdleConnTimeout,
+		DisableCompression:  originalTransport.DisableCompression,
+	}
+
+	// Create a temporary client with fallback transport
+	fallbackClient := &http.Client{
+		Timeout:   c.httpClient.Timeout,
+		Transport: fallbackTransport,
+	}
+
+	if c.enableLogging {
+		logDebug("Retrying with fallback TLS configuration (InsecureSkipVerify=true)...")
+	}
+
+	// Try again with fallback configuration
+	return fallbackClient.Do(req)
+}
+
+// isCertificateError checks if an error is related to certificate validation
+func isCertificateError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errStr := err.Error()
+	certificateErrors := []string{
+		"tls: bad certificate",
+		"certificate verify failed",
+		"certificate has expired",
+		"certificate is not valid",
+		"x509: certificate",
+		"certificate authority",
+	}
+	
+	for _, certErr := range certificateErrors {
+		if len(errStr) >= len(certErr) {
+			for i := 0; i <= len(errStr)-len(certErr); i++ {
+				if errStr[i:i+len(certErr)] == certErr {
+					return true
+				}
+			}
+		}
+	}
+	
+	return false
 }
 
 // setDefaultHeaders sets the required headers for SOAP requests

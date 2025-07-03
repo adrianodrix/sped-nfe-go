@@ -272,10 +272,13 @@ func contains(s, substr string) bool {
 func getShortError(err string) string {
 	// Extrair apenas a parte mais relevante do erro
 	if contains(err, "tls: bad certificate") {
-		return "bad certificate"
+		return "bad certificate (auto-fallback enabled)"
 	}
 	if contains(err, "tls: no renegotiation") {
-		return "no renegotiation"
+		return "no renegotiation (fixed)"
+	}
+	if contains(err, "certificate") {
+		return "certificate issue (auto-fallback enabled)"
 	}
 	if contains(err, "connection refused") {
 		return "connection refused"

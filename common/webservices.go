@@ -236,6 +236,9 @@ func (wsm *WebServiceManager) initializeDefaultServices() {
 	// Rio Grande do Sul (RS) - Production
 	wsm.initializeRSServices()
 
+	// Paraná (PR) - Production
+	wsm.initializePRServices()
+
 	// Ambiente Nacional (SVAN) - Production
 	wsm.initializeSVANServices()
 }
@@ -498,6 +501,115 @@ func (wsm *WebServiceManager) initializeRSServices() {
 	}
 
 	wsm.services["RS"] = rs
+}
+
+// initializePRServices sets up Paraná webservices
+func (wsm *WebServiceManager) initializePRServices() {
+	pr := UFServices{
+		Sigla:       "PR",
+		Homologacao: make(map[string]WebServiceInfo),
+		Producao:    make(map[string]WebServiceInfo),
+	}
+
+	// Homologation services
+	pr.Homologacao[string(NFeStatusServico)] = WebServiceInfo{
+		URL:       "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeStatusServico4?wsdl",
+		Method:    "nfeStatusServicoNF",
+		Operation: "NFeStatusServico4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
+	}
+
+	pr.Homologacao[string(NFeAutorizacao)] = WebServiceInfo{
+		URL:       "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4?wsdl",
+		Method:    "nfeAutorizacaoLote",
+		Operation: "NFeAutorizacao4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
+	}
+
+	pr.Homologacao[string(NFeRetAutorizacao)] = WebServiceInfo{
+		URL:       "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeRetAutorizacao4?wsdl",
+		Method:    "nfeRetAutorizacaoLote",
+		Operation: "NFeRetAutorizacao4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4/nfeRetAutorizacaoLote",
+	}
+
+	pr.Homologacao[string(NFeConsultaProtocolo)] = WebServiceInfo{
+		URL:       "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeConsultaProtocolo4?wsdl",
+		Method:    "nfeConsultaNF",
+		Operation: "NFeConsultaProtocolo4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4/nfeConsultaNF",
+	}
+
+	pr.Homologacao[string(NFeInutilizacao)] = WebServiceInfo{
+		URL:       "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeInutilizacao4?wsdl",
+		Method:    "nfeInutilizacaoNF",
+		Operation: "NFeInutilizacao4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeInutilizacao4/nfeInutilizacaoNF",
+	}
+
+	pr.Homologacao[string(NFeRecepcaoEvento)] = WebServiceInfo{
+		URL:       "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeRecepcaoEvento4?wsdl",
+		Method:    "nfeRecepcaoEvento",
+		Operation: "NFeRecepcaoEvento4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento",
+	}
+
+	// Production services
+	pr.Producao[string(NFeStatusServico)] = WebServiceInfo{
+		URL:       "https://nfe.sefa.pr.gov.br/nfe/NFeStatusServico4?wsdl",
+		Method:    "nfeStatusServicoNF",
+		Operation: "NFeStatusServico4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
+	}
+
+	pr.Producao[string(NFeAutorizacao)] = WebServiceInfo{
+		URL:       "https://nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4?wsdl",
+		Method:    "nfeAutorizacaoLote",
+		Operation: "NFeAutorizacao4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
+	}
+
+	pr.Producao[string(NFeRetAutorizacao)] = WebServiceInfo{
+		URL:       "https://nfe.sefa.pr.gov.br/nfe/NFeRetAutorizacao4?wsdl",
+		Method:    "nfeRetAutorizacaoLote",
+		Operation: "NFeRetAutorizacao4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4/nfeRetAutorizacaoLote",
+	}
+
+	pr.Producao[string(NFeConsultaProtocolo)] = WebServiceInfo{
+		URL:       "https://nfe.sefa.pr.gov.br/nfe/NFeConsultaProtocolo4?wsdl",
+		Method:    "nfeConsultaNF",
+		Operation: "NFeConsultaProtocolo4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4/nfeConsultaNF",
+	}
+
+	pr.Producao[string(NFeInutilizacao)] = WebServiceInfo{
+		URL:       "https://nfe.sefa.pr.gov.br/nfe/NFeInutilizacao4?wsdl",
+		Method:    "nfeInutilizacaoNF",
+		Operation: "NFeInutilizacao4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeInutilizacao4/nfeInutilizacaoNF",
+	}
+
+	pr.Producao[string(NFeRecepcaoEvento)] = WebServiceInfo{
+		URL:       "https://nfe.sefa.pr.gov.br/nfe/NFeRecepcaoEvento4?wsdl",
+		Method:    "nfeRecepcaoEvento",
+		Operation: "NFeRecepcaoEvento4",
+		Version:   "4.00",
+		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento",
+	}
+
+	wsm.services["PR"] = pr
 }
 
 // initializeSVANServices sets up SVAN (Sistema Virtual do Ambiente Nacional) webservices

@@ -29,13 +29,13 @@ func (t *Tools) GetStatusServiceInfo() (common.WebServiceInfo, error) {
 	return t.resolver.GetStatusServiceURL(uf, isProduction, t.model)
 }
 
-// GetAuthorizationServiceInfo returns the webservice info for NFe authorization service using the resolver interface  
+// GetAuthorizationServiceInfo returns the webservice info for NFe authorization service using the resolver interface
 func (t *Tools) GetAuthorizationServiceInfo() (common.WebServiceInfo, error) {
 	uf := strings.ToUpper(t.config.SiglaUF)
 	isProduction := t.config.TpAmb == types.Production
 
 	// Check if resolver supports authorization service (extended interface)
-	if extResolver, ok := t.resolver.(interface{
+	if extResolver, ok := t.resolver.(interface {
 		GetAuthorizationServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error)
 	}); ok {
 		return extResolver.GetAuthorizationServiceURL(uf, isProduction, t.model)
@@ -52,7 +52,7 @@ func (t *Tools) getInutilizacaoServiceInfo() (common.WebServiceInfo, error) {
 	isProduction := t.config.TpAmb == types.Production
 
 	// Check if resolver supports inutilização service (extended interface)
-	if extResolver, ok := t.resolver.(interface{
+	if extResolver, ok := t.resolver.(interface {
 		GetInutilizacaoServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error)
 	}); ok {
 		return extResolver.GetInutilizacaoServiceURL(uf, isProduction, t.model)
@@ -112,6 +112,19 @@ func NewTools(config *common.Config, resolver common.WebserviceResolver) (*Tools
 	if os.Getenv("SPED_NFE_UNSAFE_SSL") == "true" {
 		soapConfig.TLSConfig = &tls.Config{
 			InsecureSkipVerify: true,
+			// Enable TLS renegotiation even with unsafe SSL
+			Renegotiation: tls.RenegotiateFreelyAsClient,
+			// Use compatible cipher suites
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			},
 		}
 	}
 
@@ -156,7 +169,6 @@ func (t *Tools) SetCertificate(certificate interface{}) error {
 
 	return nil
 }
-
 
 // Status Service Operations
 
@@ -498,7 +510,7 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 	if err := ValidateInutilizacaoParams(nSerie, nIni, nFin, xJust); err != nil {
 		return nil, fmt.Errorf("validation failed: %v", err)
 	}
-	
+
 	// 2. Determine year (default to current year last 2 digits)
 	anoStr := fmt.Sprintf("%02d", time.Now().Year()%100)
 	if len(ano) > 0 && ano[0] != "" {
@@ -507,20 +519,20 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 			return nil, fmt.Errorf("ano deve ter 2 dígitos, informado: %s", anoStr)
 		}
 	}
-	
+
 	// 3. Get UF code
 	cUF := getStateCode(t.config.SiglaUF)
 	if cUF == "" {
 		return nil, fmt.Errorf("código UF não encontrado para: %s", t.config.SiglaUF)
 	}
-	
+
 	// 4. Determine document type (CNPJ vs CPF for MT)
 	documento := t.config.CNPJ
 	isCPF := t.config.SiglaUF == "MT" && len(documento) == 11
-	
+
 	// 5. Generate unique ID
 	idInut := GenerateInutilizacaoId(cUF, anoStr, documento, t.model, nSerie, nIni, nFin, isCPF)
-	
+
 	// 6. Create request structure
 	request := &InutilizacaoRequest{
 		XMLName: xml.Name{Local: "inutNFe"},
@@ -539,17 +551,17 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 			XJust:  xJust,
 		},
 	}
-	
+
 	// 7. Set document (CNPJ or CPF)
 	if isCPF {
 		request.InfInut.CPF = documento
 	} else {
 		request.InfInut.CNPJ = documento
 	}
-	
+
 	// 8. Sign the XML (placeholder - to be implemented)
 	// TODO: Implement XML signing with certificate
-	
+
 	// 9. Call the base function
 	return t.SefazInutiliza(ctx, request)
 }
@@ -1183,27 +1195,27 @@ func ValidateInutilizacaoParams(nSerie, nIni, nFin int, xJust string) error {
 	if nSerie < 0 || nSerie > 999 {
 		return fmt.Errorf("série deve estar entre 0 e 999, informado: %d", nSerie)
 	}
-	
+
 	if nIni <= 0 || nIni > 999999999 {
 		return fmt.Errorf("número inicial deve estar entre 1 e 999999999, informado: %d", nIni)
 	}
-	
+
 	if nFin <= 0 || nFin > 999999999 {
 		return fmt.Errorf("número final deve estar entre 1 e 999999999, informado: %d", nFin)
 	}
-	
+
 	if nFin < nIni {
 		return fmt.Errorf("número final (%d) deve ser maior ou igual ao inicial (%d)", nFin, nIni)
 	}
-	
+
 	if len(xJust) < 15 {
 		return fmt.Errorf("justificativa deve ter pelo menos 15 caracteres, informado: %d", len(xJust))
 	}
-	
+
 	if len(xJust) > 255 {
 		return fmt.Errorf("justificativa deve ter no máximo 255 caracteres, informado: %d", len(xJust))
 	}
-	
+
 	return nil
 }
 
@@ -1215,12 +1227,12 @@ func GenerateInutilizacaoId(cUF, ano, documento, modelo string, serie, nIni, nFi
 	} else {
 		docPadded = fmt.Sprintf("%014s", documento)
 	}
-	
+
 	serieStr := fmt.Sprintf("%03d", serie)
 	nIniStr := fmt.Sprintf("%09d", nIni)
 	nFinStr := fmt.Sprintf("%09d", nFin)
-	
-	return fmt.Sprintf("ID%s%s%s%s%s%s%s", 
+
+	return fmt.Sprintf("ID%s%s%s%s%s%s%s",
 		cUF, ano, docPadded, modelo, serieStr, nIniStr, nFinStr)
 }
 

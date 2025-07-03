@@ -74,7 +74,21 @@ func DefaultConfig() *SOAPClientConfig {
 		EnableLogging: false,
 		TLSConfig: &tls.Config{
 			MinVersion:         tls.VersionTLS12,
+			MaxVersion:         tls.VersionTLS13,
 			InsecureSkipVerify: false,
+			// Enable TLS renegotiation support for SEFAZ compatibility
+			Renegotiation: tls.RenegotiateFreelyAsClient,
+			// Use more compatible cipher suites for older SEFAZ servers
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			},
 		},
 	}
 }
@@ -332,9 +346,25 @@ func (c *SOAPClient) LoadCertificate(cert certificate.Certificate) error {
 	// Update TLS configuration with client certificate
 	if c.tlsConfig == nil {
 		c.tlsConfig = &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			MaxVersion: tls.VersionTLS13,
+			MinVersion:         tls.VersionTLS12,
+			MaxVersion:         tls.VersionTLS13,
+			// Enable TLS renegotiation support for SEFAZ compatibility
+			Renegotiation: tls.RenegotiateFreelyAsClient,
+			// Use more compatible cipher suites for older SEFAZ servers
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			},
 		}
+	} else {
+		// Ensure renegotiation is enabled on existing config
+		c.tlsConfig.Renegotiation = tls.RenegotiateFreelyAsClient
 	}
 
 	// Set the client certificate for mutual TLS authentication

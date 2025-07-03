@@ -21,8 +21,8 @@ func main() {
 	fmt.Println("🎯 Objetivo: Mapear problemas TLS/SSL em todos os estados brasileiros")
 	fmt.Println("📋 Fluxo: Configuração → Loop Estados → Análise Comparativa")
 
-	// Configure unsafe SSL for testing (disable certificate verification)
-	os.Setenv("SPED_NFE_UNSAFE_SSL", "true")
+	// Comentar/descomentar esta linha para testar com/sem bypass SSL
+	// os.Setenv("SPED_NFE_UNSAFE_SSL", "true")
 
 	// 1. Obter senha do certificado
 	var password string
@@ -286,11 +286,11 @@ func getShortError(err string) string {
 	if contains(err, "Content-Length: 0") {
 		return "empty response"
 	}
-	
+
 	// Se for muito longo, truncar
 	if len(err) > 60 {
 		return err[:60] + "..."
 	}
-	
+
 	return err
 }

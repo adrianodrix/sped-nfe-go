@@ -48,8 +48,8 @@ var AuthorizeMapping = map[types.ModeloNFe]map[types.UF]string{
 		types.AC: "SVRS", types.AL: "SVRS", types.AM: "AM", types.AN: "AN",
 		types.AP: "SVRS", types.BA: "BA", types.CE: "SVRS", types.DF: "SVRS",
 		types.ES: "SVRS", types.GO: "GO", types.MA: "SVAN", types.MG: "MG",
-		types.MS: "MS", types.MT: "MT", types.PA: "SVRS", types.PB: "SVRS",
-		types.PE: "PE", types.PI: "SVRS", types.PR: "PR", types.RJ: "SVRS",
+		types.MS: "MS", types.MT: "MT", types.PA: "SVAN", types.PB: "SVRS",
+		types.PE: "PE", types.PI: "SVAN", types.PR: "PR", types.RJ: "SVRS",
 		types.RN: "SVRS", types.RO: "SVRS", types.RR: "SVRS", types.RS: "RS",
 		types.SC: "SVRS", types.SE: "SVRS", types.SP: "SP", types.TO: "SVRS",
 		types.SVAN: "SVAN", types.SVRS: "SVRS", types.SVCAN: "SVCAN", types.SVCRS: "SVCRS",
@@ -479,6 +479,376 @@ var NFe55Config = WebserviceConfig{
 			NfeConsultaCadastro: &Service{
 				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "4.00",
 				URL: "https://cad.svrs.rs.gov.br/ws/cadconsultacadastro/cadconsultacadastro4.asmx",
+			},
+		},
+	},
+	// Goiás (GO)
+	"GO": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://homolog.sefaz.go.gov.br/nfe/services/CadConsultaCadastro4",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://nfe.sefaz.go.gov.br/nfe/services/CadConsultaCadastro4",
+			},
+		},
+	},
+	// Minas Gerais (MG)
+	"MG": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://hnfe.fazenda.mg.gov.br/nfe2/services/CadConsultaCadastro4",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://nfe.fazenda.mg.gov.br/nfe2/services/CadConsultaCadastro4",
+			},
+		},
+	},
+	// Mato Grosso (MT)
+	"MT": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeConsulta4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/NfeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/RecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://homologacao.sefaz.mt.gov.br/nfews/v2/services/CadConsultaCadastro4",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeConsulta4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/RecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/CadConsultaCadastro4",
+			},
+		},
+	},
+	// Mato Grosso do Sul (MS)
+	"MS": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://hom.nfe.sefaz.ms.gov.br/ws/CadConsultaCadastro4",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://nfe.sefaz.ms.gov.br/ws/CadConsultaCadastro4",
+			},
+		},
+	},
+	// Pernambuco (PE)
+	"PE": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://nfehomolog.sefaz.pe.gov.br/nfe-service/services/CadConsultaCadastro4",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeConsultaProtocolo4",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeInutilizacao4",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeRetAutorizacao4",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeRecepcaoEvento4",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
+				URL: "https://nfe.sefaz.pe.gov.br/nfe-service/services/CadConsultaCadastro4",
+			},
+		},
+	},
+	// SVAN (Sistema Virtual do Ambiente Nacional)
+	"SVAN": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://hom.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://hom.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://hom.sefazvirtual.fazenda.gov.br/NFeConsultaProtocolo4/NFeConsultaProtocolo4.asmx",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://hom.sefazvirtual.fazenda.gov.br/NFeInutilizacao4/NFeInutilizacao4.asmx",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://hom.sefazvirtual.fazenda.gov.br/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://hom.sefazvirtual.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://www.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://www.sefazvirtual.fazenda.gov.br/NFeAutorizacao4/NFeAutorizacao4.asmx",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://www.sefazvirtual.fazenda.gov.br/NFeConsultaProtocolo4/NFeConsultaProtocolo4.asmx",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://www.sefazvirtual.fazenda.gov.br/NFeInutilizacao4/NFeInutilizacao4.asmx",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://www.sefazvirtual.fazenda.gov.br/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://www.sefazvirtual.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
 			},
 		},
 	},

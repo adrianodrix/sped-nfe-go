@@ -154,18 +154,26 @@ func TestNFeStructureXMLMarshaling(t *testing.T) {
 }
 
 func TestPaymentBuilder(t *testing.T) {
-	// Test cash payment creation
-	cashPayment := NewPaymentBuilder().
+	// Test cash payment creation using DetPag builder
+	detPag := NewDetPagBuilder().
 		SetType(PaymentTypeMoney).
 		SetValue("100.00").
 		Build()
 
-	if cashPayment.TPag != "01" {
-		t.Errorf("Expected payment type 01, got %s", cashPayment.TPag)
+	cashPayment := NewPaymentBuilder().
+		AddDetPag(detPag).
+		Build()
+
+	if len(cashPayment.DetPag) != 1 {
+		t.Errorf("Expected 1 payment detail, got %d", len(cashPayment.DetPag))
 	}
 
-	if cashPayment.VPag != "100.00" {
-		t.Errorf("Expected payment value 100.00, got %s", cashPayment.VPag)
+	if cashPayment.DetPag[0].TPag != "01" {
+		t.Errorf("Expected payment type 01, got %s", cashPayment.DetPag[0].TPag)
+	}
+
+	if cashPayment.DetPag[0].VPag != "100.00" {
+		t.Errorf("Expected payment value 100.00, got %s", cashPayment.DetPag[0].VPag)
 	}
 
 	// Test card payment creation
@@ -175,18 +183,22 @@ func TestPaymentBuilder(t *testing.T) {
 		SetAuthorizationCode("123456").
 		Build()
 
-	cardPayment := NewPaymentBuilder().
+	cardDetPag := NewDetPagBuilder().
 		SetType(PaymentTypeCreditCard).
 		SetValue("200.00").
 		SetCard(card).
 		Build()
 
-	if cardPayment.TPag != "03" {
-		t.Errorf("Expected payment type 03, got %s", cardPayment.TPag)
+	cardPayment := NewPaymentBuilder().
+		AddDetPag(cardDetPag).
+		Build()
+
+	if cardPayment.DetPag[0].TPag != "03" {
+		t.Errorf("Expected payment type 03, got %s", cardPayment.DetPag[0].TPag)
 	}
 
-	if cardPayment.Card.TBand != "01" {
-		t.Errorf("Expected card brand 01, got %s", cardPayment.Card.TBand)
+	if cardPayment.DetPag[0].Card.TBand != "01" {
+		t.Errorf("Expected card brand 01, got %s", cardPayment.DetPag[0].Card.TBand)
 	}
 }
 
@@ -337,14 +349,20 @@ func TestPaymentTypes(t *testing.T) {
 func TestConvenienceFunctions(t *testing.T) {
 	// Test cash payment creation
 	cashPayment := CreateCashPayment("50.00")
-	if cashPayment.TPag != PaymentTypeMoney.String() {
-		t.Errorf("Expected payment type %s, got %s", PaymentTypeMoney.String(), cashPayment.TPag)
+	if len(cashPayment.DetPag) != 1 {
+		t.Errorf("Expected 1 payment detail, got %d", len(cashPayment.DetPag))
+	}
+	if cashPayment.DetPag[0].TPag != PaymentTypeMoney.String() {
+		t.Errorf("Expected payment type %s, got %s", PaymentTypeMoney.String(), cashPayment.DetPag[0].TPag)
 	}
 
 	// Test PIX payment creation
 	pixPayment := CreatePIXPayment("75.00")
-	if pixPayment.TPag != PaymentTypeInstant.String() {
-		t.Errorf("Expected payment type %s, got %s", PaymentTypeInstant.String(), pixPayment.TPag)
+	if len(pixPayment.DetPag) != 1 {
+		t.Errorf("Expected 1 payment detail, got %d", len(pixPayment.DetPag))
+	}
+	if pixPayment.DetPag[0].TPag != PaymentTypeInstant.String() {
+		t.Errorf("Expected payment type %s, got %s", PaymentTypeInstant.String(), pixPayment.DetPag[0].TPag)
 	}
 
 	// Test simple transport creation

@@ -1,20 +1,29 @@
 // Package nfe provides payment structures for NFe documents.
 package nfe
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
-// Pagamento represents payment information for NFe
+// Pagamento represents the payment group for NFe (container for payment details)
 type Pagamento struct {
-	XMLName      xml.Name `xml:"pag"`
-	IndPag       string   `xml:"indPag,omitempty" validate:"omitempty,oneof=0 1"`                                   // Payment indicator
-	TPag         string   `xml:"tPag" validate:"required,oneof=01 02 03 04 05 10 11 12 13 14 15 16 17 18 19 90 99"` // Payment type
-	XPag         string   `xml:"xPag,omitempty" validate:"omitempty,min=2,max=60"`                                  // Payment description
-	VPag         string   `xml:"vPag" validate:"required"`                                                          // Payment value
-	UfPag        string   `xml:"UFPag,omitempty" validate:"omitempty,len=2"`                                        // Payment UF
-	Card         *Card    `xml:"card,omitempty"`                                                                    // Card payment
-	CNPJPag      string   `xml:"CNPJPag,omitempty" validate:"omitempty,len=14"`                                     // Payment company CNPJ
-	UFCred       string   `xml:"UFCred,omitempty" validate:"omitempty,len=2"`                                       // Credit UF
-	CNPJCredCard string   `xml:"CNPJCredCard,omitempty" validate:"omitempty,len=14"`                                // Credit card company CNPJ
+	XMLName xml.Name `xml:"pag"`
+	DetPag  []DetPag `xml:"detPag" validate:"required,min=1,max=100"` // Payment details (1 to 100 allowed)
+	VTroco  string   `xml:"vTroco,omitempty" validate:"omitempty"`     // Change value
+}
+
+// DetPag represents individual payment details within the payment group
+type DetPag struct {
+	XMLName   xml.Name `xml:"detPag"`
+	IndPag    string   `xml:"indPag,omitempty" validate:"omitempty,oneof=0 1"`                                   // Payment indicator (0=cash, 1=term)
+	TPag      string   `xml:"tPag" validate:"required,oneof=01 02 03 04 05 10 11 12 13 14 15 16 17 18 19 90 99"` // Payment type
+	XPag      string   `xml:"xPag,omitempty" validate:"omitempty,min=2,max=60"`                                  // Payment description
+	VPag      string   `xml:"vPag" validate:"required"`                                                          // Payment value
+	DPag      string   `xml:"dPag,omitempty" validate:"omitempty"`                                               // Payment date (YYYY-MM-DD format)
+	CNPJPag   string   `xml:"CNPJPag,omitempty" validate:"omitempty,len=14"`                                     // Payment company CNPJ
+	UFPag     string   `xml:"UFPag,omitempty" validate:"omitempty,len=2"`                                        // Payment UF
+	Card      *Card    `xml:"card,omitempty"`                                                                    // Card payment information
 }
 
 // Card represents credit/debit card payment information
@@ -211,65 +220,90 @@ type PaymentBuilder struct {
 	payment *Pagamento
 }
 
+// DetPagBuilder helps build individual payment details
+type DetPagBuilder struct {
+	detPag *DetPag
+}
+
 // NewPaymentBuilder creates a new payment builder
 func NewPaymentBuilder() *PaymentBuilder {
 	return &PaymentBuilder{
-		payment: &Pagamento{},
+		payment: &Pagamento{
+			DetPag: make([]DetPag, 0),
+		},
 	}
 }
 
-// SetIndicator sets the payment indicator (cash/term)
-func (pb *PaymentBuilder) SetIndicator(indicator PaymentIndicator) *PaymentBuilder {
-	pb.payment.IndPag = indicator.String()
+// NewDetPagBuilder creates a new payment details builder
+func NewDetPagBuilder() *DetPagBuilder {
+	return &DetPagBuilder{
+		detPag: &DetPag{},
+	}
+}
+
+// AddDetPag adds a payment detail to the payment group
+func (pb *PaymentBuilder) AddDetPag(detPag DetPag) *PaymentBuilder {
+	pb.payment.DetPag = append(pb.payment.DetPag, detPag)
 	return pb
+}
+
+// SetVTroco sets the change value
+func (pb *PaymentBuilder) SetVTroco(vTroco string) *PaymentBuilder {
+	pb.payment.VTroco = vTroco
+	return pb
+}
+
+// SetIndicator sets the payment indicator (cash/term)
+func (dpb *DetPagBuilder) SetIndicator(indicator PaymentIndicator) *DetPagBuilder {
+	dpb.detPag.IndPag = indicator.String()
+	return dpb
 }
 
 // SetType sets the payment type
-func (pb *PaymentBuilder) SetType(paymentType PaymentType) *PaymentBuilder {
-	pb.payment.TPag = paymentType.String()
-	return pb
+func (dpb *DetPagBuilder) SetType(paymentType PaymentType) *DetPagBuilder {
+	dpb.detPag.TPag = paymentType.String()
+	return dpb
 }
 
 // SetDescription sets the payment description
-func (pb *PaymentBuilder) SetDescription(description string) *PaymentBuilder {
-	pb.payment.XPag = description
-	return pb
+func (dpb *DetPagBuilder) SetDescription(description string) *DetPagBuilder {
+	dpb.detPag.XPag = description
+	return dpb
 }
 
 // SetValue sets the payment value
-func (pb *PaymentBuilder) SetValue(value string) *PaymentBuilder {
-	pb.payment.VPag = value
-	return pb
+func (dpb *DetPagBuilder) SetValue(value string) *DetPagBuilder {
+	dpb.detPag.VPag = value
+	return dpb
+}
+
+// SetDate sets the payment date (YYYY-MM-DD format)
+func (dpb *DetPagBuilder) SetDate(date string) *DetPagBuilder {
+	dpb.detPag.DPag = date
+	return dpb
+}
+
+// SetCNPJ sets the payment company CNPJ
+func (dpb *DetPagBuilder) SetCNPJ(cnpj string) *DetPagBuilder {
+	dpb.detPag.CNPJPag = cnpj
+	return dpb
 }
 
 // SetUF sets the payment UF
-func (pb *PaymentBuilder) SetUF(uf string) *PaymentBuilder {
-	pb.payment.UfPag = uf
-	return pb
+func (dpb *DetPagBuilder) SetUF(uf string) *DetPagBuilder {
+	dpb.detPag.UFPag = uf
+	return dpb
 }
 
 // SetCard sets card payment information
-func (pb *PaymentBuilder) SetCard(card *Card) *PaymentBuilder {
-	pb.payment.Card = card
-	return pb
+func (dpb *DetPagBuilder) SetCard(card *Card) *DetPagBuilder {
+	dpb.detPag.Card = card
+	return dpb
 }
 
-// SetPaymentCNPJ sets the payment company CNPJ
-func (pb *PaymentBuilder) SetPaymentCNPJ(cnpj string) *PaymentBuilder {
-	pb.payment.CNPJPag = cnpj
-	return pb
-}
-
-// SetCreditUF sets the credit UF
-func (pb *PaymentBuilder) SetCreditUF(uf string) *PaymentBuilder {
-	pb.payment.UFCred = uf
-	return pb
-}
-
-// SetCreditCardCNPJ sets the credit card company CNPJ
-func (pb *PaymentBuilder) SetCreditCardCNPJ(cnpj string) *PaymentBuilder {
-	pb.payment.CNPJCredCard = cnpj
-	return pb
+// Build returns the constructed payment detail
+func (dpb *DetPagBuilder) Build() DetPag {
+	return *dpb.detPag
 }
 
 // Build returns the constructed payment
@@ -336,7 +370,17 @@ func ValidatePayment(payment *Pagamento) error {
 		return nil
 	}
 
-	// TODO: Implement validation logic
+	// Must have at least one payment detail
+	if len(payment.DetPag) == 0 {
+		return fmt.Errorf("payment must have at least one detPag")
+	}
+
+	// Maximum 100 payment details allowed
+	if len(payment.DetPag) > 100 {
+		return fmt.Errorf("payment cannot have more than 100 detPag entries")
+	}
+
+	// TODO: Implement additional validation logic
 	// - Validate payment type codes
 	// - Check value format
 	// - Validate card information if present
@@ -347,9 +391,13 @@ func ValidatePayment(payment *Pagamento) error {
 
 // CreateCashPayment creates a simple cash payment
 func CreateCashPayment(value string) *Pagamento {
-	return &Pagamento{
+	detPag := DetPag{
 		TPag: PaymentTypeMoney.String(),
 		VPag: value,
+	}
+	
+	return &Pagamento{
+		DetPag: []DetPag{detPag},
 	}
 }
 
@@ -361,28 +409,40 @@ func CreateCardPayment(value string, card *Card) *Pagamento {
 		paymentType = PaymentTypeCreditCard
 	}
 
-	return &Pagamento{
+	detPag := DetPag{
 		TPag: paymentType.String(),
 		VPag: value,
 		Card: card,
+	}
+
+	return &Pagamento{
+		DetPag: []DetPag{detPag},
 	}
 }
 
 // CreatePIXPayment creates a PIX payment
 func CreatePIXPayment(value string) *Pagamento {
-	return &Pagamento{
+	detPag := DetPag{
 		TPag: PaymentTypeInstant.String(),
 		VPag: value,
 		XPag: "PIX",
+	}
+
+	return &Pagamento{
+		DetPag: []DetPag{detPag},
 	}
 }
 
 // CreateBoletoPayment creates a boleto payment
 func CreateBoletoPayment(value string) *Pagamento {
-	return &Pagamento{
+	detPag := DetPag{
 		IndPag: PaymentIndicatorTerm.String(),
 		TPag:   PaymentTypeBoletoBancario.String(),
 		VPag:   value,
 		XPag:   "Boleto Bancário",
+	}
+
+	return &Pagamento{
+		DetPag: []DetPag{detPag},
 	}
 }

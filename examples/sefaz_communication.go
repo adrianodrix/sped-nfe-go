@@ -10,6 +10,7 @@ import (
 	"github.com/adrianodrix/sped-nfe-go/common"
 	"github.com/adrianodrix/sped-nfe-go/nfe"
 	"github.com/adrianodrix/sped-nfe-go/types"
+	"github.com/adrianodrix/sped-nfe-go/webservices"
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 	fmt.Printf("State: %s\n", config.SiglaUF)
 
 	// 2. Create Tools instance
-	tools, err := nfe.NewTools(config)
+	tools, err := nfe.NewTools(config, webservices.NewResolver())
 	if err != nil {
 		log.Fatalf("Failed to create tools: %v", err)
 	}

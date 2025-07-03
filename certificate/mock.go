@@ -3,44 +3,64 @@ package certificate
 
 import (
 	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"math/big"
 	"time"
 )
 
 // MockCertificate implements the Certificate interface for testing
 type MockCertificate struct {
-	privateKey crypto.PrivateKey
+	privateKey *rsa.PrivateKey
 	cert       *x509.Certificate
 }
 
 // NewMockCertificate creates a new mock certificate for testing
 func NewMockCertificate() *MockCertificate {
+	// Generate a real RSA private key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic("Failed to generate mock private key: " + err.Error())
+	}
+
 	// Create a basic X509 certificate for testing
 	cert := &x509.Certificate{
 		SerialNumber: big.NewInt(123456789),
 		Subject: pkix.Name{
-			CommonName: "Mock Certificate",
+			CommonName: "Mock ICP-Brasil Certificate:12345678000195",
 		},
 		Issuer: pkix.Name{
-			CommonName: "Mock Issuer",
+			CommonName: "AC Mock Issuer",
 		},
 		NotBefore:   time.Now().Add(-24 * time.Hour),
 		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
 		KeyUsage:    x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		PublicKey:   &privateKey.PublicKey,
 	}
 
 	return &MockCertificate{
-		cert: cert,
+		privateKey: privateKey,
+		cert:       cert,
 	}
 }
 
 // Sign signs the given data using the certificate's private key
 func (m *MockCertificate) Sign(data []byte, algorithm crypto.Hash) ([]byte, error) {
-	// Return mock signature
-	return []byte("mock-signature"), nil
+	// Perform real RSA signature for realistic behavior
+	hash := algorithm.New()
+	hash.Write(data)
+	hashed := hash.Sum(nil)
+	
+	signature, err := rsa.SignPKCS1v15(rand.Reader, m.privateKey, algorithm, hashed)
+	if err != nil {
+		return nil, err
+	}
+	
+	return signature, nil
 }
 
 // GetPublicKey returns the certificate's public key
@@ -84,6 +104,15 @@ func (m *MockCertificate) GetSerialNumber() string {
 // GetFingerprint returns the SHA-256 fingerprint of the certificate
 func (m *MockCertificate) GetFingerprint() string {
 	return "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+}
+
+// GetCertificateData returns the raw certificate data for inclusion in KeyInfo
+func (m *MockCertificate) GetCertificateData() string {
+	if m.cert == nil {
+		return ""
+	}
+	// Return a mock certificate data (base64 encoded)
+	return base64.StdEncoding.EncodeToString([]byte("mock-certificate-data-for-testing"))
 }
 
 // GetValidityPeriod returns the certificate's not before and not after dates

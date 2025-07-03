@@ -2,6 +2,7 @@
 package webservices
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/adrianodrix/sped-nfe-go/common"
@@ -18,24 +19,42 @@ func NewResolver() *Resolver {
 
 // GetStatusServiceURL implements the WebserviceResolver interface
 func (r *Resolver) GetStatusServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error) {
+	return r.getServiceURL(uf, isProduction, model, ServiceStatusServico)
+}
+
+// GetAuthorizationServiceURL gets the authorization service URL
+func (r *Resolver) GetAuthorizationServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error) {
+	return r.getServiceURL(uf, isProduction, model, ServiceAutorizacao)
+}
+
+// GetInutilizacaoServiceURL gets the inutilization service URL
+func (r *Resolver) GetInutilizacaoServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error) {
+	return r.getServiceURL(uf, isProduction, model, ServiceInutilizacao)
+}
+
+// getServiceURL is a common function to get service URLs with proper SOAPAction
+func (r *Resolver) getServiceURL(uf string, isProduction bool, model string, serviceType ServiceType) (common.WebServiceInfo, error) {
 	// Convert parameters to internal types
 	typesUF := convertStringToUF(uf)
 	ambiente := convertBoolToAmbiente(isProduction)
 	modelo := convertStringToModelo(model)
 
 	// Use the existing webservices system
-	service, err := GetWebserviceURL(typesUF, ambiente, modelo, ServiceStatusServico)
+	service, err := GetWebserviceURL(typesUF, ambiente, modelo, serviceType)
 	if err != nil {
 		return common.WebServiceInfo{}, err
 	}
 
 	// Convert back to common.WebServiceInfo
+	// Create proper SOAPAction from operation and method (matching common/webservices.go format)
+	action := fmt.Sprintf("http://www.portalfiscal.inf.br/nfe/wsdl/%s/%s", service.Operation, service.Method)
+	
 	return common.WebServiceInfo{
 		URL:       service.URL,
 		Method:    service.Method,
 		Operation: service.Operation,
 		Version:   service.Version,
-		Action:    service.Operation,
+		Action:    action,
 	}, nil
 }
 

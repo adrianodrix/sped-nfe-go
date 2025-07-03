@@ -345,14 +345,8 @@ func (c *NFEClient) Authorize(ctx context.Context, xml []byte) (*AuthResponse, e
 		return nil, fmt.Errorf("failed to sign NFe: %v", err)
 	}
 
-	// Create LoteNFe for sending
-	lote, err := c.createLoteFromXML(signedXML)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create lote: %v", err)
-	}
-
-	// Send to SEFAZ for authorization
-	response, err := c.tools.SefazEnviaLote(ctx, lote, false)
+	// Send to SEFAZ for authorization using signed XML directly (try synchronous first)
+	response, err := c.tools.SefazEnviaLoteSignedXML(ctx, "1", []string{string(signedXML)}, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to authorize NFe: %v", err)
 	}
@@ -764,11 +758,40 @@ func (c *NFEClient) signIfNeeded(xml []byte) ([]byte, error) {
 		return nil, fmt.Errorf("certificate is required for XML signing")
 	}
 
-	// Create XML signer with SEFAZ-compatible configuration
-	signer := certificate.CreateXMLSigner(c.certificate)
+	xmlStr := string(xml)
 
-	// Sign the NFe XML specifically
-	signedXML, err := signer.SignNFeXML(string(xml))
+	// Check if this is already an envelope (enviNFe) - if so, extract NFe first
+	if strings.Contains(xmlStr, "<enviNFe") {
+		// Extract individual NFe from envelope
+		nfeStart := strings.Index(xmlStr, "<NFe")
+		if nfeStart == -1 {
+			return nil, fmt.Errorf("no NFe element found in envelope")
+		}
+
+		nfeEnd := strings.LastIndex(xmlStr, "</NFe>")
+		if nfeEnd == -1 {
+			return nil, fmt.Errorf("incomplete NFe element in envelope")
+		}
+		nfeEnd += len("</NFe>")
+
+		// Extract just the NFe part
+		nfeXML := xmlStr[nfeStart:nfeEnd]
+
+		// Sign only the NFe part
+		signer := certificate.CreateXMLSigner(c.certificate)
+		signedNFeXML, err := signer.SignNFeXML(nfeXML)
+		if err != nil {
+			return nil, fmt.Errorf("failed to sign NFe XML: %v", err)
+		}
+
+		// Replace the NFe in the original envelope with the signed version
+		result := xmlStr[:nfeStart] + signedNFeXML + xmlStr[nfeEnd:]
+		return []byte(result), nil
+	}
+
+	// If it's a standalone NFe, sign it directly
+	signer := certificate.CreateXMLSigner(c.certificate)
+	signedXML, err := signer.SignNFeXML(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign NFe XML: %v", err)
 	}
@@ -878,7 +901,11 @@ func (c *NFEClient) convertToAuthResponse(response *EnvioLoteResponse, originalX
 	return authResponse
 }
 
+// createLoteFromXML is now deprecated - use SefazEnviaLoteSignedXML directly
+// to preserve digital signatures in the XML
 func (c *NFEClient) createLoteFromXML(xmlData []byte) (*LoteNFe, error) {
+	// This function is kept for compatibility but should not be used
+	// for signed NFe XMLs as it loses the digital signature
 	if len(xmlData) == 0 {
 		return nil, fmt.Errorf("XML content cannot be empty")
 	}
@@ -1049,7 +1076,7 @@ func (c *NFEClient) convertToCCeResponse(response *EventResponseNFe, req *CCeReq
 
 	if response != nil && len(response.RetEvento) > 0 {
 		retEvento := response.RetEvento[0]
-		
+
 		// Convert status
 		status := 0
 		if statusInt, err := strconv.Atoi(retEvento.InfEvento.CStat); err == nil {

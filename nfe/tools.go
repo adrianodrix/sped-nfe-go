@@ -3,6 +3,7 @@ package nfe
 
 import (
 	"context"
+	"crypto"
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
@@ -20,13 +21,57 @@ import (
 // Type alias for Certificate interface
 type Certificate = certificate.Certificate
 
-// getStatusServiceInfo returns the webservice info for NFe status service using the resolver interface
-func (t *Tools) getStatusServiceInfo() (common.WebServiceInfo, error) {
+// GetStatusServiceInfo returns the webservice info for NFe status service using the resolver interface
+func (t *Tools) GetStatusServiceInfo() (common.WebServiceInfo, error) {
 	uf := strings.ToUpper(t.config.SiglaUF)
 	isProduction := t.config.TpAmb == types.Production
 
 	// Use the resolver interface to get webservice information
 	return t.resolver.GetStatusServiceURL(uf, isProduction, t.model)
+}
+
+// GetAuthorizationServiceInfo returns the webservice info for NFe authorization service using the resolver interface
+func (t *Tools) GetAuthorizationServiceInfo() (common.WebServiceInfo, error) {
+	uf := strings.ToUpper(t.config.SiglaUF)
+	isProduction := t.config.TpAmb == types.Production
+
+	// Check if resolver supports authorization service (extended interface)
+	if extResolver, ok := t.resolver.(interface {
+		GetAuthorizationServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error)
+	}); ok {
+		return extResolver.GetAuthorizationServiceURL(uf, isProduction, t.model)
+	}
+
+	// Fallback to old webservices system for backward compatibility
+	env := common.Environment(t.config.TpAmb)
+	return t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeAutorizacao, env, t.model)
+}
+
+// getInutilizacaoServiceInfo returns the webservice info for NFe inutilization service using the resolver interface
+func (t *Tools) getInutilizacaoServiceInfo() (common.WebServiceInfo, error) {
+	uf := strings.ToUpper(t.config.SiglaUF)
+	isProduction := t.config.TpAmb == types.Production
+
+	// Check if resolver supports inutilização service (extended interface)
+	if extResolver, ok := t.resolver.(interface {
+		GetInutilizacaoServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error)
+	}); ok {
+		return extResolver.GetInutilizacaoServiceURL(uf, isProduction, t.model)
+	}
+
+	// Fallback to old webservices system for backward compatibility
+	env := common.Environment(t.config.TpAmb)
+	return t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeInutilizacao, env, t.model)
+}
+
+// GetLastRequest returns the last SOAP request sent for debugging
+func (t *Tools) GetLastRequest() string {
+	return t.lastRequest
+}
+
+// GetLastResponse returns the last SOAP response received for debugging
+func (t *Tools) GetLastResponse() string {
+	return t.lastResponse
 }
 
 // Tools provides the main interface for NFe operations with SEFAZ
@@ -68,6 +113,19 @@ func NewTools(config *common.Config, resolver common.WebserviceResolver) (*Tools
 	if os.Getenv("SPED_NFE_UNSAFE_SSL") == "true" {
 		soapConfig.TLSConfig = &tls.Config{
 			InsecureSkipVerify: true,
+			// Enable TLS renegotiation even with unsafe SSL
+			Renegotiation: tls.RenegotiateFreelyAsClient,
+			// Use compatible cipher suites
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			},
 		}
 	}
 
@@ -113,16 +171,6 @@ func (t *Tools) SetCertificate(certificate interface{}) error {
 	return nil
 }
 
-// GetLastRequest returns the last SOAP request sent
-func (t *Tools) GetLastRequest() string {
-	return t.lastRequest
-}
-
-// GetLastResponse returns the last SOAP response received
-func (t *Tools) GetLastResponse() string {
-	return t.lastResponse
-}
-
 // Status Service Operations
 
 // SefazStatus checks the status of SEFAZ webservice
@@ -143,7 +191,7 @@ func (t *Tools) SefazStatus(ctx context.Context) (*StatusResponse, error) {
 	}
 
 	// Get webservice info
-	serviceInfo, err := t.getStatusServiceInfo()
+	serviceInfo, err := t.GetStatusServiceInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service URL: %v", err)
 	}
@@ -219,10 +267,55 @@ func (t *Tools) SefazEnviaLote(ctx context.Context, lote *LoteNFe, sincrono bool
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal envio lote request: %v", err)
 	}
+	fmt.Printf("requestXML: %s\n", string(requestXML))
 
-	// Get webservice info
-	env := common.Environment(t.config.TpAmb)
-	serviceInfo, err := t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeAutorizacao, env, t.model)
+	return t.sefazEnviaLoteInternal(ctx, requestXML)
+}
+
+// SefazEnviaLoteSignedXML sends a batch with pre-signed NFe XML strings
+func (t *Tools) SefazEnviaLoteSignedXML(ctx context.Context, idLote string, signedNFeXMLs []string, sincrono bool) (*EnvioLoteResponse, error) {
+	if len(signedNFeXMLs) == 0 {
+		return nil, fmt.Errorf("no NFe XMLs provided")
+	}
+
+	// Set synchronous mode per official manual (AP03a field)
+	indSinc := "0"
+	if sincrono {
+		indSinc = "1"
+	}
+
+	// Build XML manually to preserve signatures following official manual format
+	requestXML := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>`)
+	requestXML += fmt.Sprintf(`<enviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="%s">`, t.config.Versao)
+	requestXML += fmt.Sprintf(`<idLote>%s</idLote>`, idLote)
+	requestXML += fmt.Sprintf(`<indSinc>%s</indSinc>`, indSinc)
+
+	// Insert each signed NFe XML directly (remove only XML declaration like PHP does)
+	for _, nfeXML := range signedNFeXMLs {
+		// Remove XML declaration if present (same as PHP preg_replace("/<\?xml.*?\?>/", "", $xml))
+		cleanedXML := nfeXML
+		if strings.HasPrefix(cleanedXML, "<?xml") {
+			if idx := strings.Index(cleanedXML, "?>"); idx >= 0 {
+				cleanedXML = strings.TrimSpace(cleanedXML[idx+2:])
+			}
+		}
+
+		// Insert the cleaned XML directly (preserving all namespaces like PHP)
+		requestXML += cleanedXML
+	}
+
+	requestXML += `</enviNFe>`
+
+	fmt.Printf("requestXML: %s\n", requestXML)
+
+	return t.sefazEnviaLoteInternal(ctx, []byte(requestXML))
+}
+
+// sefazEnviaLoteInternal handles the actual webservice call
+func (t *Tools) sefazEnviaLoteInternal(ctx context.Context, requestXML []byte) (*EnvioLoteResponse, error) {
+
+	// Get webservice info using resolver for consistency with QueryStatus
+	serviceInfo, err := t.GetAuthorizationServiceInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service URL: %v", err)
 	}
@@ -236,6 +329,16 @@ func (t *Tools) SefazEnviaLote(ctx context.Context, lote *LoteNFe, sincrono bool
 	// Store request for debugging
 	t.lastRequest = soapReq.Body
 
+	// Debug SOAP request details
+	fmt.Printf("🔍 SOAP Request Details:\n")
+	fmt.Printf("   URL: %s\n", serviceInfo.URL)
+	fmt.Printf("   Action: %s\n", serviceInfo.Action)
+	if len(soapReq.Body) > 500 {
+		fmt.Printf("   Body (primeiros 500 chars): %s...\n", string(soapReq.Body)[:500])
+	} else {
+		fmt.Printf("   Body: %s\n", string(soapReq.Body))
+	}
+
 	// Send request
 	soapResp, err := t.soapClient.Call(ctx, soapReq)
 	if err != nil {
@@ -244,6 +347,15 @@ func (t *Tools) SefazEnviaLote(ctx context.Context, lote *LoteNFe, sincrono bool
 
 	// Store response for debugging
 	t.lastResponse = soapResp.Body
+
+	fmt.Printf("🔍 SOAP Response Details:\n")
+	fmt.Printf("   Status: %d\n", soapResp.StatusCode)
+	fmt.Printf("   Headers: %v\n", soapResp.Headers)
+	if len(soapResp.Body) > 0 {
+		fmt.Printf("   Body: %s\n", string(soapResp.Body))
+	} else {
+		fmt.Printf("   Body: [VAZIO]\n")
+	}
 
 	// Extract body content
 	bodyContent, err := soap.ExtractBodyContent(soapResp.Body)
@@ -393,6 +505,179 @@ func (t *Tools) SefazConsultaChave(ctx context.Context, chave string) (*Consulta
 
 // Invalidation Service Operations
 
+// SefazInutilizaNumeros invalidates a range of NFe numbers with automatic validation and signing
+func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin int, xJust string, ano ...string) (*InutilizacaoResponse, error) {
+	// 1. Validate input parameters
+	if err := ValidateInutilizacaoParams(nSerie, nIni, nFin, xJust); err != nil {
+		return nil, fmt.Errorf("validation failed: %v", err)
+	}
+
+	// 2. Determine year (default to current year last 2 digits)
+	anoStr := fmt.Sprintf("%02d", time.Now().Year()%100)
+	if len(ano) > 0 && ano[0] != "" {
+		anoStr = ano[0]
+		if len(anoStr) != 2 {
+			return nil, fmt.Errorf("ano deve ter 2 dígitos, informado: %s", anoStr)
+		}
+	}
+
+	// 3. Get UF code
+	cUF := getStateCode(t.config.SiglaUF)
+	if cUF == "" {
+		return nil, fmt.Errorf("código UF não encontrado para: %s", t.config.SiglaUF)
+	}
+
+	// 4. Determine document type (CNPJ vs CPF for MT)
+	documento := t.config.CNPJ
+	isCPF := t.config.SiglaUF == "MT" && len(documento) == 11
+
+	// 5. Generate unique ID
+	idInut := GenerateInutilizacaoId(cUF, anoStr, documento, t.model, nSerie, nIni, nFin, isCPF)
+
+	// 6. Create request structure
+	request := &InutilizacaoRequest{
+		XMLName: xml.Name{Local: "inutNFe"},
+		Xmlns:   "http://www.portalfiscal.inf.br/nfe",
+		Versao:  t.config.Versao,
+		InfInut: InfInut{
+			Id:     idInut,
+			TpAmb:  int(t.config.TpAmb),
+			XServ:  "INUTILIZAR",
+			CUF:    cUF,
+			Ano:    anoStr,
+			Mod:    t.model,
+			Serie:  fmt.Sprintf("%d", nSerie),
+			NNFIni: fmt.Sprintf("%d", nIni),
+			NNFFin: fmt.Sprintf("%d", nFin),
+			XJust:  xJust,
+		},
+	}
+
+	// 7. Set document (CNPJ or CPF)
+	if isCPF {
+		request.InfInut.CPF = documento
+	} else {
+		request.InfInut.CNPJ = documento
+	}
+
+	// 8. Sign the XML if certificate is available
+	if t.certificate != nil {
+		if cert, ok := t.certificate.(Certificate); ok && cert != nil {
+			// Convert request to XML for signing
+			requestXML, err := xml.Marshal(request)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal request for signing: %v", err)
+			}
+
+			// Sign the XML using XMLDSig with specific SEFAZ configuration
+			// For NFe/inutilization, the signature should be placed at the inutNFe level,
+			// not inside infInut, to comply with SEFAZ schema
+			
+			// Create SEFAZ-specific XMLDSig configuration for inutilization
+			// Following SEFAZ manual requirements:
+			// - Must have Reference URI pointing to Id attribute
+			// - Must have C14N and Enveloped Transform Algorithms
+			sefazConfig := &certificate.XMLDSigConfig{
+				SignatureMethod:        "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+				DigestMethod:           "http://www.w3.org/2000/09/xmldsig#sha1",
+				CanonicalizationMethod: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+				// SEFAZ requires exactly these transforms in this order
+				TransformMethods:       []string{"http://www.w3.org/2000/09/xmldsig#enveloped-signature", "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"},
+				IncludeCertificate:     true,
+				IncludeKeyInfo:         true,
+				SignatureLocation:      certificate.LocationAsLastChild,
+				NamespacePrefix:        "",
+				HashAlgorithm:          crypto.SHA1,
+			}
+			
+			signer := certificate.NewXMLDSigSigner(cert, sefazConfig)
+			
+			// For inutilization, we need to sign the infInut element but place the signature
+			// at the inutNFe level. The Reference URI must point to the infInut Id.
+			// This is a custom approach for SEFAZ inutilization requirements.
+			
+			// Sign the entire document referencing the infInut element
+			signResult, err := signer.SignXML(string(requestXML))
+			
+			if err != nil {
+				return nil, fmt.Errorf("failed to sign inutilization XML: %v", err)
+			}
+
+			if err == nil {
+				// Ensure the Reference URI points to the correct ID
+				signedXML := signResult.SignedXML
+				if !strings.Contains(signedXML, fmt.Sprintf(`URI="#%s"`, idInut)) {
+					// Fix the Reference URI to point to the infInut ID
+					signedXML = strings.ReplaceAll(signedXML, `<Reference URI=""`, fmt.Sprintf(`<Reference URI="#%s"`, idInut))
+					signedXML = strings.ReplaceAll(signedXML, `<Reference>`, fmt.Sprintf(`<Reference URI="#%s">`, idInut))
+					signResult.SignedXML = signedXML
+				}
+			}
+			
+			// Call SefazInutiliza directly with signed XML string
+			return t.SefazInutilizaWithSignedXML(ctx, signResult.SignedXML)
+		}
+	}
+
+	// 9. Call the base function (only reached if no certificate)
+	return t.SefazInutiliza(ctx, request)
+}
+
+// SefazInutilizaWithSignedXML invalidates numbers using pre-signed XML
+func (t *Tools) SefazInutilizaWithSignedXML(ctx context.Context, signedXML string) (*InutilizacaoResponse, error) {
+	if signedXML == "" {
+		return nil, fmt.Errorf("signed XML cannot be empty")
+	}
+
+	// Get webservice info using resolver for consistency
+	serviceInfo, err := t.getInutilizacaoServiceInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service URL: %v", err)
+	}
+
+	// Create SOAP request with signed XML directly
+	soapReq, err := soap.CreateNFeSOAPRequest(serviceInfo.URL, serviceInfo.Action, signedXML)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create SOAP request: %v", err)
+	}
+
+	// Store request for debugging
+	t.lastRequest = soapReq.Body
+
+	// Send request
+	soapResp, err := t.soapClient.Call(ctx, soapReq)
+	if err != nil {
+		return nil, fmt.Errorf("SOAP call failed: %v", err)
+	}
+
+	// Store response for debugging
+	t.lastResponse = soapResp.Body
+
+	// Extract body content
+	bodyContent, err := soap.ExtractBodyContent(soapResp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract body content: %v", err)
+	}
+
+	// Parse response - handle both direct and wrapped responses
+	var inutResponse InutilizacaoResponse
+
+	// Try direct parsing first
+	if err := xml.Unmarshal([]byte(bodyContent), &inutResponse); err != nil {
+		// If that fails, try parsing the wrapped response
+		var wrappedResponse struct {
+			XMLName xml.Name            `xml:"nfeResultMsg"`
+			Result  InutilizacaoResponse `xml:"retInutNFe"`
+		}
+		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
+			return nil, fmt.Errorf("failed to unmarshal inutilizacao response: %v (also tried wrapped format: %v)", err, err2)
+		}
+		inutResponse = wrappedResponse.Result
+	}
+
+	return &inutResponse, nil
+}
+
 // SefazInutiliza invalidates a range of NFe numbers
 func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRequest) (*InutilizacaoResponse, error) {
 	if inutilizacao == nil {
@@ -409,9 +694,8 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 		return nil, fmt.Errorf("failed to marshal inutilizacao request: %v", err)
 	}
 
-	// Get webservice info
-	env := common.Environment(t.config.TpAmb)
-	serviceInfo, err := t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeInutilizacao, env, t.model)
+	// Get webservice info using resolver for consistency with authorization
+	serviceInfo, err := t.getInutilizacaoServiceInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service URL: %v", err)
 	}
@@ -440,10 +724,20 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 		return nil, fmt.Errorf("failed to extract body content: %v", err)
 	}
 
-	// Parse response
+	// Parse response - handle both direct and wrapped responses
 	var inutResponse InutilizacaoResponse
+
+	// Try direct parsing first
 	if err := xml.Unmarshal([]byte(bodyContent), &inutResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal inutilizacao response: %v", err)
+		// If that fails, try parsing the wrapped response
+		var wrappedResponse struct {
+			XMLName xml.Name            `xml:"nfeResultMsg"`
+			Result  InutilizacaoResponse `xml:"retInutNFe"`
+		}
+		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
+			return nil, fmt.Errorf("failed to unmarshal inutilizacao response: %v (also tried wrapped format: %v)", err, err2)
+		}
+		inutResponse = wrappedResponse.Result
 	}
 
 	return &inutResponse, nil
@@ -821,6 +1115,16 @@ type EnvioLoteRequest struct {
 	NFes    []NFe    `xml:"NFe"`
 }
 
+// EnvioLoteRequestRaw represents an authorization batch request with raw XML NFes
+type EnvioLoteRequestRaw struct {
+	XMLName xml.Name `xml:"enviNFe"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	Versao  string   `xml:"versao,attr"`
+	IdLote  string   `xml:"idLote"`
+	IndSinc string   `xml:"indSinc"`
+	NFesXML []string `xml:"-"` // Raw XML strings will be inserted manually
+}
+
 // EnvioLoteResponse represents an authorization batch response
 type EnvioLoteResponse struct {
 	XMLName  xml.Name  `xml:"retEnviNFe"`
@@ -942,16 +1246,19 @@ type InutilizacaoRequest struct {
 
 // InfInut represents invalidation information
 type InfInut struct {
-	TpAmb  int    `xml:"tpAmb"`
-	XServ  string `xml:"xServ"`
-	CUF    string `xml:"cUF"`
-	Ano    string `xml:"ano"`
-	CNPJ   string `xml:"CNPJ"`
-	Mod    string `xml:"mod"`
-	Serie  string `xml:"serie"`
-	NNFIni string `xml:"nNFIni"`
-	NNFFin string `xml:"nNFFin"`
-	XJust  string `xml:"xJust"`
+	Id        string      `xml:"Id,attr" validate:"required,len=43"`
+	TpAmb     int         `xml:"tpAmb" validate:"required,oneof=1 2"`
+	XServ     string      `xml:"xServ" validate:"required,eq=INUTILIZAR"`
+	CUF       string      `xml:"cUF" validate:"required,len=2"`
+	Ano       string      `xml:"ano" validate:"required,len=2"`
+	CNPJ      string      `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`
+	CPF       string      `xml:"CPF,omitempty" validate:"omitempty,len=11"`
+	Mod       string      `xml:"mod" validate:"required,oneof=55 65"`
+	Serie     string      `xml:"serie" validate:"required,min=0,max=999"`
+	NNFIni    string      `xml:"nNFIni" validate:"required,min=1,max=999999999"`
+	NNFFin    string      `xml:"nNFFin" validate:"required,min=1,max=999999999"`
+	XJust     string      `xml:"xJust" validate:"required,min=15,max=255"`
+	Signature interface{} `xml:"Signature,omitempty"` // XMLDSig signature
 }
 
 // InutilizacaoResponse represents a number invalidation response
@@ -968,14 +1275,88 @@ type InfInutRet struct {
 	CStat    string `xml:"cStat"`
 	XMotivo  string `xml:"xMotivo"`
 	CUF      string `xml:"cUF"`
-	Ano      string `xml:"ano"`
-	CNPJ     string `xml:"CNPJ"`
-	Mod      string `xml:"mod"`
-	Serie    string `xml:"serie"`
-	NNFIni   string `xml:"nNFIni"`
-	NNFFin   string `xml:"nNFFin"`
+	Ano      string `xml:"ano,omitempty"`
+	CNPJ     string `xml:"CNPJ,omitempty"`
+	CPF      string `xml:"CPF,omitempty"`
+	Mod      string `xml:"mod,omitempty"`
+	Serie    string `xml:"serie,omitempty"`
+	NNFIni   string `xml:"nNFIni,omitempty"`
+	NNFFin   string `xml:"nNFFin,omitempty"`
 	DhRecbto string `xml:"dhRecbto"`
 	NProt    string `xml:"nProt,omitempty"`
+}
+
+// IsSuccess returns true if the inutilização was successful
+func (r *InfInutRet) IsSuccess() bool {
+	return r.CStat == "102"
+}
+
+// GetMessage returns a user-friendly message based on the status code
+func (r *InfInutRet) GetMessage() string {
+	switch r.CStat {
+	case "102":
+		return "Inutilização de número homologado"
+	case "215":
+		return "CNPJ do emitente inválido"
+	case "216":
+		return "CPF do emitente inválido"
+	case "217":
+		return "Inscrição Estadual do emitente inválida"
+	case "252":
+		return "Ambiente informado diverge do ambiente solicitado"
+	case "401":
+		return "CPF do emitente não cadastrado"
+	case "402":
+		return "CNPJ do emitente não cadastrado"
+	default:
+		return r.XMotivo
+	}
+}
+
+// ValidateInutilizacaoParams validates inutilização parameters
+func ValidateInutilizacaoParams(nSerie, nIni, nFin int, xJust string) error {
+	if nSerie < 0 || nSerie > 999 {
+		return fmt.Errorf("série deve estar entre 0 e 999, informado: %d", nSerie)
+	}
+
+	if nIni <= 0 || nIni > 999999999 {
+		return fmt.Errorf("número inicial deve estar entre 1 e 999999999, informado: %d", nIni)
+	}
+
+	if nFin <= 0 || nFin > 999999999 {
+		return fmt.Errorf("número final deve estar entre 1 e 999999999, informado: %d", nFin)
+	}
+
+	if nFin < nIni {
+		return fmt.Errorf("número final (%d) deve ser maior ou igual ao inicial (%d)", nFin, nIni)
+	}
+
+	if len(xJust) < 15 {
+		return fmt.Errorf("justificativa deve ter pelo menos 15 caracteres, informado: %d", len(xJust))
+	}
+
+	if len(xJust) > 255 {
+		return fmt.Errorf("justificativa deve ter no máximo 255 caracteres, informado: %d", len(xJust))
+	}
+
+	return nil
+}
+
+// GenerateInutilizacaoId generates the ID for inutilização request
+func GenerateInutilizacaoId(cUF, ano, documento, modelo string, serie, nIni, nFin int, isCPF bool) string {
+	var docPadded string
+	if isCPF {
+		docPadded = fmt.Sprintf("%011s", documento)
+	} else {
+		docPadded = fmt.Sprintf("%014s", documento)
+	}
+
+	serieStr := fmt.Sprintf("%03d", serie)
+	nIniStr := fmt.Sprintf("%09d", nIni)
+	nFinStr := fmt.Sprintf("%09d", nFin)
+
+	return fmt.Sprintf("ID%s%s%s%s%s%s%s",
+		cUF, ano, docPadded, modelo, serieStr, nIniStr, nFinStr)
 }
 
 // EventoRequest represents an event request

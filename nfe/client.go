@@ -438,6 +438,59 @@ func (c *NFEClient) Cancel(ctx context.Context, chave, justificativa string) (*E
 	return c.convertToEventResponse(response, "cancellation"), nil
 }
 
+// CancelWithProtocol cancels an NFe with the provided justification and protocol.
+func (c *NFEClient) CancelWithProtocol(ctx context.Context, chave, justificativa, protocolo string) (*CancelamentoResponse, error) {
+	// Create and validate cancellation request
+	req, err := CreateCancelamentoRequest(chave, justificativa, protocolo)
+	if err != nil {
+		return nil, fmt.Errorf("invalid cancellation request: %v", err)
+	}
+
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	// Send cancellation event
+	response, err := c.tools.SefazCancela(ctx, req.ChaveNFe, req.Justificativa, req.Protocolo, req.DhEvento, req.Lote)
+	if err != nil {
+		return nil, fmt.Errorf("failed to cancel NFe: %v", err)
+	}
+
+	// Convert to CancelamentoResponse
+	return c.convertToCancelamentoResponse(response, req.ChaveNFe), nil
+}
+
+// CanCancel checks if an NFe can be cancelled based on its authorization date and current status.
+func (c *NFEClient) CanCancel(chave string, dhAutorizacao time.Time, currentStatus string) (bool, error) {
+	// Validate NFe key
+	if err := ValidateNFeKey(chave); err != nil {
+		return false, fmt.Errorf("invalid NFe key: %v", err)
+	}
+
+	// Check if already cancelled
+	if currentStatus == "cancelled" || currentStatus == "cancelada" {
+		return false, fmt.Errorf("NFe is already cancelled")
+	}
+
+	// Check if authorized
+	if currentStatus != "authorized" && currentStatus != "autorizada" {
+		return false, fmt.Errorf("NFe must be authorized before it can be cancelled")
+	}
+
+	// Check deadline
+	return true, ValidarPrazoCancelamento(dhAutorizacao)
+}
+
+// ValidateJustificationText validates a cancellation justification
+func (c *NFEClient) ValidateJustificationText(justificativa string) error {
+	return ValidateJustification(justificativa)
+}
+
+// GetCancellationDeadline returns the deadline for cancelling an NFe
+func (c *NFEClient) GetCancellationDeadline(dhAutorizacao time.Time) time.Time {
+	return dhAutorizacao.Add(CancellationTimeoutHours * time.Hour)
+}
+
 // CCe sends a carta de correção eletrônica (electronic correction letter).
 func (c *NFEClient) CCe(ctx context.Context, chave, correcao string, sequencia int) (*EventResponse, error) {
 	if len(chave) != 44 {
@@ -816,9 +869,37 @@ func (c *NFEClient) createLoteFromXML(xmlData []byte) (*LoteNFe, error) {
 }
 
 func (c *NFEClient) createCancellationEventRequest(chave, justificativa string) (*EventoRequest, error) {
-	// TODO: Implement proper event request creation
-	// For now, return a basic structure
-	return &EventoRequest{}, nil
+	// Create a proper cancellation request using the new validation functions
+	req, err := CreateCancelamentoRequest(chave, justificativa, "dummy_protocol")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cancellation request: %v", err)
+	}
+
+	// Convert to the old EventoRequest format for compatibility
+	return &EventoRequest{
+		IdLote: "1",
+		Evento: []Evento{
+			{
+				Versao: "1.00",
+				InfEvento: InfEvento{
+					COrgao:     getStateCode(c.config.SiglaUF),
+					TpAmb:      int(c.config.TpAmb),
+					CNPJ:       c.config.CNPJ,
+					ChNFe:      req.ChaveNFe,
+					DhEvento:   FormatDateTime(time.Now()),
+					TpEvento:   "110111",
+					NSeqEvento: "1",
+					VerEvento:  "1.00",
+					DetEvento: DetEvento{
+						Versao:     "1.00",
+						DescEvento: "Cancelamento",
+						NProt:      req.Protocolo,
+						XJust:      req.Justificativa,
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 func (c *NFEClient) createCCeEventRequest(chave, correcao string, sequencia int) (*EventoRequest, error) {
@@ -875,6 +956,51 @@ func (c *NFEClient) convertToEventResponse(response interface{}, eventType strin
 	}
 
 	return event
+}
+
+func (c *NFEClient) convertToCancelamentoResponse(response *EventResponseNFe, chave string) *CancelamentoResponse {
+	cancelResponse := &CancelamentoResponse{
+		Key:         chave,
+		EventType:   "cancellation",
+		ProcessedAt: time.Now(),
+		Sequence:    1, // Cancellation is always sequence 1
+	}
+
+	if response != nil {
+		// Parse status code
+		if statusCode, err := strconv.Atoi(response.CStat); err == nil {
+			cancelResponse.Status = statusCode
+			cancelResponse.Success = IsCancellationSuccessful(statusCode)
+		}
+
+		cancelResponse.StatusText = response.XMotivo
+		if cancelResponse.StatusText == "" {
+			cancelResponse.StatusText = GetCancellationStatusText(cancelResponse.Status)
+		}
+
+		// Add protocol if available
+		if len(response.RetEvento) > 0 {
+			cancelResponse.Protocol = response.RetEvento[0].InfEvento.NProt
+		}
+
+		// Add messages
+		if response.XMotivo != "" {
+			cancelResponse.Messages = []ResponseMessage{
+				{
+					Code:    response.CStat,
+					Message: response.XMotivo,
+					Type:    "info",
+				},
+			}
+		}
+	} else {
+		// Fallback for nil response
+		cancelResponse.Success = false
+		cancelResponse.Status = 0
+		cancelResponse.StatusText = "No response received"
+	}
+
+	return cancelResponse
 }
 
 // Authorized returns true if the authorization response indicates success.

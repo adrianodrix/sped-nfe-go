@@ -276,18 +276,34 @@ func (c *SOAPClient) performHTTPRequestWithTLSFallback(req *http.Request) (*http
 			InsecureSkipVerify: true,
 		},
 		
-		// Fallback 3: Maximum compatibility with specific cipher suites
+		// Fallback 3: Maximum compatibility with specific cipher suites and aggressive settings
 		{
 			MinVersion:         tls.VersionTLS10,
 			MaxVersion:         tls.VersionTLS13,
 			Renegotiation:      tls.RenegotiateFreelyAsClient,
 			InsecureSkipVerify: true,
+			// Force specific server name for SNI
+			ServerName: "",
 			CipherSuites: []uint16{
 				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
 				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
 				tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
 				tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
 				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			},
+		},
+		
+		// Fallback 4: Ultra-compatibility mode with legacy TLS settings
+		{
+			MinVersion:         tls.VersionTLS10,
+			MaxVersion:         tls.VersionTLS12, // Some old servers don't support TLS 1.3
+			Renegotiation:      tls.RenegotiateFreelyAsClient,
+			InsecureSkipVerify: true,
+			ServerName:         "", // Disable SNI completely
+			// Only legacy cipher suites
+			CipherSuites: []uint16{
+				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+				tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
 			},
 		},
 	}

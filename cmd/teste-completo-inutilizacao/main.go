@@ -128,6 +128,14 @@ func main() {
 		// Enable debug logging for these problematic states
 		tools.EnableDebug(true)
 
+		// IMPORTANTE: Configurar o certificado digital no cliente SOAP
+		err = tools.SetCertificate(cert)
+		if err != nil {
+			fmt.Printf("   ❌ %s: Erro ao configurar certificado: %v\n", uf, err)
+			errosOutros = append(errosOutros, uf+": "+err.Error())
+			continue
+		}
+
 		// Get service info
 		resolver := webservices.NewResolver()
 		inutInfo, err := resolver.GetInutilizacaoServiceURL(uf, true, "55")

@@ -67,10 +67,10 @@ const (
 	PA UF = 15 // Pará
 	RO UF = 11 // Rondônia
 	RR UF = 14 // Roraima
-	TO UF = 17 // Tocantins
+	TO UF = 27 // Tocantins
 
 	// Região Nordeste
-	AL UF = 27 // Alagoas
+	AL UF = 17 // Alagoas
 	BA UF = 29 // Bahia
 	CE UF = 23 // Ceará
 	MA UF = 21 // Maranhão

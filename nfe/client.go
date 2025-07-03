@@ -13,6 +13,7 @@ import (
 	"github.com/adrianodrix/sped-nfe-go/common"
 	"github.com/adrianodrix/sped-nfe-go/factories"
 	"github.com/adrianodrix/sped-nfe-go/types"
+	"github.com/adrianodrix/sped-nfe-go/validation"
 	"github.com/adrianodrix/sped-nfe-go/webservices"
 )
 
@@ -22,6 +23,7 @@ type NFEClient struct {
 	tools       *Tools
 	certificate certificate.Certificate
 	contingency *factories.Contingency
+	validator   *validation.XSDValidator
 	timeout     time.Duration
 	uf          UF
 }
@@ -161,10 +163,11 @@ func NewClient(config ClientConfig) (*NFEClient, error) {
 	}
 
 	client := &NFEClient{
-		config:  commonConfig,
-		tools:   nil, // Tools will be created lazily when needed
-		timeout: time.Duration(config.Timeout) * time.Second,
-		uf:      config.UF,
+		config:    commonConfig,
+		tools:     nil, // Tools will be created lazily when needed
+		validator: validation.NewXSDValidator(),
+		timeout:   time.Duration(config.Timeout) * time.Second,
+		uf:        config.UF,
 	}
 
 	return client, nil
@@ -515,15 +518,20 @@ func (c *NFEClient) ValidateXML(xml []byte) error {
 		return fmt.Errorf("not a valid NFe XML: missing infNFe element")
 	}
 
-	// TODO: Implement full XSD validation
+	// Perform XSD validation
+	result := c.validator.ValidateNFe(xml, "4.00")
+	if !result.Valid {
+		// Join errors into a single message
+		return fmt.Errorf("XSD validation failed: %s", strings.Join(result.Errors, "; "))
+	}
+
 	return nil
 }
 
 // GenerateKey generates an NFe access key.
 func (c *NFEClient) GenerateKey(cnpj string, modelo, serie, numero int, dhEmi time.Time) (string, error) {
-	// TODO: Implement proper access key generation
-	// For now, return a mock key with basic validation
-	if len(cnpj) != 14 {
+	// Validate inputs
+	if len(OnlyNumbers(cnpj)) != 14 {
 		return "", fmt.Errorf("CNPJ must have 14 digits")
 	}
 	if modelo != 55 && modelo != 65 {
@@ -533,22 +541,36 @@ func (c *NFEClient) GenerateKey(cnpj string, modelo, serie, numero int, dhEmi ti
 		return "", fmt.Errorf("series and number must be positive")
 	}
 
-	// Generate a mock 44-digit access key
-	mockKey := fmt.Sprintf("%02d%s%s%02d%03d%09d%08d%d",
-		int(c.uf),            // UF code
-		dhEmi.Format("0601"), // YYMM
-		cnpj,                 // CNPJ
-		modelo,               // Model
-		serie,                // Series
-		numero,               // Number
-		12345678,             // Random number
-		1)                    // Check digit
-
-	if len(mockKey) != 44 {
-		return "", fmt.Errorf("generated key has invalid length: %d", len(mockKey))
+	// Convert to appropriate types
+	var documentModel DocumentModel
+	if modelo == 55 {
+		documentModel = ModelNFe
+	} else {
+		documentModel = ModelNFCe
 	}
 
-	return mockKey, nil
+	// Generate access key using the proper implementation
+	accessKey, err := GenerateAccessKey(
+		fmt.Sprintf("%02d", int(c.uf)), // UF code as string
+		OnlyNumbers(cnpj),              // Clean CNPJ
+		documentModel,                  // Model
+		serie,                          // Series
+		numero,                         // Number
+		EmissionNormal,                 // Emission type
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate access key: %w", err)
+	}
+
+	// Set issue date/time
+	accessKey.SetIssueDateTime(dhEmi)
+
+	// Build the complete key
+	if err := accessKey.Build(); err != nil {
+		return "", fmt.Errorf("failed to build access key: %w", err)
+	}
+
+	return accessKey.GetKey(), nil
 }
 
 // AddProtocol adds authorization protocol to an NFe XML.
@@ -611,15 +633,15 @@ func (c *NFEClient) GetContingency() *factories.Contingency {
 
 // ActivateContingency activates contingency mode.
 func (c *NFEClient) ActivateContingency(motive string, contingencyType ...factories.ContingencyType) error {
-	// TODO: Implement UF.String() method or use int conversion
-	uf := fmt.Sprintf("%02d", int(c.uf)) // Use client UF as string
+	// Convert UF to appropriate format for contingency
+	ufCode := fmt.Sprintf("%02d", int(c.uf))
 
 	var cType factories.ContingencyType
 	if len(contingencyType) > 0 {
 		cType = contingencyType[0]
 	}
 
-	contingency, _, err := factories.CreateContingency(uf, motive, cType)
+	contingency, _, err := factories.CreateContingency(ufCode, motive, cType)
 	if err != nil {
 		return fmt.Errorf("failed to activate contingency: %v", err)
 	}

@@ -88,7 +88,7 @@ func main() {
 	// 	"RS", "RO", "RR", "SC", "SP", "SE", "TO",
 	// }
 	estados := []string{
-		"AM", "PR",
+		"PR",
 	}
 
 	fmt.Printf("\n🚀 ETAPA 3: Testando inutilização em TODOS os estados brasileiros...\n")
@@ -157,7 +157,7 @@ func main() {
 		cancel()
 
 		if err == nil {
-			fmt.Printf("   ✅ %s: SUCESSO! (%v) - Status: %s\n", uf, duration, response.InfInut.CStat)
+			fmt.Printf("   ✅ %s: SUCESSO! (%v) - Status: %s - %s\n", uf, duration, response.InfInut.CStat, response.InfInut.XMotivo)
 			sucessos = append(sucessos, uf)
 		} else {
 			errorStr := err.Error()

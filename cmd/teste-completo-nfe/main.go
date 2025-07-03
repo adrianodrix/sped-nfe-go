@@ -62,16 +62,6 @@ func main() {
 	fmt.Printf("   ✅ XML gerado: %d bytes\n", len(xml))
 	fmt.Printf("   🔑 Chave de acesso: %s\n\n", chave)
 
-	// Exemplo 6: Validar XML
-	fmt.Println("\n=== Validando XML ===")
-
-	err = client.ValidateXML([]byte(xml))
-	if err != nil {
-		fmt.Printf("❌ XML inválido: %v\n", err)
-	} else {
-		fmt.Printf("✅ XML válido\n")
-	}
-
 	// ETAPA 4: Assinar XML
 	fmt.Println("🔏 ETAPA 4: Assinando XML digitalmente...")
 	xmlAssinado, err := assinarXML(cert, xml)
@@ -79,6 +69,12 @@ func main() {
 		log.Fatalf("❌ Falha na etapa 4: %v", err)
 	}
 	fmt.Printf("   ✅ XML assinado: %d bytes\n\n", len(xmlAssinado))
+	err = client.ValidateXML([]byte(xmlAssinado))
+	if err != nil {
+		fmt.Printf("   ❌ XML inválido: %v\n", err)
+	} else {
+		fmt.Printf("   ✅ XML válido\n")
+	}
 
 	// ETAPA 5: Autorizar no SEFAZ
 	fmt.Println("📡 ETAPA 5: Enviando para autorização SEFAZ...")
@@ -88,38 +84,41 @@ func main() {
 		fmt.Println("   💡 Nota: Erro esperado em ambiente de teste/demo\n")
 	}
 
-	// ETAPA 6: Salvar Arquivos
-	fmt.Println("💾 ETAPA 6: Salvando arquivos...")
-	err = salvarArquivos(xml, xmlAssinado, chave)
-	if err != nil {
-		log.Printf("   ⚠️  Erro ao salvar: %v\n", err)
-	} else {
-		fmt.Println("   ✅ Arquivos salvos com sucesso\n")
-	}
+	/*
+		// ETAPA 6: Salvar Arquivos
+		fmt.Println("💾 ETAPA 6: Salvando arquivos...")
+		err = salvarArquivos(xml, xmlAssinado, chave)
+		if err != nil {
+			log.Printf("   ⚠️  Erro ao salvar: %v\n", err)
+		} else {
+			fmt.Println("   ✅ Arquivos salvos com sucesso\n")
+		}
 
-	// RESULTADO FINAL
-	fmt.Println("🎉 TESTE COMPLETO FINALIZADO!")
-	fmt.Println("=============================")
-	fmt.Println("✅ Geração de XML: SUCESSO")
-	fmt.Println("✅ Assinatura digital: SUCESSO")
-	fmt.Println("✅ Comunicação SEFAZ: TESTADA")
-	fmt.Println()
-	fmt.Println("📁 Arquivos gerados:")
-	fmt.Println("   • nfe_original.xml - XML original da NFe")
-	fmt.Println("   • nfe_assinada.xml - XML assinado digitalmente")
-	fmt.Println("   • chave_acesso.txt - Chave de acesso da NFe")
-	fmt.Println()
-	fmt.Println("🏆 SPED-NFE-GO funcionando corretamente!")
+		// RESULTADO FINAL
+		fmt.Println("🎉 TESTE COMPLETO FINALIZADO!")
+		fmt.Println("=============================")
+		fmt.Println("✅ Geração de XML: SUCESSO")
+		fmt.Println("✅ Assinatura digital: SUCESSO")
+		fmt.Println("✅ Comunicação SEFAZ: TESTADA")
+		fmt.Println()
+		fmt.Println("📁 Arquivos gerados:")
+		fmt.Println("   • nfe_original.xml - XML original da NFe")
+		fmt.Println("   • nfe_assinada.xml - XML assinado digitalmente")
+		fmt.Println("   • chave_acesso.txt - Chave de acesso da NFe")
+		fmt.Println()
+		fmt.Println("🏆 SPED-NFE-GO funcionando corretamente!")
+		**/
 }
 
 // carregarCertificado carrega e valida o certificado digital A1
 func carregarCertificado(password string) (certificate.Certificate, error) {
-	certPath := "../../refs/certificates/valid-certificate.pfx"
+	// Usar certificado real para teste final do erro 298
+	fmt.Println("   🔐 Carregando certificado ICP-Brasil real...")
 
+	certPath := "../../refs/certificates/valid-certificate.pfx"
 	cert, err := certificate.LoadA1FromFile(certPath, password)
 	if err != nil {
 		certPath := "refs/certificates/valid-certificate.pfx"
-
 		cert, err = certificate.LoadA1FromFile(certPath, password)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao carregar certificado: %v", err)
@@ -131,15 +130,21 @@ func carregarCertificado(password string) (certificate.Certificate, error) {
 		return nil, fmt.Errorf("certificado inválido ou expirado")
 	}
 
+	fmt.Printf("   📋 Certificado: %s\n", extrairNomeCertificado(cert.GetSubject()))
+	notBefore, notAfter := cert.GetValidityPeriod()
+	fmt.Printf("   📅 Válido: %s até %s\n",
+		notBefore.Format("02/01/2006"),
+		notAfter.Format("02/01/2006"))
+
 	return cert, nil
 }
 
 // configurarCliente cria e configura o cliente NFe com certificado
 func configurarCliente(cert certificate.Certificate) (*nfe.NFEClient, error) {
 	config := nfe.ClientConfig{
-		Environment: nfe.Production, // Ambiente de homologação
-		UF:          nfe.PR,         // Paraná
-		Timeout:     30,             // 50 segundos
+		Environment: nfe.Homologation, // Ambiente de homologação
+		UF:          nfe.PR,           // Paraná
+		Timeout:     30,               // 50 segundos
 	}
 
 	client, err := nfe.NewClient(config)
@@ -172,7 +177,7 @@ func gerarNFe() (string, string, error) {
 	now := time.Now()
 	identificacao := &nfe.Identificacao{
 		CUF:      "41",                    // Paraná
-		CNF:      "12345678",              // Código numérico fiscal
+		CNF:      "87654321",              // Código numérico fiscal (8 dígitos aleatórios)
 		NatOp:    "Venda de mercadoria",   // Natureza da operação
 		Mod:      "55",                    // Modelo NFe
 		Serie:    "1",                     // Série
@@ -200,8 +205,8 @@ func gerarNFe() (string, string, error) {
 	emitente := &nfe.Emitente{
 		CNPJ:  "10541434000152",
 		XNome: "EMPARI INFORMATICA LTDA",
-		XFant: "EMPARI INFORMATICA LTDA",
-		IE:    "123456789012",
+		XFant: "EMPARI GLOBAL",
+		IE:    "9054701753",
 		CRT:   "3", // Regime Normal
 		EnderEmit: nfe.Endereco{
 			XLgr:    "RUA DAS EMPRESAS",
@@ -223,18 +228,18 @@ func gerarNFe() (string, string, error) {
 
 	// Configurar destinatário
 	destinatario := &nfe.Destinatario{
-		CNPJ:      "22333444000195",
-		XNome:     "CLIENTE EXEMPLO LTDA",
+		CNPJ:      "79379491002550",
+		XNome:     " NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
 		IndIEDest: "1", // Contribuinte ICMS
-		IE:        "987654321098",
+		IE:        "9053360022",
 		EnderDest: &nfe.Endereco{
 			XLgr:    "AVENIDA DOS CLIENTES",
 			Nro:     "456",
 			XBairro: "JARDIM COMERCIAL",
-			CMun:    "3550308",
-			XMun:    "SAO PAULO",
-			UF:      "SP",
-			CEP:     "01234568",
+			CMun:    "4115200",
+			XMun:    "MARINGA",
+			UF:      "PR",
+			CEP:     "87020000",
 			CPais:   "1058",
 			XPais:   "BRASIL",
 		},
@@ -308,7 +313,7 @@ func gerarNFe() (string, string, error) {
 				CEAN:     "SEM GTIN",
 				XProd:    "INSTALACAO E CONFIGURACAO",
 				NCM:      "00000000",
-				CFOP:     "5933",
+				CFOP:     "5102",
 				UCom:     "SV",
 				QCom:     "1.0000",
 				VUnCom:   "500.00",
@@ -324,7 +329,7 @@ func gerarNFe() (string, string, error) {
 					ICMS40: &nfe.ICMS40{
 						Orig:       "0",
 						CST:        "40",
-						VICMSDeson: "0.00",
+						VICMSDeson: "90.00", // 500.00 * 18% = 90.00 (ICMS que seria devido)
 						MotDesICMS: "9",
 					},
 				},
@@ -368,8 +373,12 @@ func gerarNFe() (string, string, error) {
 
 	// Configurar pagamento
 	pagamento := &nfe.Pagamento{
-		TPag: "01",      // Dinheiro
-		VPag: "5750.00", // Total da NFe (com impostos)
+		DetPag: []nfe.DetPag{
+			{
+				TPag: "01",      // Dinheiro
+				VPag: "5660.00", // Total da NFe (com impostos)
+			},
+		},
 	}
 
 	err = nfeMake.TagPag(pagamento)
@@ -405,6 +414,7 @@ func gerarNFe() (string, string, error) {
 
 // assinarXML assina digitalmente o XML da NFe
 func assinarXML(cert certificate.Certificate, xml string) (string, error) {
+	// Usar XMLSigner que tem implementação mais estável
 	signer := certificate.CreateXMLSigner(cert)
 
 	xmlAssinado, err := signer.SignNFeXML(xml)
@@ -416,21 +426,11 @@ func assinarXML(cert certificate.Certificate, xml string) (string, error) {
 }
 
 // autorizarNFe envia a NFe para autorização no SEFAZ
-func autorizarNFe(client *nfe.NFEClient, xmlAssinado, chave string) error {
-	// Testar conectividade primeiro
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func autorizarNFe(client *nfe.NFEClient, xmlAssinado, _ string) error {
+	// ⚠️ TESTE REAL COM CERTIFICADO - LIMITADO PARA EVITAR BLOQUEIO SEFAZ
+	fmt.Println("   📤 Enviando NFe REAL para autorização SEFAZ...")
+	fmt.Println("   ⚠️ ATENÇÃO: Teste único para validar correção do erro 298")
 
-	fmt.Println("   📡 Testando conectividade SEFAZ...")
-	status, err := client.QueryStatus(ctx)
-	if err != nil {
-		return fmt.Errorf("falha na conectividade SEFAZ: %v", err)
-	}
-
-	fmt.Printf("   📊 Status SEFAZ: Online=%v\n", status.Online)
-
-	// Enviar para autorização
-	fmt.Println("   📤 Enviando NFe para autorização...")
 	authCtx, authCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer authCancel()
 
@@ -439,12 +439,30 @@ func autorizarNFe(client *nfe.NFEClient, xmlAssinado, chave string) error {
 		return fmt.Errorf("erro na autorização: %v", err)
 	}
 
-	fmt.Printf("   📋 Resposta: Status=%d, Protocolo=%s, StatusText=%s\n", response.Status, response.Protocol, response.StatusText)
+	fmt.Printf("   📋 Resposta SEFAZ: Status=%d, Protocolo=%s, StatusText=%s\n",
+		response.Status, response.Protocol, response.StatusText)
 
-	// Em ambiente de homologação, responses específicos são esperados
-	if response.Status == 539 {
-		fmt.Println("   ✅ Resposta esperada para ambiente de homologação")
+	// Analisar o resultado
+	switch response.Status {
+	case 298:
+		fmt.Println("   ❌ ERRO 298: Assinatura difere do padrão do Projeto")
+		fmt.Println("   💡 Estrutura da assinatura ainda precisa ajustes")
+		return fmt.Errorf("Status=298: Assinatura difere do padrão do Projeto")
+
+	case 539:
+		fmt.Println("   ✅ Status 539: Homologação - NFe rejeitada (esperado)")
 		return nil
+
+	case 100:
+		fmt.Println("   ✅ Status 100: NFe autorizada com sucesso!")
+		return nil
+
+	default:
+		fmt.Printf("   ℹ️ Status %d: %s\n", response.Status, response.StatusText)
+		if response.Status < 300 {
+			fmt.Println("   ✅ NFe processada sem erro de assinatura")
+			return nil
+		}
 	}
 
 	return nil

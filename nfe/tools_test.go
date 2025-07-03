@@ -374,20 +374,20 @@ func TestToolsErrorHandling(t *testing.T) {
 		t.Error("SefazInutiliza should return error for nil request")
 	}
 
-	// Test SefazEvento with nil request
-	_, err = tools.SefazEvento(ctx, nil)
+	// Test SefazEvento with invalid chave
+	_, err = tools.SefazEvento(ctx, "invalid", EVT_CCE, 1, "", nil, "")
 	if err == nil {
-		t.Error("SefazEvento should return error for nil request")
+		t.Error("SefazEvento should return error for invalid chave")
 	}
 
 	// Test SefazCancela with invalid parameters
-	_, err = tools.SefazCancela(ctx, "invalid", "", "")
+	_, err = tools.SefazCancela(ctx, "invalid", "", "", nil, "")
 	if err == nil {
 		t.Error("SefazCancela should return error for invalid parameters")
 	}
 
 	// Test SefazCCe with invalid parameters
-	_, err = tools.SefazCCe(ctx, "invalid", "", 0)
+	_, err = tools.SefazCCe(ctx, "invalid", "", 0, nil, "")
 	if err == nil {
 		t.Error("SefazCCe should return error for invalid parameters")
 	}

@@ -451,31 +451,23 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 
 // SefazCCe sends a correction letter (carta de correção) event to SEFAZ
 func (t *Tools) SefazCCe(ctx context.Context, chave string, xCorrecao string, nSeqEvento int, dhEvento *time.Time, lote string) (*EventResponseNFe, error) {
-	if chave == "" || xCorrecao == "" {
-		return nil, fmt.Errorf("CCe: chave or xCorrecao is empty")
+	// Create and validate CCe request
+	req := &CCeRequest{
+		ChaveNFe:  chave,
+		Correcao:  xCorrecao,
+		Sequencia: nSeqEvento,
+		DhEvento:  dhEvento,
+		Lote:      lote,
 	}
 
-	// Validate and clean correction text
-	xCorrecao = strings.TrimSpace(xCorrecao)
-	if len(xCorrecao) > 1000 {
-		xCorrecao = xCorrecao[:1000]
+	if err := ValidarCCe(req); err != nil {
+		return nil, fmt.Errorf("CCe validation failed: %v", err)
 	}
 
-	// Standard correction letter usage condition text
-	xCondUso := "A Carta de Correcao e disciplinada pelo paragrafo " +
-		"1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 " +
-		"e pode ser utilizada para regularizacao de erro ocorrido " +
-		"na emissao de documento fiscal, desde que o erro nao esteja " +
-		"relacionado com: I - as variaveis que determinam o valor " +
-		"do imposto tais como: base de calculo, aliquota, " +
-		"diferenca de preco, quantidade, valor da operacao ou da " +
-		"prestacao; II - a correcao de dados cadastrais que implique " +
-		"mudanca do remetente ou do destinatario; III - a data de " +
-		"emissao ou de saida."
+	// Create additional XML tags for CCe
+	tagAdic := CreateCCeTagAdic(req.Correcao, req.XCondUso)
 
-	tagAdic := fmt.Sprintf("<xCorrecao>%s</xCorrecao><xCondUso>%s</xCondUso>", xCorrecao, xCondUso)
-
-	return t.SefazEvento(ctx, chave, EVT_CCE, nSeqEvento, tagAdic, dhEvento, lote)
+	return t.SefazEvento(ctx, req.ChaveNFe, CCeTypeEvent, req.Sequencia, tagAdic, req.DhEvento, req.Lote)
 }
 
 // SefazCancela sends a cancellation event to SEFAZ

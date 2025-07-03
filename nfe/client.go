@@ -493,14 +493,10 @@ func (c *NFEClient) GetCancellationDeadline(dhAutorizacao time.Time) time.Time {
 
 // CCe sends a carta de correção eletrônica (electronic correction letter).
 func (c *NFEClient) CCe(ctx context.Context, chave, correcao string, sequencia int) (*EventResponse, error) {
-	if len(chave) != 44 {
-		return nil, fmt.Errorf("invalid access key length: expected 44, got %d", len(chave))
-	}
-	if len(correcao) < 15 {
-		return nil, fmt.Errorf("correction must be at least 15 characters")
-	}
-	if sequencia < 1 {
-		return nil, fmt.Errorf("sequence must be greater than 0")
+	// Create and validate CCe request using the new validation functions
+	req, err := CreateCCeRequest(chave, correcao, sequencia)
+	if err != nil {
+		return nil, fmt.Errorf("CCe request validation failed: %v", err)
 	}
 
 	if err := c.ensureTools(); err != nil {
@@ -508,12 +504,51 @@ func (c *NFEClient) CCe(ctx context.Context, chave, correcao string, sequencia i
 	}
 
 	// Use the new SefazCCe function
-	response, err := c.tools.SefazCCe(ctx, chave, correcao, sequencia, nil, "")
+	response, err := c.tools.SefazCCe(ctx, req.ChaveNFe, req.Correcao, req.Sequencia, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to send CCe: %v", err)
 	}
 
 	return c.convertToEventResponse(response, "cce"), nil
+}
+
+// CCeWithRequest sends a CCe using a pre-built CCeRequest structure.
+func (c *NFEClient) CCeWithRequest(ctx context.Context, req *CCeRequest) (*CCeResponse, error) {
+	if err := ValidarCCe(req); err != nil {
+		return nil, fmt.Errorf("CCe request validation failed: %v", err)
+	}
+
+	if err := c.ensureTools(); err != nil {
+		return nil, err
+	}
+
+	// Use the new SefazCCe function
+	response, err := c.tools.SefazCCe(ctx, req.ChaveNFe, req.Correcao, req.Sequencia, req.DhEvento, req.Lote)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send CCe: %v", err)
+	}
+
+	return c.convertToCCeResponse(response, req), nil
+}
+
+// CanSendCCe checks if a CCe can be sent for the given NFe and sequence.
+func (c *NFEClient) CanSendCCe(chave string, authorized bool, sequencia int) (bool, error) {
+	// Validate NFe key
+	if err := ValidateNFeKey(chave); err != nil {
+		return false, fmt.Errorf("invalid NFe key: %v", err)
+	}
+
+	return CanSendCCe(authorized, sequencia)
+}
+
+// GetNextCCeSequence calculates the next valid sequence number for CCe.
+func (c *NFEClient) GetNextCCeSequence(lastSequence int) (int, error) {
+	return GetNextSequence(lastSequence)
+}
+
+// GetCCeLimit returns the maximum number of CCe that can be sent for an NFe.
+func (c *NFEClient) GetCCeLimit() int {
+	return CCeMaxSequence
 }
 
 // Manifesta sends a manifestation event for received NFe.
@@ -1001,6 +1036,49 @@ func (c *NFEClient) convertToCancelamentoResponse(response *EventResponseNFe, ch
 	}
 
 	return cancelResponse
+}
+
+func (c *NFEClient) convertToCCeResponse(response *EventResponseNFe, req *CCeRequest) *CCeResponse {
+	cceResponse := &CCeResponse{
+		Key:         req.ChaveNFe,
+		Sequence:    req.Sequencia,
+		EventType:   "CCe",
+		Correction:  req.Correcao,
+		ProcessedAt: time.Now(),
+	}
+
+	if response != nil && len(response.RetEvento) > 0 {
+		retEvento := response.RetEvento[0]
+		
+		// Convert status
+		status := 0
+		if statusInt, err := strconv.Atoi(retEvento.InfEvento.CStat); err == nil {
+			status = statusInt
+		}
+
+		cceResponse.Success = IsCCeSuccessful(status)
+		cceResponse.Status = status
+		cceResponse.StatusText = GetCCeStatusText(status)
+		cceResponse.Protocol = retEvento.InfEvento.NProt
+
+		// Add messages
+		if retEvento.InfEvento.XMotivo != "" {
+			cceResponse.Messages = []ResponseMessage{
+				{
+					Code:    retEvento.InfEvento.CStat,
+					Message: retEvento.InfEvento.XMotivo,
+					Type:    "info",
+				},
+			}
+		}
+	} else {
+		// Fallback for nil response
+		cceResponse.Success = false
+		cceResponse.Status = 0
+		cceResponse.StatusText = "No response received"
+	}
+
+	return cceResponse
 }
 
 // Authorized returns true if the authorization response indicates success.

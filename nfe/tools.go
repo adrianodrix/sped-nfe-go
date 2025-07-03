@@ -574,8 +574,31 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 			fmt.Printf("[DEBUG] ID do elemento para assinar: %s\n", idInut)
 
 			// Sign the XML using XMLDSig
+			// For NFe/inutilization, the signature should be placed at the inutNFe level,
+			// not inside infInut, to comply with SEFAZ schema
 			signer := certificate.CreateXMLDSigSigner(cert)
-			signResult, err := signer.SignXMLElement(string(requestXML), idInut)
+			
+			// Use SignNFeXML which places signature correctly for NFe documents
+			// We need to temporarily rename infInut to infNFe for compatibility
+			tempXML := strings.ReplaceAll(string(requestXML), "<infInut ", "<infNFe ")
+			tempXML = strings.ReplaceAll(tempXML, "</infInut>", "</infNFe>")
+			tempXML = strings.ReplaceAll(tempXML, "<inutNFe ", "<NFe ")
+			tempXML = strings.ReplaceAll(tempXML, "</inutNFe>", "</NFe>")
+			
+			signResult, err := signer.SignNFeXML(tempXML)
+			if err != nil {
+				// Fallback to element signing if NFe signing fails
+				signResult, err = signer.SignXMLElement(string(requestXML), idInut)
+			}
+			
+			if err == nil {
+				// Restore original element names
+				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "<infNFe ", "<infInut ")
+				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "</infNFe>", "</infInut>")
+				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "<NFe ", "<inutNFe ")
+				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "</NFe>", "</inutNFe>")
+			}
+			
 			if err != nil {
 				return nil, fmt.Errorf("failed to sign inutilization XML: %v", err)
 			}

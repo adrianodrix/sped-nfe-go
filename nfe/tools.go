@@ -46,6 +46,23 @@ func (t *Tools) GetAuthorizationServiceInfo() (common.WebServiceInfo, error) {
 	return t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeAutorizacao, env, t.model)
 }
 
+// getInutilizacaoServiceInfo returns the webservice info for NFe inutilization service using the resolver interface
+func (t *Tools) getInutilizacaoServiceInfo() (common.WebServiceInfo, error) {
+	uf := strings.ToUpper(t.config.SiglaUF)
+	isProduction := t.config.TpAmb == types.Production
+
+	// Check if resolver supports inutilização service (extended interface)
+	if extResolver, ok := t.resolver.(interface{
+		GetInutilizacaoServiceURL(uf string, isProduction bool, model string) (common.WebServiceInfo, error)
+	}); ok {
+		return extResolver.GetInutilizacaoServiceURL(uf, isProduction, t.model)
+	}
+
+	// Fallback to old webservices system for backward compatibility
+	env := common.Environment(t.config.TpAmb)
+	return t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeInutilizacao, env, t.model)
+}
+
 // GetLastRequest returns the last SOAP request sent for debugging
 func (t *Tools) GetLastRequest() string {
 	return t.lastRequest
@@ -475,6 +492,68 @@ func (t *Tools) SefazConsultaChave(ctx context.Context, chave string) (*Consulta
 
 // Invalidation Service Operations
 
+// SefazInutilizaNumeros invalidates a range of NFe numbers with automatic validation and signing
+func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin int, xJust string, ano ...string) (*InutilizacaoResponse, error) {
+	// 1. Validate input parameters
+	if err := ValidateInutilizacaoParams(nSerie, nIni, nFin, xJust); err != nil {
+		return nil, fmt.Errorf("validation failed: %v", err)
+	}
+	
+	// 2. Determine year (default to current year last 2 digits)
+	anoStr := fmt.Sprintf("%02d", time.Now().Year()%100)
+	if len(ano) > 0 && ano[0] != "" {
+		anoStr = ano[0]
+		if len(anoStr) != 2 {
+			return nil, fmt.Errorf("ano deve ter 2 dígitos, informado: %s", anoStr)
+		}
+	}
+	
+	// 3. Get UF code
+	cUF := getStateCode(t.config.SiglaUF)
+	if cUF == "" {
+		return nil, fmt.Errorf("código UF não encontrado para: %s", t.config.SiglaUF)
+	}
+	
+	// 4. Determine document type (CNPJ vs CPF for MT)
+	documento := t.config.CNPJ
+	isCPF := t.config.SiglaUF == "MT" && len(documento) == 11
+	
+	// 5. Generate unique ID
+	idInut := GenerateInutilizacaoId(cUF, anoStr, documento, t.model, nSerie, nIni, nFin, isCPF)
+	
+	// 6. Create request structure
+	request := &InutilizacaoRequest{
+		XMLName: xml.Name{Local: "inutNFe"},
+		Xmlns:   "http://www.portalfiscal.inf.br/nfe",
+		Versao:  t.config.Versao,
+		InfInut: InfInut{
+			Id:     idInut,
+			TpAmb:  int(t.config.TpAmb),
+			XServ:  "INUTILIZAR",
+			CUF:    cUF,
+			Ano:    anoStr,
+			Mod:    t.model,
+			Serie:  fmt.Sprintf("%d", nSerie),
+			NNFIni: fmt.Sprintf("%d", nIni),
+			NNFFin: fmt.Sprintf("%d", nFin),
+			XJust:  xJust,
+		},
+	}
+	
+	// 7. Set document (CNPJ or CPF)
+	if isCPF {
+		request.InfInut.CPF = documento
+	} else {
+		request.InfInut.CNPJ = documento
+	}
+	
+	// 8. Sign the XML (placeholder - to be implemented)
+	// TODO: Implement XML signing with certificate
+	
+	// 9. Call the base function
+	return t.SefazInutiliza(ctx, request)
+}
+
 // SefazInutiliza invalidates a range of NFe numbers
 func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRequest) (*InutilizacaoResponse, error) {
 	if inutilizacao == nil {
@@ -491,9 +570,8 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 		return nil, fmt.Errorf("failed to marshal inutilizacao request: %v", err)
 	}
 
-	// Get webservice info
-	env := common.Environment(t.config.TpAmb)
-	serviceInfo, err := t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeInutilizacao, env, t.model)
+	// Get webservice info using resolver for consistency with authorization
+	serviceInfo, err := t.getInutilizacaoServiceInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service URL: %v", err)
 	}

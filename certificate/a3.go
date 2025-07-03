@@ -261,6 +261,15 @@ func (a3 *A3Certificate) GetPublicKey() crypto.PublicKey {
 	return a3.certificate.PublicKey
 }
 
+// GetPrivateKey returns the certificate's private key for TLS authentication
+// Note: For A3 certificates, this returns the PKCS#11 Signer interface
+func (a3 *A3Certificate) GetPrivateKey() crypto.PrivateKey {
+	a3.mutex.RLock()
+	defer a3.mutex.RUnlock()
+
+	return a3.privateKey
+}
+
 // GetCertificate returns the X.509 certificate
 func (a3 *A3Certificate) GetCertificate() *x509.Certificate {
 	a3.mutex.RLock()

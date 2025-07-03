@@ -3,6 +3,7 @@ package nfe
 
 import (
 	"context"
+	"crypto"
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
@@ -573,36 +574,52 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 			fmt.Printf("[DEBUG] XML antes da assinatura: %s\n", string(requestXML))
 			fmt.Printf("[DEBUG] ID do elemento para assinar: %s\n", idInut)
 
-			// Sign the XML using XMLDSig
+			// Sign the XML using XMLDSig with specific SEFAZ configuration
 			// For NFe/inutilization, the signature should be placed at the inutNFe level,
 			// not inside infInut, to comply with SEFAZ schema
-			signer := certificate.CreateXMLDSigSigner(cert)
 			
-			// Use SignNFeXML which places signature correctly for NFe documents
-			// We need to temporarily rename infInut to infNFe for compatibility
-			tempXML := strings.ReplaceAll(string(requestXML), "<infInut ", "<infNFe ")
-			tempXML = strings.ReplaceAll(tempXML, "</infInut>", "</infNFe>")
-			tempXML = strings.ReplaceAll(tempXML, "<inutNFe ", "<NFe ")
-			tempXML = strings.ReplaceAll(tempXML, "</inutNFe>", "</NFe>")
-			
-			signResult, err := signer.SignNFeXML(tempXML)
-			if err != nil {
-				// Fallback to element signing if NFe signing fails
-				signResult, err = signer.SignXMLElement(string(requestXML), idInut)
+			// Create SEFAZ-specific XMLDSig configuration for inutilization
+			// Following SEFAZ manual requirements:
+			// - Must have Reference URI pointing to Id attribute
+			// - Must have C14N and Enveloped Transform Algorithms
+			sefazConfig := &certificate.XMLDSigConfig{
+				SignatureMethod:        "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+				DigestMethod:           "http://www.w3.org/2000/09/xmldsig#sha1",
+				CanonicalizationMethod: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+				// SEFAZ requires exactly these transforms in this order
+				TransformMethods:       []string{"http://www.w3.org/2000/09/xmldsig#enveloped-signature", "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"},
+				IncludeCertificate:     true,
+				IncludeKeyInfo:         true,
+				SignatureLocation:      certificate.LocationAsLastChild,
+				NamespacePrefix:        "",
+				HashAlgorithm:          crypto.SHA1,
 			}
 			
-			if err == nil {
-				// Restore original element names
-				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "<infNFe ", "<infInut ")
-				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "</infNFe>", "</infInut>")
-				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "<NFe ", "<inutNFe ")
-				signResult.SignedXML = strings.ReplaceAll(signResult.SignedXML, "</NFe>", "</inutNFe>")
-			}
+			signer := certificate.NewXMLDSigSigner(cert, sefazConfig)
+			
+			// For inutilization, we need to sign the infInut element but place the signature
+			// at the inutNFe level. The Reference URI must point to the infInut Id.
+			// This is a custom approach for SEFAZ inutilization requirements.
+			
+			// Sign the entire document referencing the infInut element
+			signResult, err := signer.SignXML(string(requestXML))
 			
 			if err != nil {
 				return nil, fmt.Errorf("failed to sign inutilization XML: %v", err)
 			}
 
+			if err == nil {
+				// Ensure the Reference URI points to the correct ID
+				// Replace any empty URI with the correct reference
+				signedXML := signResult.SignedXML
+				if !strings.Contains(signedXML, fmt.Sprintf(`URI="#%s"`, idInut)) {
+					// Fix the Reference URI to point to the infInut ID
+					signedXML = strings.ReplaceAll(signedXML, `<Reference URI=""`, fmt.Sprintf(`<Reference URI="#%s"`, idInut))
+					signedXML = strings.ReplaceAll(signedXML, `<Reference>`, fmt.Sprintf(`<Reference URI="#%s">`, idInut))
+					signResult.SignedXML = signedXML
+				}
+			}
+			
 			fmt.Printf("[DEBUG] XML após assinatura: %s\n", signResult.SignedXML)
 			
 			// Use the signed XML directly instead of unmarshaling/marshaling

@@ -17,32 +17,32 @@ type CanonicalizationMethod string
 const (
 	// C14N10Inclusive represents Canonical XML 1.0 (inclusive)
 	C14N10Inclusive CanonicalizationMethod = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
-	
+
 	// C14N10Exclusive represents Canonical XML 1.0 (exclusive)
 	C14N10Exclusive CanonicalizationMethod = "http://www.w3.org/2001/10/xml-exc-c14n#"
-	
+
 	// C14N11Inclusive represents Canonical XML 1.1 (inclusive)
 	C14N11Inclusive CanonicalizationMethod = "http://www.w3.org/2006/12/xml-c14n11"
-	
+
 	// C14N11Exclusive represents Canonical XML 1.1 (exclusive)
 	C14N11Exclusive CanonicalizationMethod = "http://www.w3.org/2006/12/xml-c14n11#WithComments"
 )
 
 // XMLCanonicalizer provides XML canonicalization functionality
 type XMLCanonicalizer struct {
-	method         CanonicalizationMethod
+	method          CanonicalizationMethod
 	inclusivePrefix string
-	withComments   bool
+	withComments    bool
 }
 
 // CanonicalizationConfig holds configuration for XML canonicalization
 type CanonicalizationConfig struct {
-	Method           CanonicalizationMethod `json:"method"`
-	InclusivePrefix  string                 `json:"inclusivePrefix"`
-	WithComments     bool                   `json:"withComments"`
-	TrimWhitespace   bool                   `json:"trimWhitespace"`
-	SortAttributes   bool                   `json:"sortAttributes"`
-	RemoveXMLDecl    bool                   `json:"removeXmlDecl"`
+	Method          CanonicalizationMethod `json:"method"`
+	InclusivePrefix string                 `json:"inclusivePrefix"`
+	WithComments    bool                   `json:"withComments"`
+	TrimWhitespace  bool                   `json:"trimWhitespace"`
+	SortAttributes  bool                   `json:"sortAttributes"`
+	RemoveXMLDecl   bool                   `json:"removeXmlDecl"`
 }
 
 // NewXMLCanonicalizer creates a new XML canonicalizer
@@ -50,11 +50,11 @@ func NewXMLCanonicalizer(config *CanonicalizationConfig) *XMLCanonicalizer {
 	if config == nil {
 		config = DefaultCanonicalizationConfig()
 	}
-	
+
 	return &XMLCanonicalizer{
-		method:         config.Method,
+		method:          config.Method,
 		inclusivePrefix: config.InclusivePrefix,
-		withComments:   config.WithComments,
+		withComments:    config.WithComments,
 	}
 }
 
@@ -75,13 +75,13 @@ func (canonicalizer *XMLCanonicalizer) Canonicalize(xmlContent string) ([]byte, 
 	if xmlContent == "" {
 		return nil, errors.NewValidationError("XML content cannot be empty", "xmlContent", "")
 	}
-	
+
 	// Parse XML document
 	doc := etree.NewDocument()
 	if err := doc.ReadFromString(xmlContent); err != nil {
 		return nil, errors.NewValidationError("failed to parse XML", "xml", err.Error())
 	}
-	
+
 	return canonicalizer.CanonicalizeDocument(doc)
 }
 
@@ -90,24 +90,24 @@ func (canonicalizer *XMLCanonicalizer) CanonicalizeDocument(doc *etree.Document)
 	if doc == nil {
 		return nil, errors.NewValidationError("document cannot be nil", "document", "")
 	}
-	
+
 	root := doc.Root()
 	if root == nil {
 		return nil, errors.NewValidationError("document has no root element", "root", "")
 	}
-	
+
 	// Apply canonicalization
 	canonicalizedRoot := canonicalizer.canonicalizeElement(root)
-	
+
 	// Create new document with canonicalized root
 	canonDoc := etree.NewDocument()
 	canonDoc.SetRoot(canonicalizedRoot)
-	
+
 	// Configure output settings for canonicalization
 	doc.WriteSettings.CanonicalEndTags = true
 	doc.WriteSettings.CanonicalText = true
 	doc.WriteSettings.CanonicalAttrVal = true
-	
+
 	return canonDoc.WriteToBytes()
 }
 
@@ -116,18 +116,18 @@ func (canonicalizer *XMLCanonicalizer) CanonicalizeElement(element *etree.Elemen
 	if element == nil {
 		return nil, errors.NewValidationError("element cannot be nil", "element", "")
 	}
-	
+
 	canonicalizedElement := canonicalizer.canonicalizeElement(element)
-	
+
 	// Create temporary document
 	tempDoc := etree.NewDocument()
 	tempDoc.SetRoot(canonicalizedElement)
-	
+
 	// Configure output settings for canonicalization
 	tempDoc.WriteSettings.CanonicalEndTags = true
 	tempDoc.WriteSettings.CanonicalText = true
 	tempDoc.WriteSettings.CanonicalAttrVal = true
-	
+
 	return tempDoc.WriteToBytes()
 }
 
@@ -135,13 +135,13 @@ func (canonicalizer *XMLCanonicalizer) CanonicalizeElement(element *etree.Elemen
 func (canonicalizer *XMLCanonicalizer) canonicalizeElement(element *etree.Element) *etree.Element {
 	// Create a copy of the element
 	canonical := element.Copy()
-	
+
 	// Sort attributes according to C14N rules
 	canonicalizer.sortAttributes(canonical)
-	
+
 	// Normalize namespace declarations
 	canonicalizer.normalizeNamespaces(canonical)
-	
+
 	// Process child elements recursively
 	for _, child := range canonical.Child {
 		if childElement, ok := child.(*etree.Element); ok {
@@ -154,12 +154,12 @@ func (canonicalizer *XMLCanonicalizer) canonicalizeElement(element *etree.Elemen
 			canonicalizer.normalizeText(charData)
 		}
 	}
-	
+
 	// Remove comments if not preserving them
 	if !canonicalizer.withComments {
 		canonicalizer.removeComments(canonical)
 	}
-	
+
 	return canonical
 }
 
@@ -168,11 +168,11 @@ func (canonicalizer *XMLCanonicalizer) sortAttributes(element *etree.Element) {
 	if len(element.Attr) <= 1 {
 		return
 	}
-	
+
 	// Separate namespace declarations from regular attributes
 	var nsAttrs []etree.Attr
 	var regularAttrs []etree.Attr
-	
+
 	for _, attr := range element.Attr {
 		if attr.Space == "xmlns" || attr.Key == "xmlns" {
 			nsAttrs = append(nsAttrs, attr)
@@ -180,7 +180,7 @@ func (canonicalizer *XMLCanonicalizer) sortAttributes(element *etree.Element) {
 			regularAttrs = append(regularAttrs, attr)
 		}
 	}
-	
+
 	// Sort namespace declarations
 	sort.Slice(nsAttrs, func(i, j int) bool {
 		// xmlns comes before xmlns:prefix
@@ -192,7 +192,7 @@ func (canonicalizer *XMLCanonicalizer) sortAttributes(element *etree.Element) {
 		}
 		return nsAttrs[i].Key < nsAttrs[j].Key
 	})
-	
+
 	// Sort regular attributes
 	sort.Slice(regularAttrs, func(i, j int) bool {
 		// Compare by namespace URI first, then by local name
@@ -201,7 +201,7 @@ func (canonicalizer *XMLCanonicalizer) sortAttributes(element *etree.Element) {
 		}
 		return regularAttrs[i].Key < regularAttrs[j].Key
 	})
-	
+
 	// Rebuild attribute list: namespace declarations first, then regular attributes
 	element.Attr = nil
 	element.Attr = append(element.Attr, nsAttrs...)
@@ -219,10 +219,10 @@ func (canonicalizer *XMLCanonicalizer) normalizeNamespaces(element *etree.Elemen
 // removeUnusedNamespaces removes namespace declarations that are not used
 func (canonicalizer *XMLCanonicalizer) removeUnusedNamespaces(element *etree.Element) {
 	usedNamespaces := make(map[string]bool)
-	
+
 	// Collect used namespaces from element and its descendants
 	canonicalizer.collectUsedNamespaces(element, usedNamespaces)
-	
+
 	// Remove unused namespace declarations
 	var filteredAttrs []etree.Attr
 	for _, attr := range element.Attr {
@@ -238,7 +238,7 @@ func (canonicalizer *XMLCanonicalizer) removeUnusedNamespaces(element *etree.Ele
 			filteredAttrs = append(filteredAttrs, attr)
 		}
 	}
-	
+
 	element.Attr = filteredAttrs
 }
 
@@ -248,14 +248,14 @@ func (canonicalizer *XMLCanonicalizer) collectUsedNamespaces(element *etree.Elem
 	if element.Space != "" {
 		used[element.Space] = true
 	}
-	
+
 	// Mark namespaces used in attributes
 	for _, attr := range element.Attr {
 		if attr.Space != "" && attr.Space != "xmlns" {
 			used[attr.Space] = true
 		}
 	}
-	
+
 	// Recursively process child elements
 	for _, child := range element.Child {
 		if childElement, ok := child.(*etree.Element); ok {
@@ -269,7 +269,7 @@ func (canonicalizer *XMLCanonicalizer) isInclusivePrefix(prefix string) bool {
 	if canonicalizer.inclusivePrefix == "" {
 		return false
 	}
-	
+
 	prefixes := strings.Split(canonicalizer.inclusivePrefix, " ")
 	for _, p := range prefixes {
 		if strings.TrimSpace(p) == prefix {
@@ -290,18 +290,18 @@ func (canonicalizer *XMLCanonicalizer) normalizeText(charData *etree.CharData) {
 // removeComments removes comment nodes from the element tree
 func (canonicalizer *XMLCanonicalizer) removeComments(element *etree.Element) {
 	var filteredChildren []etree.Token
-	
+
 	for _, child := range element.Child {
 		if _, isComment := child.(*etree.Comment); !isComment {
 			filteredChildren = append(filteredChildren, child)
-			
+
 			// Recursively remove comments from child elements
 			if childElement, ok := child.(*etree.Element); ok {
 				canonicalizer.removeComments(childElement)
 			}
 		}
 	}
-	
+
 	element.Child = filteredChildren
 }
 
@@ -317,7 +317,7 @@ func EnvelopedSignatureTransform(xmlContent string) ([]byte, error) {
 	if err := doc.ReadFromString(xmlContent); err != nil {
 		return nil, errors.NewValidationError("failed to parse XML", "xml", err.Error())
 	}
-	
+
 	// Remove signature elements
 	for {
 		sigElement := doc.FindElement(".//ds:Signature")
@@ -326,7 +326,7 @@ func EnvelopedSignatureTransform(xmlContent string) ([]byte, error) {
 		}
 		sigElement.Parent().RemoveChild(sigElement)
 	}
-	
+
 	// Apply canonicalization
 	canonicalizer := NewXMLCanonicalizer(DefaultCanonicalizationConfig())
 	return canonicalizer.CanonicalizeDocument(doc)
@@ -338,9 +338,9 @@ func CanonicalizeForSigning(xmlContent string, elementID string) ([]byte, error)
 	if err := doc.ReadFromString(xmlContent); err != nil {
 		return nil, errors.NewValidationError("failed to parse XML", "xml", err.Error())
 	}
-	
+
 	var elementToCanonnicalize *etree.Element
-	
+
 	if elementID != "" {
 		// Find specific element by ID
 		selectors := []string{
@@ -348,14 +348,14 @@ func CanonicalizeForSigning(xmlContent string, elementID string) ([]byte, error)
 			fmt.Sprintf(".//*[@id='%s']", elementID),
 			fmt.Sprintf(".//*[@ID='%s']", elementID),
 		}
-		
+
 		for _, selector := range selectors {
 			if element := doc.FindElement(selector); element != nil {
 				elementToCanonnicalize = element
 				break
 			}
 		}
-		
+
 		if elementToCanonnicalize == nil {
 			return nil, errors.NewValidationError("element with specified ID not found", "elementID", elementID)
 		}
@@ -363,7 +363,7 @@ func CanonicalizeForSigning(xmlContent string, elementID string) ([]byte, error)
 		// Use root element
 		elementToCanonnicalize = doc.Root()
 	}
-	
+
 	// Remove any existing signature elements from the element being signed
 	for {
 		sigElement := elementToCanonnicalize.FindElement(".//ds:Signature")
@@ -372,7 +372,7 @@ func CanonicalizeForSigning(xmlContent string, elementID string) ([]byte, error)
 		}
 		elementToCanonnicalize.RemoveChild(sigElement)
 	}
-	
+
 	// Apply canonicalization
 	canonicalizer := NewXMLCanonicalizer(DefaultCanonicalizationConfig())
 	return canonicalizer.CanonicalizeElement(elementToCanonnicalize)
@@ -381,29 +381,29 @@ func CanonicalizeForSigning(xmlContent string, elementID string) ([]byte, error)
 // ValidateCanonicalForm validates if XML is in canonical form
 func ValidateCanonicalForm(xmlContent string) error {
 	canonicalizer := NewXMLCanonicalizer(DefaultCanonicalizationConfig())
-	
+
 	// Canonicalize the content
 	canonicalized, err := canonicalizer.Canonicalize(xmlContent)
 	if err != nil {
 		return err
 	}
-	
+
 	// Compare with original (simplified check)
 	doc := etree.NewDocument()
 	if err := doc.ReadFromString(xmlContent); err != nil {
 		return errors.NewValidationError("failed to parse original XML", "xml", err.Error())
 	}
-	
+
 	original, err := doc.WriteToBytes()
 	if err != nil {
 		return errors.NewValidationError("failed to serialize original XML", "xml", err.Error())
 	}
-	
+
 	// Simple byte comparison (in practice, you might want more sophisticated comparison)
 	if !bytes.Equal(canonicalized, original) {
 		return errors.NewValidationError("XML is not in canonical form", "form", "not-canonical")
 	}
-	
+
 	return nil
 }
 

@@ -429,7 +429,7 @@ func (c *NFEClient) Cancel(ctx context.Context, chave, justificativa string) (*E
 		return nil, fmt.Errorf("failed to create cancellation event: %v", err)
 	}
 
-	// Convert the old event request to the new format  
+	// Convert the old event request to the new format
 	response, err := c.tools.SefazCancela(ctx, chave, justificativa, eventoReq.Evento[0].InfEvento.DetEvento.NProt, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to cancel NFe: %v", err)
@@ -863,7 +863,7 @@ func (c *NFEClient) convertToEventResponse(response interface{}, eventType strin
 			event.Status = statusCode
 		}
 		event.StatusText = nfeResp.XMotivo
-		
+
 		// Add event protocol if available
 		if len(nfeResp.RetEvento) > 0 {
 			event.Protocol = nfeResp.RetEvento[0].InfEvento.NProt

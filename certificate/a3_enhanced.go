@@ -25,17 +25,17 @@ type PKCS11ConfigExtended struct {
 	TokenLabel  string `json:"tokenLabel"`
 	PIN         string `json:"pin"`
 	Slot        *uint  `json:"slot,omitempty"`
-	
+
 	// Extended configuration
 	CertificateLabel string `json:"certificateLabel,omitempty"`
 	CertificateID    string `json:"certificateId,omitempty"`
-	
+
 	// Connection settings
-	MaxSessions      int           `json:"maxSessions"`
-	SessionTimeout   time.Duration `json:"sessionTimeout"`
-	RetryAttempts    int           `json:"retryAttempts"`
-	RetryDelay       time.Duration `json:"retryDelay"`
-	
+	MaxSessions    int           `json:"maxSessions"`
+	SessionTimeout time.Duration `json:"sessionTimeout"`
+	RetryAttempts  int           `json:"retryAttempts"`
+	RetryDelay     time.Duration `json:"retryDelay"`
+
 	// Security settings
 	ForceAuthentication bool `json:"forceAuthentication"`
 	LogSensitiveData    bool `json:"logSensitiveData"`
@@ -43,26 +43,26 @@ type PKCS11ConfigExtended struct {
 
 // A3TokenInfo contains information about a PKCS#11 token
 type A3TokenInfo struct {
-	SlotID          uint   `json:"slotId"`
-	TokenLabel      string `json:"tokenLabel"`
-	ManufacturerID  string `json:"manufacturerId"`
-	Model           string `json:"model"`
-	SerialNumber    string `json:"serialNumber"`
-	IsInitialized   bool   `json:"isInitialized"`
-	HasTokenPresent bool   `json:"hasTokenPresent"`
-	IsWriteProtected bool  `json:"isWriteProtected"`
-	LoginRequired   bool   `json:"loginRequired"`
+	SlotID           uint   `json:"slotId"`
+	TokenLabel       string `json:"tokenLabel"`
+	ManufacturerID   string `json:"manufacturerId"`
+	Model            string `json:"model"`
+	SerialNumber     string `json:"serialNumber"`
+	IsInitialized    bool   `json:"isInitialized"`
+	HasTokenPresent  bool   `json:"hasTokenPresent"`
+	IsWriteProtected bool   `json:"isWriteProtected"`
+	LoginRequired    bool   `json:"loginRequired"`
 }
 
 // A3CertificateDetails contains detailed information about an A3 certificate
 type A3CertificateDetails struct {
-	CertificateInfo *CertificateInfo `json:"certificateInfo"`
-	TokenInfo       *A3TokenInfo     `json:"tokenInfo"`
-	Label           string           `json:"label"`
-	ID              []byte           `json:"id"`
-	IsPrivateKeyAccessible bool     `json:"isPrivateKeyAccessible"`
-	KeySize         int             `json:"keySize"`
-	Usage           []string        `json:"usage"`
+	CertificateInfo        *CertificateInfo `json:"certificateInfo"`
+	TokenInfo              *A3TokenInfo     `json:"tokenInfo"`
+	Label                  string           `json:"label"`
+	ID                     []byte           `json:"id"`
+	IsPrivateKeyAccessible bool             `json:"isPrivateKeyAccessible"`
+	KeySize                int              `json:"keySize"`
+	Usage                  []string         `json:"usage"`
 }
 
 // NewA3CertificateManager creates a new A3 certificate manager
@@ -70,7 +70,7 @@ func NewA3CertificateManager(config *PKCS11ConfigExtended) *A3CertificateManager
 	if config == nil {
 		config = DefaultPKCS11ConfigExtended()
 	}
-	
+
 	return &A3CertificateManager{
 		contexts: make(map[string]*crypto11.Context),
 		config:   convertToPKCS11Config(config),
@@ -95,33 +95,33 @@ func DefaultPKCS11ConfigExtended() *PKCS11ConfigExtended {
 func (manager *A3CertificateManager) ListAvailableTokens() ([]*A3TokenInfo, error) {
 	manager.mutex.RLock()
 	defer manager.mutex.RUnlock()
-	
+
 	// Create a temporary context to test connection
 	tempConfig := &crypto11.Config{
 		Path: manager.config.LibraryPath,
 	}
-	
+
 	ctx, err := crypto11.Configure(tempConfig)
 	if err != nil {
 		return nil, errors.NewCertificateError("failed to configure PKCS#11", err)
 	}
 	defer ctx.Close()
-	
+
 	// Return a simplified token list since detailed enumeration is not available
 	tokens := []*A3TokenInfo{
 		{
-			SlotID:          0,
-			TokenLabel:      "Available Token",
-			ManufacturerID:  "Unknown",
-			Model:           "Generic PKCS#11 Token",
-			SerialNumber:    "000000000",
-			IsInitialized:   true,
-			HasTokenPresent: true,
+			SlotID:           0,
+			TokenLabel:       "Available Token",
+			ManufacturerID:   "Unknown",
+			Model:            "Generic PKCS#11 Token",
+			SerialNumber:     "000000000",
+			IsInitialized:    true,
+			HasTokenPresent:  true,
 			IsWriteProtected: false,
-			LoginRequired:   true,
+			LoginRequired:    true,
 		},
 	}
-	
+
 	return tokens, nil
 }
 
@@ -129,11 +129,11 @@ func (manager *A3CertificateManager) ListAvailableTokens() ([]*A3TokenInfo, erro
 func (manager *A3CertificateManager) LoadCertificateFromToken(tokenLabel, pin string) (*A3Certificate, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
-	
+
 	// Check if context already exists for this token
 	contextKey := fmt.Sprintf("%s:%s", tokenLabel, manager.config.LibraryPath)
 	ctx, exists := manager.contexts[contextKey]
-	
+
 	if !exists {
 		// Create new context
 		config := &crypto11.Config{
@@ -141,16 +141,16 @@ func (manager *A3CertificateManager) LoadCertificateFromToken(tokenLabel, pin st
 			TokenLabel: tokenLabel,
 			Pin:        pin,
 		}
-		
+
 		var err error
 		ctx, err = crypto11.Configure(config)
 		if err != nil {
 			return nil, errors.NewCertificateError("failed to configure PKCS#11 for token", err)
 		}
-		
+
 		manager.contexts[contextKey] = ctx
 	}
-	
+
 	// Find certificate and private key using existing A3 loader
 	a3Loader := NewA3CertificateLoader(DefaultConfig())
 	pkcs11Config := &PKCS11Config{
@@ -158,12 +158,12 @@ func (manager *A3CertificateManager) LoadCertificateFromToken(tokenLabel, pin st
 		TokenLabel:  tokenLabel,
 		PIN:         pin,
 	}
-	
+
 	a3Cert, err := a3Loader.LoadFromToken(pkcs11Config)
 	if err != nil {
 		return nil, errors.NewCertificateError("failed to load certificate from token", err)
 	}
-	
+
 	return a3Cert, nil
 }
 
@@ -175,31 +175,31 @@ func (manager *A3CertificateManager) GetCertificateDetails(tokenLabel, pin strin
 		return nil, err
 	}
 	defer a3Cert.Close()
-	
+
 	cert := a3Cert.GetCertificate()
 	if cert == nil {
 		return nil, errors.NewCertificateError("no certificate available", nil)
 	}
-	
+
 	certInfo := GetCertificateInfo(cert, TypeA3)
 	tokenInfo := &A3TokenInfo{
-		SlotID:          0,
-		TokenLabel:      tokenLabel,
-		ManufacturerID:  "Unknown",
-		Model:           "PKCS#11 Token",
-		SerialNumber:    "Unknown",
-		IsInitialized:   true,
-		HasTokenPresent: true,
+		SlotID:           0,
+		TokenLabel:       tokenLabel,
+		ManufacturerID:   "Unknown",
+		Model:            "PKCS#11 Token",
+		SerialNumber:     "Unknown",
+		IsInitialized:    true,
+		HasTokenPresent:  true,
 		IsWriteProtected: false,
-		LoginRequired:   true,
+		LoginRequired:    true,
 	}
-	
+
 	// Get key size
 	keySize := GetCertificateKeySize(cert)
-	
+
 	// Get key usage
 	usage := getKeyUsageStrings(cert)
-	
+
 	detail := &A3CertificateDetails{
 		CertificateInfo:        certInfo,
 		TokenInfo:              tokenInfo,
@@ -209,7 +209,7 @@ func (manager *A3CertificateManager) GetCertificateDetails(tokenLabel, pin strin
 		KeySize:                keySize,
 		Usage:                  usage,
 	}
-	
+
 	return []*A3CertificateDetails{detail}, nil
 }
 
@@ -220,20 +220,20 @@ func (manager *A3CertificateManager) TestTokenConnection(tokenLabel, pin string)
 		TokenLabel: tokenLabel,
 		Pin:        pin,
 	}
-	
+
 	ctx, err := crypto11.Configure(config)
 	if err != nil {
 		return errors.NewCertificateError("failed to connect to token", err)
 	}
 	defer ctx.Close()
-	
+
 	// Simple test - try to create a key pair finder
 	_, err = ctx.FindKeyPair(nil, nil)
 	if err != nil {
 		// This is expected if no keys are found, but connection works
 		// We consider this a successful connection test
 	}
-	
+
 	return nil
 }
 
@@ -241,7 +241,7 @@ func (manager *A3CertificateManager) TestTokenConnection(tokenLabel, pin string)
 func (manager *A3CertificateManager) Close() error {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
-	
+
 	var lastError error
 	for key, ctx := range manager.contexts {
 		if err := ctx.Close(); err != nil {
@@ -249,7 +249,7 @@ func (manager *A3CertificateManager) Close() error {
 		}
 		delete(manager.contexts, key)
 	}
-	
+
 	return lastError
 }
 
@@ -259,20 +259,20 @@ func (manager *A3CertificateManager) Close() error {
 func (a3 *A3Certificate) SignWithRetry(data []byte, algorithm crypto.Hash, maxRetries int) ([]byte, error) {
 	a3.mutex.RLock()
 	defer a3.mutex.RUnlock()
-	
+
 	var lastError error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		signature, err := a3.privateKey.Sign(nil, data, algorithm)
 		if err == nil {
 			return signature, nil
 		}
-		
+
 		lastError = err
 		if attempt < maxRetries {
 			time.Sleep(time.Millisecond * 100) // Brief delay before retry
 		}
 	}
-	
+
 	return nil, errors.NewCertificateError("failed to sign after retries", lastError)
 }
 
@@ -280,22 +280,22 @@ func (a3 *A3Certificate) SignWithRetry(data []byte, algorithm crypto.Hash, maxRe
 func (a3 *A3Certificate) GetTokenInfo() (*A3TokenInfo, error) {
 	a3.mutex.RLock()
 	defer a3.mutex.RUnlock()
-	
+
 	if a3.context == nil {
 		return nil, errors.NewCertificateError("PKCS#11 context not available", nil)
 	}
-	
+
 	// Return simplified token info
 	return &A3TokenInfo{
-		SlotID:          0,
-		TokenLabel:      a3.tokenLabel,
-		ManufacturerID:  "Unknown",
-		Model:           "PKCS#11 Token",
-		SerialNumber:    "Unknown",
-		IsInitialized:   true,
-		HasTokenPresent: true,
+		SlotID:           0,
+		TokenLabel:       a3.tokenLabel,
+		ManufacturerID:   "Unknown",
+		Model:            "PKCS#11 Token",
+		SerialNumber:     "Unknown",
+		IsInitialized:    true,
+		HasTokenPresent:  true,
 		IsWriteProtected: false,
-		LoginRequired:   true,
+		LoginRequired:    true,
 	}, nil
 }
 
@@ -303,11 +303,11 @@ func (a3 *A3Certificate) GetTokenInfo() (*A3TokenInfo, error) {
 func (a3 *A3Certificate) IsTokenPresentEnhanced() bool {
 	a3.mutex.RLock()
 	defer a3.mutex.RUnlock()
-	
+
 	if a3.context == nil {
 		return false
 	}
-	
+
 	// Try a simple operation to test if token is accessible
 	_, err := a3.context.FindKeyPair(nil, nil)
 	// If we can perform operations, token is likely present
@@ -325,14 +325,14 @@ func convertToPKCS11Config(extended *PKCS11ConfigExtended) *PKCS11Config {
 		PIN:         extended.PIN,
 		Slot:        extended.Slot,
 	}
-	
+
 	return basic
 }
 
 // getKeyUsageStrings converts X.509 key usage to human-readable strings
 func getKeyUsageStrings(cert *x509.Certificate) []string {
 	var usage []string
-	
+
 	if cert.KeyUsage&x509.KeyUsageDigitalSignature != 0 {
 		usage = append(usage, "Digital Signature")
 	}
@@ -351,7 +351,7 @@ func getKeyUsageStrings(cert *x509.Certificate) []string {
 	if cert.KeyUsage&x509.KeyUsageCRLSign != 0 {
 		usage = append(usage, "CRL Signing")
 	}
-	
+
 	return usage
 }
 
@@ -362,10 +362,10 @@ func LoadA3CertificateFromToken(libraryPath, tokenLabel, pin string) (*A3Certifi
 		TokenLabel:  tokenLabel,
 		PIN:         pin,
 	}
-	
+
 	manager := NewA3CertificateManager(config)
 	defer manager.Close()
-	
+
 	return manager.LoadCertificateFromToken(tokenLabel, pin)
 }
 
@@ -374,24 +374,24 @@ func ValidateA3Certificate(cert *A3Certificate) error {
 	if cert == nil {
 		return errors.NewValidationError("certificate cannot be nil", "certificate", "")
 	}
-	
+
 	// Check if token is present
 	if !cert.IsTokenPresent() {
 		return errors.NewCertificateError("token not present", nil)
 	}
-	
+
 	// Validate the X.509 certificate
 	x509Cert := cert.GetCertificate()
 	if err := ValidateCertificate(x509Cert, cert.config); err != nil {
 		return err
 	}
-	
+
 	// Test private key access
 	testData := []byte("test")
 	_, err := cert.SignWithRetry(testData, crypto.SHA1, 2)
 	if err != nil {
 		return errors.NewCertificateError("private key not accessible", err)
 	}
-	
+
 	return nil
 }

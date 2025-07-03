@@ -153,9 +153,9 @@ func example3() {
 
 	// Configure tax calculator for services
 	config := &nfe.TaxConfig{
-		ISSQNRate:        5.0,           // 5% ISSQN rate
-		ServiceMunCode:   "3550308",     // São Paulo municipality code
-		ServiceListCode:  "14.01",       // Service list code
+		ISSQNRate:        5.0,       // 5% ISSQN rate
+		ServiceMunCode:   "3550308", // São Paulo municipality code
+		ServiceListCode:  "14.01",   // Service list code
 		FederalTaxRegime: "NORMAL",
 	}
 
@@ -270,7 +270,7 @@ func example4() {
 	fmt.Printf("  Total IPI: R$ %.2f\n", totals.TotalIPI)
 	fmt.Printf("  Total PIS: R$ %.2f\n", totals.TotalPIS)
 	fmt.Printf("  Total COFINS: R$ %.2f\n", totals.TotalCOFINS)
-	fmt.Printf("  Total Impostos: R$ %.2f\n", 
+	fmt.Printf("  Total Impostos: R$ %.2f\n",
 		totals.TotalICMS+totals.TotalIPI+totals.TotalPIS+totals.TotalCOFINS)
 
 	fmt.Println()
@@ -415,9 +415,9 @@ func example6() {
 	fmt.Printf("Total ICMS: R$ %.2f\n", totals.TotalICMS)
 	fmt.Printf("Total PIS: R$ %.2f\n", totals.TotalPIS)
 	fmt.Printf("Total COFINS: R$ %.2f\n", totals.TotalCOFINS)
-	fmt.Printf("Total Impostos: R$ %.2f\n", 
+	fmt.Printf("Total Impostos: R$ %.2f\n",
 		totals.TotalICMS+totals.TotalPIS+totals.TotalCOFINS)
-	fmt.Printf("Total da Nota: R$ %.2f\n", 
+	fmt.Printf("Total da Nota: R$ %.2f\n",
 		totalProducts+(totals.TotalICMS+totals.TotalPIS+totals.TotalCOFINS))
 
 	fmt.Println()

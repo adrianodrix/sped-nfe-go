@@ -19,7 +19,7 @@ func TestNewXSDValidator(t *testing.T) {
 func TestNewXSDValidatorWithPath(t *testing.T) {
 	customPath := "/custom/path"
 	validator := NewXSDValidatorWithPath(customPath)
-	
+
 	if validator.schemasPath != customPath {
 		t.Errorf("Expected custom schemas path to be '%s', got '%s'", customPath, validator.schemasPath)
 	}
@@ -73,7 +73,7 @@ func TestValidateAccessKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := validator.ValidateAccessKey(tt.key)
-			
+
 			if result.Valid != tt.expectValid {
 				t.Errorf("Expected valid=%v, got valid=%v", tt.expectValid, result.Valid)
 			}
@@ -124,18 +124,18 @@ func TestCalculateModulo11(t *testing.T) {
 
 func TestValidateXML_InvalidXML(t *testing.T) {
 	validator := NewXSDValidator()
-	
+
 	invalidXML := []byte("invalid xml content")
 	result := validator.ValidateXML(invalidXML, "nfe", "4.00")
-	
+
 	if result.Valid {
 		t.Error("Expected validation to fail for invalid XML")
 	}
-	
+
 	if len(result.Errors) == 0 {
 		t.Error("Expected errors for invalid XML")
 	}
-	
+
 	// Check that error message mentions XML parsing
 	found := false
 	for _, err := range result.Errors {
@@ -151,15 +151,15 @@ func TestValidateXML_InvalidXML(t *testing.T) {
 
 func TestValidateXML_SchemaNotFound(t *testing.T) {
 	validator := NewXSDValidator()
-	
+
 	validXML := []byte(`<?xml version="1.0" encoding="UTF-8"?><NFe xmlns="http://www.portalfiscal.inf.br/nfe"><infNFe></infNFe></NFe>`)
 	result := validator.ValidateXML(validXML, "nonexistent", "1.00")
-	
+
 	// Should return valid=true when schema doesn't exist (PHP behavior)
 	if !result.Valid {
 		t.Error("Expected validation to pass when schema doesn't exist")
 	}
-	
+
 	// Should have warning about missing schema
 	found := false
 	for _, err := range result.Errors {
@@ -175,9 +175,9 @@ func TestValidateXML_SchemaNotFound(t *testing.T) {
 
 func TestValidate_ConvenienceMethod(t *testing.T) {
 	validator := NewXSDValidator()
-	
+
 	validXML := []byte(`<?xml version="1.0" encoding="UTF-8"?><NFe xmlns="http://www.portalfiscal.inf.br/nfe"><infNFe></infNFe></NFe>`)
-	
+
 	tests := []struct {
 		docType string
 		version string
@@ -189,7 +189,7 @@ func TestValidate_ConvenienceMethod(t *testing.T) {
 		{"cce", "1.00"},
 		{"inutilizacao", "4.00"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.docType, func(t *testing.T) {
 			result := validator.Validate(validXML, tt.docType, tt.version)
@@ -198,7 +198,7 @@ func TestValidate_ConvenienceMethod(t *testing.T) {
 			}
 		})
 	}
-	
+
 	// Test unknown document type
 	result := validator.Validate(validXML, "unknown", "4.00")
 	if result.Valid {
@@ -208,18 +208,18 @@ func TestValidate_ConvenienceMethod(t *testing.T) {
 
 func TestGetAvailableSchemas(t *testing.T) {
 	validator := NewXSDValidator()
-	
+
 	schemas, err := validator.GetAvailableSchemas()
 	if err != nil {
 		// It's OK if this fails in test environment without schemas
 		t.Logf("GetAvailableSchemas failed (expected in test env): %v", err)
 		return
 	}
-	
+
 	if len(schemas) == 0 {
 		t.Log("No schemas found (expected in test environment)")
 	}
-	
+
 	// Check that all returned items are .xsd files
 	for _, schema := range schemas {
 		if !strings.HasSuffix(schema, ".xsd") {
@@ -230,16 +230,16 @@ func TestGetAvailableSchemas(t *testing.T) {
 
 func TestClearCache(t *testing.T) {
 	validator := NewXSDValidator()
-	
+
 	// Add a schema to cache (this would normally happen during LoadSchema)
 	validator.schemas["test"] = &Schema{Name: "test"}
-	
+
 	if len(validator.schemas) == 0 {
 		t.Error("Expected schema in cache")
 	}
-	
+
 	validator.ClearCache()
-	
+
 	if len(validator.schemas) != 0 {
 		t.Error("Expected cache to be cleared")
 	}
@@ -252,19 +252,19 @@ func TestValidationResult(t *testing.T) {
 		Schema:  "nfe",
 		Version: "4.00",
 	}
-	
+
 	if !result.Valid {
 		t.Error("Expected result to be valid")
 	}
-	
+
 	if result.Schema != "nfe" {
 		t.Errorf("Expected schema 'nfe', got '%s'", result.Schema)
 	}
-	
+
 	if result.Version != "4.00" {
 		t.Errorf("Expected version '4.00', got '%s'", result.Version)
 	}
-	
+
 	if len(result.Errors) != 1 || result.Errors[0] != "test error" {
 		t.Errorf("Expected errors ['test error'], got %v", result.Errors)
 	}

@@ -49,7 +49,7 @@ func TestGetEventInfo(t *testing.T) {
 
 func TestCreateEventXML(t *testing.T) {
 	testTime := time.Date(2023, 12, 1, 10, 30, 0, 0, time.UTC)
-	
+
 	tests := []struct {
 		name    string
 		params  EventParams
@@ -140,7 +140,7 @@ func TestCreateEventXML(t *testing.T) {
 
 func TestCreateEventXML_XMLGeneration(t *testing.T) {
 	testTime := time.Date(2023, 12, 1, 10, 30, 0, 0, time.UTC)
-	
+
 	params := EventParams{
 		UF:         "SP",
 		ChNFe:      "35220214200166000187550010000000101234567890",
@@ -427,10 +427,10 @@ func TestEventConstants(t *testing.T) {
 
 // Helper function to check if a string contains a substring
 func containsStr(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || 
-		len(s) > len(substr) && (s[:len(substr)] == substr || 
-		s[len(s)-len(substr):] == substr || 
-		containsMiddle(s, substr)))
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		len(s) > len(substr) && (s[:len(substr)] == substr ||
+			s[len(s)-len(substr):] == substr ||
+			containsMiddle(s, substr)))
 }
 
 func containsMiddle(s, substr string) bool {

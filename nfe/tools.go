@@ -460,7 +460,7 @@ func (t *Tools) SefazCCe(ctx context.Context, chave string, xCorrecao string, nS
 	if len(xCorrecao) > 1000 {
 		xCorrecao = xCorrecao[:1000]
 	}
-	
+
 	// Standard correction letter usage condition text
 	xCondUso := "A Carta de Correcao e disciplinada pelo paragrafo " +
 		"1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 " +
@@ -652,7 +652,7 @@ func (t *Tools) extractUFFromChave(chave string) (string, error) {
 
 	// The UF code is in positions 0-1 of the access key
 	ufCode := chave[0:2]
-	
+
 	// Map UF codes to UF names
 	ufMap := map[string]string{
 		"12": "AC", "27": "AL", "16": "AP", "23": "AM", "29": "BA", "85": "CE", "53": "DF",
@@ -667,7 +667,6 @@ func (t *Tools) extractUFFromChave(chave string) (string, error) {
 
 	return "", fmt.Errorf("invalid UF code in chave: %s", ufCode)
 }
-
 
 // Registry Service Operations
 

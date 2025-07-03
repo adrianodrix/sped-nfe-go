@@ -11,25 +11,25 @@ import (
 
 // Event types constants matching the PHP implementation
 const (
-	EVT_CONFIRMACAO                         = 210200 // Confirmação da Operação
-	EVT_CIENCIA                             = 210210 // Ciência da Operação
-	EVT_DESCONHECIMENTO                     = 210220 // Desconhecimento da Operação
-	EVT_NAO_REALIZADA                       = 210240 // Operação não Realizada
-	EVT_CCE                                 = 110110 // Carta de Correção
-	EVT_CANCELA                             = 110111 // Cancelamento
-	EVT_CANCELASUBSTITUICAO                 = 110112 // Cancelamento por Substituição
-	EVT_EPEC                                = 110140 // Emissão em Contingência EPEC
-	EVT_ATORINTERESSADO                     = 110150 // Ator Interessado
-	EVT_COMPROVANTE_ENTREGA                 = 110130 // Comprovante de Entrega
-	EVT_CANCELAMENTO_COMPROVANTE_ENTREGA    = 110131 // Cancelamento Comprovante de Entrega
-	EVT_PRORROGACAO_1                       = 111500 // Prorrogação 1
-	EVT_PRORROGACAO_2                       = 111501 // Prorrogação 2
-	EVT_CANCELA_PRORROGACAO_1               = 111502 // Cancelamento Prorrogação 1
-	EVT_CANCELA_PRORROGACAO_2               = 111503 // Cancelamento Prorrogação 2
-	EVT_INSUCESSO_ENTREGA                   = 110192 // Insucesso na Entrega
-	EVT_CANCELA_INSUCESSO_ENTREGA           = 110193 // Cancelamento Insucesso na Entrega
-	EVT_CONCILIACAO                         = 110750 // Conciliação Financeira
-	EVT_CANCELA_CONCILIACAO                 = 110751 // Cancelamento Conciliação Financeira
+	EVT_CONFIRMACAO                      = 210200 // Confirmação da Operação
+	EVT_CIENCIA                          = 210210 // Ciência da Operação
+	EVT_DESCONHECIMENTO                  = 210220 // Desconhecimento da Operação
+	EVT_NAO_REALIZADA                    = 210240 // Operação não Realizada
+	EVT_CCE                              = 110110 // Carta de Correção
+	EVT_CANCELA                          = 110111 // Cancelamento
+	EVT_CANCELASUBSTITUICAO              = 110112 // Cancelamento por Substituição
+	EVT_EPEC                             = 110140 // Emissão em Contingência EPEC
+	EVT_ATORINTERESSADO                  = 110150 // Ator Interessado
+	EVT_COMPROVANTE_ENTREGA              = 110130 // Comprovante de Entrega
+	EVT_CANCELAMENTO_COMPROVANTE_ENTREGA = 110131 // Cancelamento Comprovante de Entrega
+	EVT_PRORROGACAO_1                    = 111500 // Prorrogação 1
+	EVT_PRORROGACAO_2                    = 111501 // Prorrogação 2
+	EVT_CANCELA_PRORROGACAO_1            = 111502 // Cancelamento Prorrogação 1
+	EVT_CANCELA_PRORROGACAO_2            = 111503 // Cancelamento Prorrogação 2
+	EVT_INSUCESSO_ENTREGA                = 110192 // Insucesso na Entrega
+	EVT_CANCELA_INSUCESSO_ENTREGA        = 110193 // Cancelamento Insucesso na Entrega
+	EVT_CONCILIACAO                      = 110750 // Conciliação Financeira
+	EVT_CANCELA_CONCILIACAO              = 110751 // Cancelamento Conciliação Financeira
 )
 
 // EventInfoNFe contains information about each event type
@@ -41,25 +41,25 @@ type EventInfoNFe struct {
 // GetEventInfo returns the event information for a given event type
 func GetEventInfo(eventType int) (EventInfoNFe, error) {
 	events := map[int]EventInfoNFe{
-		EVT_CCE:                                 {Version: "1.00", Name: "envCCe"},
-		EVT_CANCELA:                             {Version: "1.00", Name: "envEventoCancNFe"},
-		EVT_CANCELASUBSTITUICAO:                 {Version: "1.00", Name: "envEventoCancSubst"},
-		EVT_ATORINTERESSADO:                     {Version: "1.00", Name: "envEventoAtorInteressado"},
-		EVT_COMPROVANTE_ENTREGA:                 {Version: "1.00", Name: "envEventoEntregaNFe"},
-		EVT_CANCELAMENTO_COMPROVANTE_ENTREGA:    {Version: "1.00", Name: "envEventoCancEntregaNFe"},
-		EVT_CIENCIA:                             {Version: "1.00", Name: "envConfRecebto"},
-		EVT_CONFIRMACAO:                         {Version: "1.00", Name: "envConfRecebto"},
-		EVT_DESCONHECIMENTO:                     {Version: "1.00", Name: "envConfRecebto"},
-		EVT_NAO_REALIZADA:                       {Version: "1.00", Name: "envConfRecebto"},
-		EVT_PRORROGACAO_1:                       {Version: "1.00", Name: "envRemIndus"},
-		EVT_PRORROGACAO_2:                       {Version: "1.00", Name: "envRemIndus"},
-		EVT_CANCELA_PRORROGACAO_1:               {Version: "1.00", Name: "envRemIndus"},
-		EVT_CANCELA_PRORROGACAO_2:               {Version: "1.00", Name: "envRemIndus"},
-		EVT_EPEC:                                {Version: "1.00", Name: "envEPEC"},
-		EVT_INSUCESSO_ENTREGA:                   {Version: "1.00", Name: "envEventoInsucessoNFe"},
-		EVT_CANCELA_INSUCESSO_ENTREGA:           {Version: "1.00", Name: "envEventoCancInsucessoNFe"},
-		EVT_CONCILIACAO:                         {Version: "1.00", Name: "envEventoEConf"},
-		EVT_CANCELA_CONCILIACAO:                 {Version: "1.00", Name: "envEventoCancEConf"},
+		EVT_CCE:                              {Version: "1.00", Name: "envCCe"},
+		EVT_CANCELA:                          {Version: "1.00", Name: "envEventoCancNFe"},
+		EVT_CANCELASUBSTITUICAO:              {Version: "1.00", Name: "envEventoCancSubst"},
+		EVT_ATORINTERESSADO:                  {Version: "1.00", Name: "envEventoAtorInteressado"},
+		EVT_COMPROVANTE_ENTREGA:              {Version: "1.00", Name: "envEventoEntregaNFe"},
+		EVT_CANCELAMENTO_COMPROVANTE_ENTREGA: {Version: "1.00", Name: "envEventoCancEntregaNFe"},
+		EVT_CIENCIA:                          {Version: "1.00", Name: "envConfRecebto"},
+		EVT_CONFIRMACAO:                      {Version: "1.00", Name: "envConfRecebto"},
+		EVT_DESCONHECIMENTO:                  {Version: "1.00", Name: "envConfRecebto"},
+		EVT_NAO_REALIZADA:                    {Version: "1.00", Name: "envConfRecebto"},
+		EVT_PRORROGACAO_1:                    {Version: "1.00", Name: "envRemIndus"},
+		EVT_PRORROGACAO_2:                    {Version: "1.00", Name: "envRemIndus"},
+		EVT_CANCELA_PRORROGACAO_1:            {Version: "1.00", Name: "envRemIndus"},
+		EVT_CANCELA_PRORROGACAO_2:            {Version: "1.00", Name: "envRemIndus"},
+		EVT_EPEC:                             {Version: "1.00", Name: "envEPEC"},
+		EVT_INSUCESSO_ENTREGA:                {Version: "1.00", Name: "envEventoInsucessoNFe"},
+		EVT_CANCELA_INSUCESSO_ENTREGA:        {Version: "1.00", Name: "envEventoCancInsucessoNFe"},
+		EVT_CONCILIACAO:                      {Version: "1.00", Name: "envEventoEConf"},
+		EVT_CANCELA_CONCILIACAO:              {Version: "1.00", Name: "envEventoCancEConf"},
 	}
 
 	if info, exists := events[eventType]; exists {
@@ -70,50 +70,50 @@ func GetEventInfo(eventType int) (EventInfoNFe, error) {
 
 // EventRequestNFe represents the structure for event requests
 type EventRequestNFe struct {
-	XMLName     xml.Name `xml:"envEvento"`
-	Xmlns       string   `xml:"xmlns,attr"`
-	Versao      string   `xml:"versao,attr"`
-	IdLote      string   `xml:"idLote"`
-	Evento      EventoNFe   `xml:"evento"`
+	XMLName xml.Name  `xml:"envEvento"`
+	Xmlns   string    `xml:"xmlns,attr"`
+	Versao  string    `xml:"versao,attr"`
+	IdLote  string    `xml:"idLote"`
+	Evento  EventoNFe `xml:"evento"`
 }
 
 // EventoNFe represents the event structure
 type EventoNFe struct {
-	XMLName     xml.Name    `xml:"evento"`
-	Xmlns       string      `xml:"xmlns,attr"`
-	Versao      string      `xml:"versao,attr"`
-	InfEvento   InfEventoNFe   `xml:"infEvento"`
-	Signature   *SignatureNFe  `xml:"Signature,omitempty"`
+	XMLName   xml.Name      `xml:"evento"`
+	Xmlns     string        `xml:"xmlns,attr"`
+	Versao    string        `xml:"versao,attr"`
+	InfEvento InfEventoNFe  `xml:"infEvento"`
+	Signature *SignatureNFe `xml:"Signature,omitempty"`
 }
 
 // InfEventoNFe represents the event information structure
 type InfEventoNFe struct {
-	XMLName     xml.Name `xml:"infEvento"`
-	ID          string   `xml:"Id,attr"`
-	COrgao      string   `xml:"cOrgao"`
-	TpAmb       string   `xml:"tpAmb"`
-	CNPJ        string   `xml:"CNPJ"`
-	ChNFe       string   `xml:"chNFe"`
-	DhEvento    string   `xml:"dhEvento"`
-	TpEvento    string   `xml:"tpEvento"`
-	NSeqEvento  string   `xml:"nSeqEvento"`
-	VerEvento   string   `xml:"verEvento"`
-	DetEvento   DetEventoNFe `xml:"detEvento"`
+	XMLName    xml.Name     `xml:"infEvento"`
+	ID         string       `xml:"Id,attr"`
+	COrgao     string       `xml:"cOrgao"`
+	TpAmb      string       `xml:"tpAmb"`
+	CNPJ       string       `xml:"CNPJ"`
+	ChNFe      string       `xml:"chNFe"`
+	DhEvento   string       `xml:"dhEvento"`
+	TpEvento   string       `xml:"tpEvento"`
+	NSeqEvento string       `xml:"nSeqEvento"`
+	VerEvento  string       `xml:"verEvento"`
+	DetEvento  DetEventoNFe `xml:"detEvento"`
 }
 
 // DetEventoNFe represents the event details structure
 type DetEventoNFe struct {
-	XMLName     xml.Name `xml:"detEvento"`
-	Versao      string   `xml:"versao,attr"`
+	XMLName xml.Name `xml:"detEvento"`
+	Versao  string   `xml:"versao,attr"`
 	// CCe fields
-	XCorrecao   string   `xml:"xCorrecao,omitempty"`
-	XCondUso    string   `xml:"xCondUso,omitempty"`
+	XCorrecao string `xml:"xCorrecao,omitempty"`
+	XCondUso  string `xml:"xCondUso,omitempty"`
 	// Cancellation fields
-	NProt       string   `xml:"nProt,omitempty"`
-	XJust       string   `xml:"xJust,omitempty"`
+	NProt string `xml:"nProt,omitempty"`
+	XJust string `xml:"xJust,omitempty"`
 	// Substitution fields
-	ChNFeRef    string   `xml:"chNFeRef,omitempty"`
-	VerAplic    string   `xml:"verAplic,omitempty"`
+	ChNFeRef string `xml:"chNFeRef,omitempty"`
+	VerAplic string `xml:"verAplic,omitempty"`
 }
 
 // SignatureNFe represents the XML signature structure
@@ -125,22 +125,22 @@ type SignatureNFe struct {
 
 // EventResponseNFe represents the response structure from SEFAZ
 type EventResponseNFe struct {
-	XMLName     xml.Name        `xml:"retEnvEvento"`
-	Xmlns       string          `xml:"xmlns,attr"`
-	Versao      string          `xml:"versao,attr"`
-	IdLote      string          `xml:"idLote"`
-	TpAmb       string          `xml:"tpAmb"`
-	COrgao      string          `xml:"cOrgao"`
-	CStat       string          `xml:"cStat"`
-	XMotivo     string          `xml:"xMotivo"`
-	RetEvento   []RetEventoNFe  `xml:"retEvento"`
+	XMLName   xml.Name       `xml:"retEnvEvento"`
+	Xmlns     string         `xml:"xmlns,attr"`
+	Versao    string         `xml:"versao,attr"`
+	IdLote    string         `xml:"idLote"`
+	TpAmb     string         `xml:"tpAmb"`
+	COrgao    string         `xml:"cOrgao"`
+	CStat     string         `xml:"cStat"`
+	XMotivo   string         `xml:"xMotivo"`
+	RetEvento []RetEventoNFe `xml:"retEvento"`
 }
 
 // RetEventoNFe represents individual event response
 type RetEventoNFe struct {
-	XMLName     xml.Name    `xml:"retEvento"`
-	Versao      string      `xml:"versao,attr"`
-	InfEvento   InfEventoRetNFe `xml:"infEvento"`
+	XMLName   xml.Name        `xml:"retEvento"`
+	Versao    string          `xml:"versao,attr"`
+	InfEvento InfEventoRetNFe `xml:"infEvento"`
 }
 
 // InfEventoRetNFe represents the event response information
@@ -164,16 +164,16 @@ type InfEventoRetNFe struct {
 
 // EventParams represents the parameters for creating an event
 type EventParams struct {
-	UF          string
-	ChNFe       string
-	TpEvento    int
-	NSeqEvento  int
-	TagAdic     string
-	DhEvento    *time.Time
-	Lote        string
-	CNPJ        string
-	TpAmb       string
-	VerEvento   string
+	UF         string
+	ChNFe      string
+	TpEvento   int
+	NSeqEvento int
+	TagAdic    string
+	DhEvento   *time.Time
+	Lote       string
+	CNPJ       string
+	TpAmb      string
+	VerEvento  string
 }
 
 // CreateEventXML creates the XML structure for an event

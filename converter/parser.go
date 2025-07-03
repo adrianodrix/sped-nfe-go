@@ -19,15 +19,15 @@ type Parser struct {
 
 // NFEData represents the complete structure of an NFe
 type NFEData struct {
-	InfNFe       *nfe.InfNFe       `json:"infNFe,omitempty"`
+	InfNFe        *nfe.InfNFe        `json:"infNFe,omitempty"`
 	Identificacao *nfe.Identificacao `json:"identificacao,omitempty"`
-	Emitente     *nfe.Emitente     `json:"emitente,omitempty"`
-	Destinatario *nfe.Destinatario `json:"destinatario,omitempty"`
-	Itens        []*nfe.Item       `json:"itens,omitempty"`
-	Total        *nfe.Total        `json:"total,omitempty"`
-	Transporte   *nfe.Transporte   `json:"transporte,omitempty"`
-	InfAdic      *nfe.InfAdicionais `json:"infAdic,omitempty"`
-	Referencias  []Referencia       `json:"referencias,omitempty"`
+	Emitente      *nfe.Emitente      `json:"emitente,omitempty"`
+	Destinatario  *nfe.Destinatario  `json:"destinatario,omitempty"`
+	Itens         []*nfe.Item        `json:"itens,omitempty"`
+	Total         *nfe.Total         `json:"total,omitempty"`
+	Transporte    *nfe.Transporte    `json:"transporte,omitempty"`
+	InfAdic       *nfe.InfAdicionais `json:"infAdic,omitempty"`
+	Referencias   []Referencia       `json:"referencias,omitempty"`
 }
 
 // FieldMap represents parsed fields from a TXT line
@@ -77,7 +77,7 @@ func (p *Parser) parseLine(line string, lineNum int) error {
 	}
 
 	tag := parts[0]
-	
+
 	// Get structure for this tag
 	structure, exists := p.layoutConfig.Structure[tag]
 	if !exists {

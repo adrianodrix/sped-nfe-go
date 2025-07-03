@@ -17,15 +17,15 @@ func TestNewParser(t *testing.T) {
 	}
 
 	parser := NewParser(config)
-	
+
 	if parser == nil {
 		t.Error("Expected parser but got nil")
 	}
-	
+
 	if parser.layoutConfig != config {
 		t.Error("Parser config not set correctly")
 	}
-	
+
 	if parser.currentItem != 0 {
 		t.Errorf("Expected currentItem to be 0, got %d", parser.currentItem)
 	}
@@ -37,7 +37,7 @@ func TestParser_parseFields(t *testing.T) {
 			"A": "A|versao|Id|pk_nItem|",
 		},
 	}
-	
+
 	parser := NewParser(config)
 
 	tests := []struct {
@@ -79,19 +79,19 @@ func TestParser_parseFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := parser.parseFields(tt.parts, tt.structure)
-			
+
 			if tt.expectErr {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			for key, expectedValue := range tt.expected {
 				if result[key] != expectedValue {
 					t.Errorf("Field %s: expected %q, got %q", key, expectedValue, result[key])
@@ -230,14 +230,14 @@ func TestParser_processTagI(t *testing.T) {
 	parser.currentItem = 1
 
 	fields := FieldMap{
-		"cProd":   "BOLH-S1252",
-		"xProd":   "BE6007550 SACO BOLHA SIMPLES",
-		"NCM":     "39232190",
-		"CFOP":    "5101",
-		"uCom":    "MI",
-		"qCom":    "0.4000",
-		"vUnCom":  "1060.5000",
-		"vProd":   "424.20",
+		"cProd":  "BOLH-S1252",
+		"xProd":  "BE6007550 SACO BOLHA SIMPLES",
+		"NCM":    "39232190",
+		"CFOP":   "5101",
+		"uCom":   "MI",
+		"qCom":   "0.4000",
+		"vUnCom": "1060.5000",
+		"vProd":  "424.20",
 	}
 
 	err := parser.processTagI(fields)
@@ -271,10 +271,10 @@ func TestParser_validateRequiredFields(t *testing.T) {
 		{
 			name: "All required fields present",
 			nfeData: &NFEData{
-				InfNFe:       &nfe.InfNFe{},
+				InfNFe:        &nfe.InfNFe{},
 				Identificacao: &nfe.Identificacao{},
-				Emitente:     &nfe.Emitente{},
-				Itens:        []*nfe.Item{{}},
+				Emitente:      &nfe.Emitente{},
+				Itens:         []*nfe.Item{{}},
 			},
 			expectErr: false,
 		},
@@ -282,8 +282,8 @@ func TestParser_validateRequiredFields(t *testing.T) {
 			name: "Missing InfNFe",
 			nfeData: &NFEData{
 				Identificacao: &nfe.Identificacao{},
-				Emitente:     &nfe.Emitente{},
-				Itens:        []*nfe.Item{{}},
+				Emitente:      &nfe.Emitente{},
+				Itens:         []*nfe.Item{{}},
 			},
 			expectErr: true,
 		},
@@ -299,19 +299,19 @@ func TestParser_validateRequiredFields(t *testing.T) {
 		{
 			name: "Missing Emitente",
 			nfeData: &NFEData{
-				InfNFe:       &nfe.InfNFe{},
+				InfNFe:        &nfe.InfNFe{},
 				Identificacao: &nfe.Identificacao{},
-				Itens:        []*nfe.Item{{}},
+				Itens:         []*nfe.Item{{}},
 			},
 			expectErr: true,
 		},
 		{
 			name: "Missing Items",
 			nfeData: &NFEData{
-				InfNFe:       &nfe.InfNFe{},
+				InfNFe:        &nfe.InfNFe{},
 				Identificacao: &nfe.Identificacao{},
-				Emitente:     &nfe.Emitente{},
-				Itens:        []*nfe.Item{},
+				Emitente:      &nfe.Emitente{},
+				Itens:         []*nfe.Item{},
 			},
 			expectErr: true,
 		},
@@ -323,7 +323,7 @@ func TestParser_validateRequiredFields(t *testing.T) {
 			parser.currentNFe = tt.nfeData
 
 			err := parser.validateRequiredFields()
-			
+
 			if tt.expectErr && err == nil {
 				t.Error("Expected error but got none")
 			}
@@ -418,19 +418,19 @@ func TestParseFloat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ParseFloat(fields, tt.key)
-			
+
 			if tt.expectErr {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if result != tt.expected {
 				t.Errorf("Expected %f, got %f", tt.expected, result)
 			}
@@ -474,19 +474,19 @@ func TestParseInt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ParseInt(fields, tt.key)
-			
+
 			if tt.expectErr {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if result != tt.expected {
 				t.Errorf("Expected %d, got %d", tt.expected, result)
 			}
@@ -544,19 +544,19 @@ func TestParseDateTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ParseDateTime(fields, tt.key)
-			
+
 			if tt.expectErr {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if result.IsZero() {
 				t.Error("Expected valid time but got zero time")
 			}
@@ -571,7 +571,7 @@ func BenchmarkParser_parseFields(b *testing.B) {
 			"B": "B|cUF|cNF|natOp|mod|serie|nNF|dhEmi|dhSaiEnt|tpNF|idDest|cMunFG|tpImp|tpEmis|cDV|tpAmb|finNFe|indFinal|indPres|indIntermed|procEmi|verProc|dhCont|xJust|",
 		},
 	}
-	
+
 	parser := NewParser(config)
 	parts := []string{"B", "35", "80070008", "VENDA", "55", "1", "2", "2015-02-19T13:48:00-02:00", "", "1", "1", "3518800", "1", "1", "2", "2", "1", "0", "0", "3", "3.10.31", "", "", ""}
 	structure := config.Structure["B"]

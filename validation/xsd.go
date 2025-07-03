@@ -61,7 +61,7 @@ func (v *XSDValidator) LoadSchema(name, version string) (*Schema, error) {
 	defer v.mutex.Unlock()
 
 	schemaKey := fmt.Sprintf("%s_v%s", name, version)
-	
+
 	// Check if schema is already loaded
 	if schema, exists := v.schemas[schemaKey]; exists {
 		return schema, nil
@@ -70,7 +70,7 @@ func (v *XSDValidator) LoadSchema(name, version string) (*Schema, error) {
 	// Try to load from embedded schemas first
 	schemaFile := fmt.Sprintf("%s_v%s.xsd", name, version)
 	schemaPath := filepath.Join("schemas/xsd", schemaFile)
-	
+
 	var content []byte
 	var err error
 
@@ -156,7 +156,7 @@ func (v *XSDValidator) ValidateXML(xmlContent []byte, schemaName, version string
 			result.Errors = append(result.Errors, fmt.Sprintf("Schema %s_v%s.xsd not found - validation skipped", schemaName, version))
 			return result
 		}
-		
+
 		result.Errors = append(result.Errors, fmt.Sprintf("Failed to load schema: %s", err.Error()))
 		return result
 	}
@@ -322,7 +322,7 @@ func (v *XSDValidator) GetSchemaInfo(name, version string) (*Schema, error) {
 func (v *XSDValidator) ClearCache() {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
-	
+
 	v.schemas = make(map[string]*Schema)
 }
 

@@ -30,7 +30,7 @@ func TestNewConverter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			converter, err := NewConverter(tt.layout)
-			
+
 			if tt.wantErr && err == nil {
 				t.Error("Expected error but got none")
 			}
@@ -108,19 +108,19 @@ B|35|80070008|VENDA|55|1|1|2015-02-19T13:48:00-02:00||1|1|3518800|1|1|2|2|1|0|0|
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			nfes, err := converter.parseTXTContent([]byte(tt.content))
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if len(nfes) != tt.expectNFes {
 				t.Errorf("Expected %d NFes, got %d", tt.expectNFes, len(nfes))
 			}
@@ -161,12 +161,12 @@ func TestConverter_splitLines(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := converter.splitLines([]byte(tt.content))
-			
+
 			if len(result) != len(tt.expected) {
 				t.Errorf("Expected %d lines, got %d", len(tt.expected), len(result))
 				return
 			}
-			
+
 			for i, line := range result {
 				if line != tt.expected[i] {
 					t.Errorf("Line %d: expected %q, got %q", i, tt.expected[i], line)
@@ -215,7 +215,7 @@ func TestConverter_splitNFes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := converter.splitNFes(tt.lines)
-			
+
 			if len(result) != tt.expected {
 				t.Errorf("Expected %d NFes, got %d", tt.expected, len(result))
 			}
@@ -266,7 +266,7 @@ C|PLASTFOAM IND COM PLASTICOS LTDA|PLASTFOAM|336546371113||184394|2222600|3|`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors, err := converter.ValidateTXT([]byte(tt.content))
-			
+
 			if tt.expectError {
 				if err == nil && len(errors) == 0 {
 					t.Error("Expected validation errors but got none")
@@ -285,11 +285,11 @@ C|PLASTFOAM IND COM PLASTICOS LTDA|PLASTFOAM|336546371113||184394|2222600|3|`,
 
 func TestGetSupportedLayouts(t *testing.T) {
 	layouts := GetSupportedLayouts()
-	
+
 	if len(layouts) == 0 {
 		t.Error("Expected at least one supported layout")
 	}
-	
+
 	for _, layout := range layouts {
 		if layout == "" {
 			t.Error("Empty layout description")
@@ -311,12 +311,12 @@ func TestLayoutNames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.expectedName, func(t *testing.T) {
 			converter := &Converter{layout: tt.layout}
-			
+
 			name := converter.getLayoutName()
 			if name != tt.expectedName {
 				t.Errorf("Expected name %q, got %q", tt.expectedName, name)
 			}
-			
+
 			version := converter.getLayoutVersion()
 			if version != tt.expectedVer {
 				t.Errorf("Expected version %q, got %q", tt.expectedVer, version)
@@ -361,11 +361,11 @@ func TestNewConverterWithConfig(t *testing.T) {
 	}
 
 	converter := NewConverterWithConfig(config)
-	
+
 	if converter == nil {
 		t.Error("Expected converter but got nil")
 	}
-	
+
 	if converter.layoutConfig.Name != "Test Layout" {
 		t.Errorf("Expected name 'Test Layout', got %q", converter.layoutConfig.Name)
 	}
@@ -374,7 +374,7 @@ func TestNewConverterWithConfig(t *testing.T) {
 // Benchmark tests
 func BenchmarkConverter_parseTXTContent(b *testing.B) {
 	converter, _ := NewConverter(Layout400Local)
-	
+
 	content := `NOTAFISCAL|1|
 A|4.00|NFe35150271780456000160550010000000021800700082||
 B|35|80070008|VENDA|55|1|2|2015-02-19T13:48:00-02:00||1|1|3518800|1|1|2|2|1|0|0|3|3.10.31|||
@@ -393,7 +393,7 @@ I|BOLH-S1252||BE6007550 SACO BOLHA|39232190||5101|MI|0.4000|1060.5000|424.20||MI
 
 func BenchmarkConverter_ValidateTXT(b *testing.B) {
 	converter, _ := NewConverter(Layout400Local)
-	
+
 	content := `NOTAFISCAL|1|
 A|4.00|NFe35150271780456000160550010000000021800700082||
 B|35|80070008|VENDA|55|1|2|2015-02-19T13:48:00-02:00||1|1|3518800|1|1|2|2|1|0|0|3|3.10.31|||

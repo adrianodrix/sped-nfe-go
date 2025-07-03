@@ -46,12 +46,12 @@ func TestNewTaxCalculator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewTaxCalculator(tt.config)
-			
+
 			if got == nil {
 				t.Errorf("NewTaxCalculator() returned nil")
 				return
 			}
-			
+
 			if tt.name == "with nil config" {
 				// Check default values were set
 				if got.config.ICMSRate != 18.0 {
@@ -136,26 +136,26 @@ func TestTaxCalculator_CalculateItemTaxes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := calculator.CalculateItemTaxes(tt.item)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CalculateItemTaxes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			
+
 			if !tt.wantErr && tt.item != nil {
 				// Verify taxes were calculated
 				if tt.item.Imposto.ICMS == nil {
 					t.Error("ICMS not calculated")
 				}
-				
+
 				if tt.item.Imposto.IPI == nil {
 					t.Error("IPI not calculated")
 				}
-				
+
 				if tt.item.Imposto.PIS == nil {
 					t.Error("PIS not calculated")
 				}
-				
+
 				if tt.item.Imposto.COFINS == nil {
 					t.Error("COFINS not calculated")
 				}
@@ -420,12 +420,12 @@ func TestParseDecimal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parseDecimal(tt.input)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseDecimal() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			
+
 			if got != tt.want {
 				t.Errorf("parseDecimal() = %v, want %v", got, tt.want)
 			}
@@ -526,7 +526,7 @@ func TestTaxCalculator_ValidateCalculatedTaxes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := calculator.ValidateCalculatedTaxes(tt.item)
-			
+
 			if len(errors) != tt.wantCount {
 				t.Errorf("ValidateCalculatedTaxes() returned %d errors, want %d", len(errors), tt.wantCount)
 			}

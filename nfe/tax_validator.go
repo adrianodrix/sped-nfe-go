@@ -13,10 +13,10 @@ type TaxValidator struct {
 
 // ValidationConfig holds configuration for tax validation
 type ValidationConfig struct {
-	UF                string  // State code for state-specific rules
-	Environment       string  // "PRODUCAO" or "HOMOLOGACAO"
-	Version           string  // NFe layout version
-	StrictValidation  bool    // Enable strict validation mode
+	UF               string // State code for state-specific rules
+	Environment      string // "PRODUCAO" or "HOMOLOGACAO"
+	Version          string // NFe layout version
+	StrictValidation bool   // Enable strict validation mode
 }
 
 // NewTaxValidator creates a new tax validator with configuration
@@ -29,64 +29,64 @@ func NewTaxValidator(config *ValidationConfig) *TaxValidator {
 			StrictValidation: true,
 		}
 	}
-	
+
 	return &TaxValidator{config: config}
 }
 
 // ValidateItemTaxes performs comprehensive validation of item taxes
 func (tv *TaxValidator) ValidateItemTaxes(item *Item) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate product information first
 	errors = append(errors, tv.validateProductForTax(item.Prod)...)
-	
+
 	// Validate tax structure consistency
 	errors = append(errors, tv.validateTaxStructure(item.Imposto)...)
-	
+
 	// Validate ICMS
 	if item.Imposto.ICMS != nil {
 		errors = append(errors, tv.validateICMSAdvanced(item.Imposto.ICMS, item.Prod)...)
 	}
-	
+
 	// Validate IPI
 	if item.Imposto.IPI != nil {
 		errors = append(errors, tv.validateIPIAdvanced(item.Imposto.IPI, item.Prod)...)
 	}
-	
+
 	// Validate PIS
 	if item.Imposto.PIS != nil {
 		errors = append(errors, tv.validatePISAdvanced(item.Imposto.PIS, item.Prod)...)
 	}
-	
+
 	// Validate COFINS
 	if item.Imposto.COFINS != nil {
 		errors = append(errors, tv.validateCOFINSAdvanced(item.Imposto.COFINS, item.Prod)...)
 	}
-	
+
 	// Validate ISSQN
 	if item.Imposto.ISSQN != nil {
 		errors = append(errors, tv.validateISSQNAdvanced(item.Imposto.ISSQN, item.Prod)...)
 	}
-	
+
 	// Cross-validation between taxes
 	errors = append(errors, tv.validateCrossTaxRules(item)...)
-	
+
 	return errors
 }
 
 // ValidationError represents a tax validation error
 type ValidationError struct {
-	Field       string `json:"field"`
-	Code        string `json:"code"`
-	Message     string `json:"message"`
-	Severity    string `json:"severity"` // "ERROR", "WARNING", "INFO"
-	Rule        string `json:"rule"`     // SEFAZ rule reference
+	Field    string `json:"field"`
+	Code     string `json:"code"`
+	Message  string `json:"message"`
+	Severity string `json:"severity"` // "ERROR", "WARNING", "INFO"
+	Rule     string `json:"rule"`     // SEFAZ rule reference
 }
 
 // validateProductForTax validates product information for tax calculation
 func (tv *TaxValidator) validateProductForTax(prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate NCM
 	if err := tv.validateNCM(prod.NCM); err != nil {
 		errors = append(errors, ValidationError{
@@ -97,7 +97,7 @@ func (tv *TaxValidator) validateProductForTax(prod Produto) []ValidationError {
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate CFOP
 	if err := tv.validateCFOP(prod.CFOP); err != nil {
 		errors = append(errors, ValidationError{
@@ -108,7 +108,7 @@ func (tv *TaxValidator) validateProductForTax(prod Produto) []ValidationError {
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate CEST (if applicable)
 	if prod.CEST != "" {
 		if err := tv.validateCEST(prod.CEST); err != nil {
@@ -121,7 +121,7 @@ func (tv *TaxValidator) validateProductForTax(prod Produto) []ValidationError {
 			})
 		}
 	}
-	
+
 	return errors
 }
 
@@ -131,23 +131,23 @@ func (tv *TaxValidator) validateNCM(ncm string) error {
 	if len(ncm) != 8 {
 		return fmt.Errorf("NCM deve conter 8 dígitos")
 	}
-	
+
 	// Check if all characters are numeric
 	if !regexp.MustCompile(`^\d{8}$`).MatchString(ncm) {
 		return fmt.Errorf("NCM deve conter apenas dígitos")
 	}
-	
+
 	// Validate against known NCM ranges (simplified validation)
 	// Complete validation would require a full NCM table
 	ncmInt, err := strconv.Atoi(ncm)
 	if err != nil {
 		return fmt.Errorf("NCM inválido: %v", err)
 	}
-	
+
 	if ncmInt < 1000000 || ncmInt > 99999999 {
 		return fmt.Errorf("NCM fora da faixa válida")
 	}
-	
+
 	return nil
 }
 
@@ -157,20 +157,20 @@ func (tv *TaxValidator) validateCFOP(cfop string) error {
 	if len(cfop) != 4 {
 		return fmt.Errorf("CFOP deve conter 4 dígitos")
 	}
-	
+
 	// Check if all characters are numeric
 	if !regexp.MustCompile(`^\d{4}$`).MatchString(cfop) {
 		return fmt.Errorf("CFOP deve conter apenas dígitos")
 	}
-	
+
 	cfopInt, err := strconv.Atoi(cfop)
 	if err != nil {
 		return fmt.Errorf("CFOP inválido: %v", err)
 	}
-	
+
 	// Validate CFOP ranges
 	firstDigit := cfopInt / 1000
-	
+
 	switch firstDigit {
 	case 1: // Entries
 		// Valid range: 1000-1999
@@ -200,7 +200,7 @@ func (tv *TaxValidator) validateCFOP(cfop string) error {
 	default:
 		return fmt.Errorf("CFOP com primeiro dígito inválido")
 	}
-	
+
 	return nil
 }
 
@@ -210,19 +210,19 @@ func (tv *TaxValidator) validateCEST(cest string) error {
 	if len(cest) != 7 {
 		return fmt.Errorf("CEST deve conter 7 dígitos")
 	}
-	
+
 	// Check if all characters are numeric
 	if !regexp.MustCompile(`^\d{7}$`).MatchString(cest) {
 		return fmt.Errorf("CEST deve conter apenas dígitos")
 	}
-	
+
 	return nil
 }
 
 // validateTaxStructure validates the overall tax structure
 func (tv *TaxValidator) validateTaxStructure(imposto Imposto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// ICMS is mandatory for products
 	if imposto.ICMS == nil {
 		errors = append(errors, ValidationError{
@@ -233,7 +233,7 @@ func (tv *TaxValidator) validateTaxStructure(imposto Imposto) []ValidationError 
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate tax value format if present
 	if imposto.VTotTrib != "" {
 		if err := tv.validateDecimalField(imposto.VTotTrib, "vTotTrib"); err != nil {
@@ -246,17 +246,17 @@ func (tv *TaxValidator) validateTaxStructure(imposto Imposto) []ValidationError 
 			})
 		}
 	}
-	
+
 	return errors
 }
 
 // validateICMSAdvanced performs advanced ICMS validation
 func (tv *TaxValidator) validateICMSAdvanced(icms *ICMS, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Count active modalities
 	activeModalities := tv.countActiveICMSModalities(icms)
-	
+
 	if activeModalities == 0 {
 		errors = append(errors, ValidationError{
 			Field:    "imposto.ICMS",
@@ -274,29 +274,29 @@ func (tv *TaxValidator) validateICMSAdvanced(icms *ICMS, prod Produto) []Validat
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate specific modalities
 	if icms.ICMS00 != nil {
 		errors = append(errors, tv.validateICMS00(icms.ICMS00, prod)...)
 	}
-	
+
 	if icms.ICMS10 != nil {
 		errors = append(errors, tv.validateICMS10(icms.ICMS10, prod)...)
 	}
-	
+
 	if icms.ICMS20 != nil {
 		errors = append(errors, tv.validateICMS20(icms.ICMS20, prod)...)
 	}
-	
+
 	// Add validation for other modalities...
-	
+
 	return errors
 }
 
 // validateICMS00 validates ICMS00 (normal taxation)
 func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate origin
 	if err := tv.validateOrigin(icms00.Orig); err != nil {
 		errors = append(errors, ValidationError{
@@ -307,7 +307,7 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate CST
 	if icms00.CST != "00" {
 		errors = append(errors, ValidationError{
@@ -318,7 +318,7 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate modBC
 	if !tv.isValidModBC(icms00.ModBC) {
 		errors = append(errors, ValidationError{
@@ -329,7 +329,7 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate values
 	vbc, err := parseDecimal(icms00.VBC)
 	if err != nil {
@@ -341,7 +341,7 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	picms, err := parseDecimal(icms00.PICMS)
 	if err != nil {
 		errors = append(errors, ValidationError{
@@ -352,7 +352,7 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	vicms, err := parseDecimal(icms00.VICMS)
 	if err != nil {
 		errors = append(errors, ValidationError{
@@ -363,12 +363,12 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Cross-validation: vICMS should equal vBC * pICMS / 100
 	if err == nil {
 		expectedVICMS := vbc * picms / 100
 		tolerance := 0.01 // Allow 1 cent tolerance
-		
+
 		if abs(vicms-expectedVICMS) > tolerance {
 			errors = append(errors, ValidationError{
 				Field:    "ICMS00.vICMS",
@@ -379,14 +379,14 @@ func (tv *TaxValidator) validateICMS00(icms00 *ICMS00, prod Produto) []Validatio
 			})
 		}
 	}
-	
+
 	return errors
 }
 
 // validateICMS10 validates ICMS10 (taxed with ST)
 func (tv *TaxValidator) validateICMS10(icms10 *ICMS10, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate origin
 	if err := tv.validateOrigin(icms10.Orig); err != nil {
 		errors = append(errors, ValidationError{
@@ -397,7 +397,7 @@ func (tv *TaxValidator) validateICMS10(icms10 *ICMS10, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate CST
 	if icms10.CST != "10" {
 		errors = append(errors, ValidationError{
@@ -408,7 +408,7 @@ func (tv *TaxValidator) validateICMS10(icms10 *ICMS10, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate ST modality
 	if !tv.isValidModBCST(icms10.ModBCST) {
 		errors = append(errors, ValidationError{
@@ -419,16 +419,16 @@ func (tv *TaxValidator) validateICMS10(icms10 *ICMS10, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Additional validations for ST calculations would go here...
-	
+
 	return errors
 }
 
 // validateICMS20 validates ICMS20 (reduced tax base)
 func (tv *TaxValidator) validateICMS20(icms20 *ICMS20, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate reduction percentage
 	predbc, err := parseDecimal(icms20.PRedBC)
 	if err != nil {
@@ -448,14 +448,14 @@ func (tv *TaxValidator) validateICMS20(icms20 *ICMS20, prod Produto) []Validatio
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	return errors
 }
 
 // validateIPIAdvanced performs advanced IPI validation
 func (tv *TaxValidator) validateIPIAdvanced(ipi *IPI, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate framework code
 	if err := tv.validateIPIFramework(ipi.CEnq); err != nil {
 		errors = append(errors, ValidationError{
@@ -466,7 +466,7 @@ func (tv *TaxValidator) validateIPIAdvanced(ipi *IPI, prod Produto) []Validation
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate modality exclusivity
 	if ipi.IPITrib != nil && ipi.IPINT != nil {
 		errors = append(errors, ValidationError{
@@ -477,7 +477,7 @@ func (tv *TaxValidator) validateIPIAdvanced(ipi *IPI, prod Produto) []Validation
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	if ipi.IPITrib == nil && ipi.IPINT == nil {
 		errors = append(errors, ValidationError{
 			Field:    "IPI",
@@ -487,17 +487,17 @@ func (tv *TaxValidator) validateIPIAdvanced(ipi *IPI, prod Produto) []Validation
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	return errors
 }
 
 // validatePISAdvanced performs advanced PIS validation
 func (tv *TaxValidator) validatePISAdvanced(pis *PIS, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Count active modalities
 	activeModalities := tv.countActivePISModalities(pis)
-	
+
 	if activeModalities == 0 {
 		errors = append(errors, ValidationError{
 			Field:    "PIS",
@@ -515,17 +515,17 @@ func (tv *TaxValidator) validatePISAdvanced(pis *PIS, prod Produto) []Validation
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	return errors
 }
 
 // validateCOFINSAdvanced performs advanced COFINS validation
 func (tv *TaxValidator) validateCOFINSAdvanced(cofins *COFINS, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Count active modalities
 	activeModalities := tv.countActiveCOFINSModalities(cofins)
-	
+
 	if activeModalities == 0 {
 		errors = append(errors, ValidationError{
 			Field:    "COFINS",
@@ -543,14 +543,14 @@ func (tv *TaxValidator) validateCOFINSAdvanced(cofins *COFINS, prod Produto) []V
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	return errors
 }
 
 // validateISSQNAdvanced performs advanced ISSQN validation
 func (tv *TaxValidator) validateISSQNAdvanced(issqn *ISSQN, prod Produto) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Validate municipality code
 	if err := tv.validateMunicipalityCode(issqn.CMunFG); err != nil {
 		errors = append(errors, ValidationError{
@@ -561,7 +561,7 @@ func (tv *TaxValidator) validateISSQNAdvanced(issqn *ISSQN, prod Produto) []Vali
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Validate service list code
 	if err := tv.validateServiceListCode(issqn.CListServ); err != nil {
 		errors = append(errors, ValidationError{
@@ -572,18 +572,18 @@ func (tv *TaxValidator) validateISSQNAdvanced(issqn *ISSQN, prod Produto) []Vali
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	return errors
 }
 
 // validateCrossTaxRules validates rules that apply across different taxes
 func (tv *TaxValidator) validateCrossTaxRules(item *Item) []ValidationError {
 	var errors []ValidationError
-	
+
 	// Rule: If PIS is taxed, COFINS should also be taxed (and vice versa)
 	pisIsTaxed := tv.isPISTaxed(item.Imposto.PIS)
 	cofinsIsTaxed := tv.isCOFINSTaxed(item.Imposto.COFINS)
-	
+
 	if pisIsTaxed != cofinsIsTaxed {
 		errors = append(errors, ValidationError{
 			Field:    "imposto",
@@ -593,7 +593,7 @@ func (tv *TaxValidator) validateCrossTaxRules(item *Item) []ValidationError {
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	// Rule: ISSQN and ICMS are generally mutually exclusive for services
 	if item.Imposto.ISSQN != nil && tv.isICMSTaxed(item.Imposto.ICMS) {
 		errors = append(errors, ValidationError{
@@ -604,7 +604,7 @@ func (tv *TaxValidator) validateCrossTaxRules(item *Item) []ValidationError {
 			Rule:     "NT2019.001",
 		})
 	}
-	
+
 	return errors
 }
 
@@ -644,11 +644,11 @@ func (tv *TaxValidator) validateIPIFramework(cenq string) error {
 	if len(cenq) != 3 {
 		return fmt.Errorf("código de enquadramento deve ter 3 dígitos")
 	}
-	
+
 	if !regexp.MustCompile(`^\d{3}$`).MatchString(cenq) {
 		return fmt.Errorf("código de enquadramento deve conter apenas dígitos")
 	}
-	
+
 	return nil
 }
 
@@ -663,11 +663,11 @@ func (tv *TaxValidator) validateMunicipalityCode(code string) error {
 	if len(code) != 7 {
 		return fmt.Errorf("código do município deve ter 7 dígitos")
 	}
-	
+
 	if !regexp.MustCompile(`^\d{7}$`).MatchString(code) {
 		return fmt.Errorf("código do município deve conter apenas dígitos")
 	}
-	
+
 	return nil
 }
 
@@ -675,54 +675,116 @@ func (tv *TaxValidator) validateServiceListCode(code string) error {
 	if len(code) < 2 || len(code) > 5 {
 		return fmt.Errorf("código da lista de serviços deve ter entre 2 e 5 caracteres")
 	}
-	
+
 	return nil
 }
 
 func (tv *TaxValidator) countActiveICMSModalities(icms *ICMS) int {
 	count := 0
-	if icms.ICMS00 != nil { count++ }
-	if icms.ICMS10 != nil { count++ }
-	if icms.ICMS20 != nil { count++ }
-	if icms.ICMS30 != nil { count++ }
-	if icms.ICMS40 != nil { count++ }
-	if icms.ICMS41 != nil { count++ }
-	if icms.ICMS50 != nil { count++ }
-	if icms.ICMS51 != nil { count++ }
-	if icms.ICMS60 != nil { count++ }
-	if icms.ICMS70 != nil { count++ }
-	if icms.ICMS90 != nil { count++ }
-	if icms.ICMSPart != nil { count++ }
-	if icms.ICMSST != nil { count++ }
+	if icms.ICMS00 != nil {
+		count++
+	}
+	if icms.ICMS10 != nil {
+		count++
+	}
+	if icms.ICMS20 != nil {
+		count++
+	}
+	if icms.ICMS30 != nil {
+		count++
+	}
+	if icms.ICMS40 != nil {
+		count++
+	}
+	if icms.ICMS41 != nil {
+		count++
+	}
+	if icms.ICMS50 != nil {
+		count++
+	}
+	if icms.ICMS51 != nil {
+		count++
+	}
+	if icms.ICMS60 != nil {
+		count++
+	}
+	if icms.ICMS70 != nil {
+		count++
+	}
+	if icms.ICMS90 != nil {
+		count++
+	}
+	if icms.ICMSPart != nil {
+		count++
+	}
+	if icms.ICMSST != nil {
+		count++
+	}
 	// Simples Nacional modalities
-	if icms.ICMSSN101 != nil { count++ }
-	if icms.ICMSSN102 != nil { count++ }
-	if icms.ICMSSN103 != nil { count++ }
-	if icms.ICMSSN201 != nil { count++ }
-	if icms.ICMSSN202 != nil { count++ }
-	if icms.ICMSSN203 != nil { count++ }
-	if icms.ICMSSN300 != nil { count++ }
-	if icms.ICMSSN400 != nil { count++ }
-	if icms.ICMSSN500 != nil { count++ }
-	if icms.ICMSSN900 != nil { count++ }
+	if icms.ICMSSN101 != nil {
+		count++
+	}
+	if icms.ICMSSN102 != nil {
+		count++
+	}
+	if icms.ICMSSN103 != nil {
+		count++
+	}
+	if icms.ICMSSN201 != nil {
+		count++
+	}
+	if icms.ICMSSN202 != nil {
+		count++
+	}
+	if icms.ICMSSN203 != nil {
+		count++
+	}
+	if icms.ICMSSN300 != nil {
+		count++
+	}
+	if icms.ICMSSN400 != nil {
+		count++
+	}
+	if icms.ICMSSN500 != nil {
+		count++
+	}
+	if icms.ICMSSN900 != nil {
+		count++
+	}
 	return count
 }
 
 func (tv *TaxValidator) countActivePISModalities(pis *PIS) int {
 	count := 0
-	if pis.PISAliq != nil { count++ }
-	if pis.PISQtde != nil { count++ }
-	if pis.PISNT != nil { count++ }
-	if pis.PISOutr != nil { count++ }
+	if pis.PISAliq != nil {
+		count++
+	}
+	if pis.PISQtde != nil {
+		count++
+	}
+	if pis.PISNT != nil {
+		count++
+	}
+	if pis.PISOutr != nil {
+		count++
+	}
 	return count
 }
 
 func (tv *TaxValidator) countActiveCOFINSModalities(cofins *COFINS) int {
 	count := 0
-	if cofins.COFINSAliq != nil { count++ }
-	if cofins.COFINSQtde != nil { count++ }
-	if cofins.COFINSNT != nil { count++ }
-	if cofins.COFINSOutr != nil { count++ }
+	if cofins.COFINSAliq != nil {
+		count++
+	}
+	if cofins.COFINSQtde != nil {
+		count++
+	}
+	if cofins.COFINSNT != nil {
+		count++
+	}
+	if cofins.COFINSOutr != nil {
+		count++
+	}
 	return count
 }
 
@@ -745,9 +807,9 @@ func (tv *TaxValidator) isICMSTaxed(icms *ICMS) bool {
 		return false
 	}
 	// ICMS is considered taxed if it's not in exempt/non-taxed modalities
-	return icms.ICMS00 != nil || icms.ICMS10 != nil || icms.ICMS20 != nil || 
-		   icms.ICMS51 != nil || icms.ICMS70 != nil || icms.ICMS90 != nil ||
-		   icms.ICMSPart != nil || icms.ICMSSN101 != nil || icms.ICMSSN201 != nil || icms.ICMSSN900 != nil
+	return icms.ICMS00 != nil || icms.ICMS10 != nil || icms.ICMS20 != nil ||
+		icms.ICMS51 != nil || icms.ICMS70 != nil || icms.ICMS90 != nil ||
+		icms.ICMSPart != nil || icms.ICMSSN101 != nil || icms.ICMSSN201 != nil || icms.ICMSSN900 != nil
 }
 
 // abs returns the absolute value of a float64

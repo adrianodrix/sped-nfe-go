@@ -31,8 +31,8 @@ func (ve *ValidationError) Error() string {
 
 // ValidationResult holds the result of validation
 type ValidationResult struct {
-	Valid   bool               `json:"valid"`
-	Errors  []*ValidationError `json:"errors,omitempty"`
+	Valid    bool               `json:"valid"`
+	Errors   []*ValidationError `json:"errors,omitempty"`
 	Warnings []*ValidationError `json:"warnings,omitempty"`
 }
 
@@ -46,7 +46,7 @@ func NewValidator(config *LayoutConfig) *Validator {
 // ValidateNFe validates an entire NFe TXT structure
 func (v *Validator) ValidateNFe(lines []string) error {
 	result := v.ValidateNFeDetailed(lines)
-	
+
 	if !result.Valid {
 		// Convert validation errors to a single error message
 		var messages []string
@@ -55,7 +55,7 @@ func (v *Validator) ValidateNFe(lines []string) error {
 		}
 		return fmt.Errorf("validation errors: %s", strings.Join(messages, "; "))
 	}
-	
+
 	return nil
 }
 
@@ -140,7 +140,7 @@ func (v *Validator) validateLine(line string, lineNum int) []*ValidationError {
 	}
 
 	tag := parts[0]
-	
+
 	// Validate tag exists in layout
 	structure, exists := v.layoutConfig.Structure[tag]
 	if !exists {
@@ -397,7 +397,7 @@ func (v *Validator) isValidVersion(version string) bool {
 func (v *Validator) isValidCNPJ(cnpj string) bool {
 	// Remove any formatting
 	digits := regexp.MustCompile(`\D`).ReplaceAllString(cnpj, "")
-	
+
 	// Must have exactly 14 digits
 	if len(digits) != 14 {
 		return false
@@ -424,7 +424,7 @@ func (v *Validator) isValidCNPJ(cnpj string) bool {
 func (v *Validator) isValidCPF(cpf string) bool {
 	// Remove any formatting
 	digits := regexp.MustCompile(`\D`).ReplaceAllString(cpf, "")
-	
+
 	// Must have exactly 11 digits
 	if len(digits) != 11 {
 		return false
@@ -473,9 +473,9 @@ func (v *Validator) isValidDateTime(datetime string) bool {
 	// Check for common NFe datetime formats
 	patterns := []string{
 		`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$`, // ISO with timezone
-		`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$`,                 // ISO without timezone
-		`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$`,                 // Simple datetime
-		`^\d{4}-\d{2}-\d{2}$`,                                    // Date only
+		`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$`,                // ISO without timezone
+		`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$`,                // Simple datetime
+		`^\d{4}-\d{2}-\d{2}$`,                                  // Date only
 	}
 
 	for _, pattern := range patterns {
@@ -491,7 +491,7 @@ func (v *Validator) isValidDateTime(datetime string) bool {
 func (v *Validator) isValidIE(ie string) bool {
 	// Remove any formatting
 	digits := regexp.MustCompile(`\D`).ReplaceAllString(ie, "")
-	
+
 	// Must have between 8 and 14 digits
 	return len(digits) >= 8 && len(digits) <= 14
 }
@@ -508,7 +508,7 @@ func (v *Validator) isValidEmail(email string) bool {
 func (v *Validator) isValidCEP(cep string) bool {
 	// Remove any formatting
 	digits := regexp.MustCompile(`\D`).ReplaceAllString(cep, "")
-	
+
 	// Must have exactly 8 digits
 	return len(digits) == 8
 }
@@ -517,7 +517,7 @@ func (v *Validator) isValidCEP(cep string) bool {
 func (v *Validator) isValidNCM(ncm string) bool {
 	// Remove any formatting
 	digits := regexp.MustCompile(`\D`).ReplaceAllString(ncm, "")
-	
+
 	// Must have exactly 8 digits
 	return len(digits) == 8
 }
@@ -545,7 +545,7 @@ func (v *Validator) extractTag(line string) string {
 // ValidateTXTContent validates entire TXT content (multiple NFes)
 func (v *Validator) ValidateTXTContent(content []byte) (*ValidationResult, error) {
 	lines := strings.Split(string(content), "\n")
-	
+
 	// Clean empty lines
 	var cleanLines []string
 	for _, line := range lines {
@@ -580,7 +580,7 @@ func (v *Validator) ValidateTXTContent(content []byte) (*ValidationResult, error
 
 	// Split into NFes and validate each
 	nfes := v.splitNFes(cleanLines[1:])
-	
+
 	result := &ValidationResult{
 		Valid:    true,
 		Errors:   []*ValidationError{},

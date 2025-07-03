@@ -15,11 +15,11 @@ func TestNewValidatorSimple(t *testing.T) {
 	}
 
 	validator := NewValidator(config)
-	
+
 	if validator == nil {
 		t.Error("Expected validator but got nil")
 	}
-	
+
 	if validator.layoutConfig != config {
 		t.Error("Validator config not set correctly")
 	}

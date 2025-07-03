@@ -36,12 +36,12 @@ func TestNewTaxValidator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			validator := NewTaxValidator(tt.config)
-			
+
 			if validator == nil {
 				t.Errorf("NewTaxValidator() returned nil")
 				return
 			}
-			
+
 			if tt.name == "with nil config" {
 				// Check default values were set
 				if validator.config.UF != "SP" {
@@ -93,7 +93,7 @@ func TestTaxValidator_ValidateNCM(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validator.validateNCM(tt.ncm)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("validateNCM() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -149,7 +149,7 @@ func TestTaxValidator_ValidateCFOP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validator.validateCFOP(tt.cfop)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("validateCFOP() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -190,7 +190,7 @@ func TestTaxValidator_ValidateCEST(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validator.validateCEST(tt.cest)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("validateCEST() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -236,7 +236,7 @@ func TestTaxValidator_ValidateOrigin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validator.validateOrigin(tt.origin)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("validateOrigin() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -248,9 +248,9 @@ func TestTaxValidator_IsValidModBC(t *testing.T) {
 	validator := NewTaxValidator(nil)
 
 	tests := []struct {
-		name   string
-		modBC  string
-		want   bool
+		name  string
+		modBC string
+		want  bool
 	}{
 		{
 			name:  "valid modBC 0",
@@ -345,7 +345,7 @@ func TestTaxValidator_ValidateICMS00(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.validateICMS00(tt.icms00, Produto{})
-			
+
 			if len(errors) != tt.wantCount {
 				t.Errorf("validateICMS00() returned %d errors, want %d", len(errors), tt.wantCount)
 				for _, err := range errors {
@@ -426,7 +426,7 @@ func TestTaxValidator_ValidateItemTaxes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateItemTaxes(tt.item)
-			
+
 			if len(errors) != tt.wantCount {
 				t.Errorf("ValidateItemTaxes() returned %d errors, want %d", len(errors), tt.wantCount)
 				for _, err := range errors {
@@ -537,7 +537,7 @@ func TestTaxValidator_ValidateCrossTaxRules(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.validateCrossTaxRules(tt.item)
-			
+
 			if len(errors) != tt.wantCount {
 				t.Errorf("validateCrossTaxRules() returned %d errors, want %d", len(errors), tt.wantCount)
 				for _, err := range errors {

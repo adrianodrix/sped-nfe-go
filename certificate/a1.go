@@ -15,6 +15,7 @@ import (
 
 	"github.com/adrianodrix/sped-nfe-go/errors"
 	"golang.org/x/crypto/pkcs12"
+	sslmatePkcs12 "software.sslmate.com/src/go-pkcs12"
 )
 
 // A1Certificate represents a software-based certificate (A1 type) loaded from .pfx/.p12 files
@@ -257,6 +258,14 @@ func (a1 *A1Certificate) GetPublicKey() crypto.PublicKey {
 	return a1.certificate.PublicKey
 }
 
+// GetPrivateKey returns the certificate's private key for TLS authentication
+func (a1 *A1Certificate) GetPrivateKey() crypto.PrivateKey {
+	a1.mutex.RLock()
+	defer a1.mutex.RUnlock()
+
+	return a1.privateKey
+}
+
 // GetCertificate returns the X.509 certificate
 func (a1 *A1Certificate) GetCertificate() *x509.Certificate {
 	a1.mutex.RLock()
@@ -375,10 +384,77 @@ func (a1 *A1Certificate) Close() error {
 }
 
 // ExportToPKCS12 exports the certificate and private key to PKCS#12 format
-// Note: PKCS#12 encoding is not supported by golang.org/x/crypto/pkcs12
-// This is a placeholder for future implementation or use of external tools
+// This creates a new PKCS#12 container with the certificate and private key
 func (a1 *A1Certificate) ExportToPKCS12(password string) ([]byte, error) {
-	return nil, errors.NewCertificateError("PKCS#12 encoding not supported in current implementation", nil)
+	a1.mutex.RLock()
+	defer a1.mutex.RUnlock()
+
+	if a1.certificate == nil || a1.privateKey == nil {
+		return nil, errors.NewCertificateError("certificate or private key not available", nil)
+	}
+
+	if password == "" {
+		return nil, errors.NewValidationError("password cannot be empty for PKCS#12 export", "password", "")
+	}
+
+	// Use software.sslmate.com/src/go-pkcs12 for encoding
+	// This library supports both decoding and encoding PKCS#12
+	
+	// Create a chain with the certificate and any intermediate certificates
+	var chain []*x509.Certificate
+	chain = append(chain, a1.certificate)
+	
+	// Add intermediate certificates if available
+	if a1.chain != nil && len(a1.chain) > 0 {
+		chain = append(chain, a1.chain...)
+	}
+
+	// Encode to PKCS#12 using sslmate library which supports encoding
+	// Create a certificate chain starting from intermediate certificates (excluding the main cert)
+	var caCerts []*x509.Certificate
+	if len(chain) > 1 {
+		caCerts = chain[1:]
+	}
+	
+	p12Data, err := sslmatePkcs12.Encode(rand.Reader, a1.privateKey, a1.certificate, caCerts, password)
+	if err != nil {
+		return nil, errors.NewCertificateError("failed to encode PKCS#12", err)
+	}
+
+	return p12Data, nil
+}
+
+// ValidateICPBrasilChain validates the certificate chain against ICP-Brasil root CAs
+func (a1 *A1Certificate) ValidateICPBrasilChain() error {
+	a1.mutex.RLock()
+	defer a1.mutex.RUnlock()
+
+	if a1.certificate == nil {
+		return errors.NewCertificateError("certificate not available", nil)
+	}
+
+	// Create certificate chain for validation
+	var chain []*x509.Certificate
+	chain = append(chain, a1.certificate)
+	if a1.chain != nil {
+		chain = append(chain, a1.chain...)
+	}
+
+	// Validate chain against ICP-Brasil root certificates
+	return ValidateICPBrasilCertificateChain(chain)
+}
+
+
+// IsICPBrasilCertificate checks if the certificate is from ICP-Brasil
+func (a1 *A1Certificate) IsICPBrasilCertificate() bool {
+	a1.mutex.RLock()
+	defer a1.mutex.RUnlock()
+
+	if a1.certificate == nil {
+		return false
+	}
+
+	return IsICPBrasilCertificate(a1.certificate)
 }
 
 // ExportCertificateToPEM exports only the certificate to PEM format

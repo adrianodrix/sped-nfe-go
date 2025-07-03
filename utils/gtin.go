@@ -17,10 +17,10 @@ func ValidateGTIN(gtin string) error {
 	if gtin == "" || strings.ToUpper(gtin) == "SEM GTIN" {
 		return nil // Empty or "SEM GTIN" is considered valid
 	}
-	
+
 	// Remove non-numeric characters
 	gtinClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(gtin, "")
-	
+
 	// Check supported lengths
 	validLengths := []int{8, 12, 13, 14}
 	isValidLength := false
@@ -30,21 +30,21 @@ func ValidateGTIN(gtin string) error {
 			break
 		}
 	}
-	
+
 	if !isValidLength {
 		return errors.NewValidationError("GTIN must be 8, 12, 13, or 14 digits", "gtin", gtin)
 	}
-	
+
 	// Check if all digits are the same (invalid), except for all zeros
 	if isAllSameDigits(gtinClean) && gtinClean != strings.Repeat("0", len(gtinClean)) {
 		return errors.NewValidationError("GTIN cannot have all same digits", "gtin", gtin)
 	}
-	
+
 	// Validate check digit
 	if !isValidGTINCheckDigit(gtinClean) {
 		return errors.NewValidationError("invalid GTIN check digit", "gtin", gtin)
 	}
-	
+
 	return nil
 }
 
@@ -54,15 +54,15 @@ func FormatGTIN(gtin string) (string, error) {
 	if err := ValidateGTIN(gtin); err != nil {
 		return "", err
 	}
-	
+
 	// Clean the GTIN
 	gtinClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(gtin, "")
-	
+
 	// Handle special cases
 	if gtin == "" || strings.ToUpper(gtin) == "SEM GTIN" {
 		return strings.ToUpper(gtin), nil
 	}
-	
+
 	// Format based on length
 	switch len(gtinClean) {
 	case 8: // EAN-8
@@ -88,9 +88,9 @@ func GetGTINType(gtin string) (string, error) {
 	if IsGTINEmpty(gtin) {
 		return "EMPTY", nil
 	}
-	
+
 	gtinClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(gtin, "")
-	
+
 	switch len(gtinClean) {
 	case 8:
 		return "EAN-8", nil
@@ -112,40 +112,40 @@ func isValidGTINCheckDigit(gtin string) bool {
 	if len(gtin) < 8 {
 		return false
 	}
-	
+
 	// Calculate check digit for the first n-1 digits
 	calculatedCheckDigit := calculateGTINCheckDigit(gtin[:len(gtin)-1])
-	
+
 	// Get the actual check digit (last digit)
 	actualCheckDigit, err := strconv.Atoi(string(gtin[len(gtin)-1]))
 	if err != nil {
 		return false
 	}
-	
+
 	return calculatedCheckDigit == actualCheckDigit
 }
 
 // calculateGTINCheckDigit calculates the check digit for a GTIN
 func calculateGTINCheckDigit(partialGTIN string) int {
 	sum := 0
-	
+
 	// Calculate weighted sum from right to left
 	// Odd positions (from right) get weight 3, even positions get weight 1
 	for i, digit := range partialGTIN {
 		digitValue, _ := strconv.Atoi(string(digit))
-		
+
 		// Position from right (1-indexed)
 		positionFromRight := len(partialGTIN) - i
-		
+
 		// Odd positions from right get weight 3, even positions get weight 1
 		weight := 1
 		if positionFromRight%2 == 1 {
 			weight = 3
 		}
-		
+
 		sum += digitValue * weight
 	}
-	
+
 	// Calculate check digit
 	remainder := sum % 10
 	if remainder == 0 {
@@ -185,16 +185,16 @@ func ConvertToGTIN14(gtin string) (string, error) {
 	if err := ValidateGTIN(gtin); err != nil {
 		return "", err
 	}
-	
+
 	if IsGTINEmpty(gtin) {
 		return "SEM GTIN", nil
 	}
-	
+
 	gtinClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(gtin, "")
-	
+
 	// Pad to 14 digits with leading zeros
 	gtin14 := strings.Repeat("0", 14-len(gtinClean)) + gtinClean
-	
+
 	return gtin14, nil
 }
 
@@ -203,25 +203,25 @@ func ConvertFromGTIN14(gtin14 string) (string, error) {
 	if err := ValidateGTIN(gtin14); err != nil {
 		return "", err
 	}
-	
+
 	if IsGTINEmpty(gtin14) {
 		return gtin14, nil
 	}
-	
+
 	gtinClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(gtin14, "")
-	
+
 	if len(gtinClean) != 14 {
 		return "", errors.NewValidationError("input must be a 14-digit GTIN", "gtin14", gtin14)
 	}
-	
+
 	// Remove leading zeros to find the shortest valid representation
 	trimmed := strings.TrimLeft(gtinClean, "0")
-	
+
 	// If all zeros, return "0"
 	if trimmed == "" {
 		return "0", nil
 	}
-	
+
 	// Determine the appropriate length based on the first digit
 	switch len(trimmed) {
 	case 1, 2, 3, 4, 5, 6, 7:
@@ -247,11 +247,11 @@ func ConvertFromGTIN14(gtin14 string) (string, error) {
 func GenerateGTINCheckDigit(partialGTIN string) (string, error) {
 	// Validate input
 	gtinClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(partialGTIN, "")
-	
+
 	if len(gtinClean) < 7 || len(gtinClean) > 13 {
 		return "", errors.NewValidationError("partial GTIN must be 7-13 digits", "partialGTIN", partialGTIN)
 	}
-	
+
 	checkDigit := calculateGTINCheckDigit(gtinClean)
 	return gtinClean + strconv.Itoa(checkDigit), nil
 }

@@ -26,12 +26,12 @@ func NewMockCertificate() *MockCertificate {
 		Issuer: pkix.Name{
 			CommonName: "Mock Issuer",
 		},
-		NotBefore:    time.Now().Add(-24 * time.Hour),
-		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		NotBefore:   time.Now().Add(-24 * time.Hour),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:    x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
-	
+
 	return &MockCertificate{
 		cert: cert,
 	}

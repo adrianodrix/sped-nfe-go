@@ -38,25 +38,25 @@ func main() {
 
 	// Adicionar informações básicas da NFe
 	identificacao := &nfe.Identificacao{
-		CUF:     "35",           // São Paulo
-		CNF:     "12345678",     // Código numérico fiscal
-		NatOp:   "Venda",        // Natureza da operação
-		Mod:     "55",           // Modelo NFe
-		Serie:   "1",            // Série
-		NNF:     "123",          // Número da NFe
-		DhEmi:   time.Now().Format("2006-01-02T15:04:05-07:00"),
-		TpNF:    "1",            // Saída
-		IdDest:  "1",            // Operação interna
-		CMunFG:  "3550308",      // São Paulo
-		TpImp:   "1",            // DANFE normal
-		TpEmis:  "1",            // Normal
-		CDV:     "1",            // Dígito verificador
-		TpAmb:   "2",            // Homologação
-		FinNFe:  "1",            // Normal
-		IndFinal: "0",           // Não consumidor final
-		IndPres: "1",            // Presencial
-		ProcEmi: "0",            // Aplicativo do contribuinte
-		VerProc: "1.0.0",        // Versão do processo
+		CUF:      "35",       // São Paulo
+		CNF:      "12345678", // Código numérico fiscal
+		NatOp:    "Venda",    // Natureza da operação
+		Mod:      "55",       // Modelo NFe
+		Serie:    "1",        // Série
+		NNF:      "123",      // Número da NFe
+		DhEmi:    time.Now().Format("2006-01-02T15:04:05-07:00"),
+		TpNF:     "1",       // Saída
+		IdDest:   "1",       // Operação interna
+		CMunFG:   "3550308", // São Paulo
+		TpImp:    "1",       // DANFE normal
+		TpEmis:   "1",       // Normal
+		CDV:      "1",       // Dígito verificador
+		TpAmb:    "2",       // Homologação
+		FinNFe:   "1",       // Normal
+		IndFinal: "0",       // Não consumidor final
+		IndPres:  "1",       // Presencial
+		ProcEmi:  "0",       // Aplicativo do contribuinte
+		VerProc:  "1.0.0",   // Versão do processo
 	}
 
 	err = make.TagIde(identificacao)
@@ -97,7 +97,7 @@ func main() {
 	// Exemplo 2: Autorizar a NFe
 	fmt.Println("\n=== Autorizando NFe ===")
 	ctx := context.Background()
-	
+
 	authResponse, err := client.Authorize(ctx, []byte(xml))
 	if err != nil {
 		log.Fatalf("Erro ao autorizar NFe: %v", err)
@@ -116,7 +116,7 @@ func main() {
 
 	// Exemplo 3: Consultar status do SEFAZ
 	fmt.Println("\n=== Consultando status SEFAZ ===")
-	
+
 	statusResponse, err := client.QueryStatus(ctx)
 	if err != nil {
 		log.Fatalf("Erro ao consultar status: %v", err)
@@ -132,7 +132,7 @@ func main() {
 
 	// Exemplo 4: Gerar chave de acesso
 	fmt.Println("\n=== Gerando chave de acesso ===")
-	
+
 	chave, err := client.GenerateKey(
 		"12345678000195", // CNPJ
 		55,               // Modelo NFe
@@ -148,16 +148,16 @@ func main() {
 
 	// Exemplo 5: Ativar contingência
 	fmt.Println("\n=== Testando contingência ===")
-	
+
 	err = client.ActivateContingency("SEFAZ fora do ar para manutenção programada")
 	if err != nil {
 		log.Printf("Erro ao ativar contingência: %v", err)
 	} else {
 		fmt.Printf("✅ Contingência ativada\n")
-		
+
 		if client.IsContingencyActive() {
 			fmt.Printf("   Status: Ativa\n")
-			
+
 			// Desativar contingência
 			err = client.DeactivateContingency()
 			if err != nil {
@@ -170,7 +170,7 @@ func main() {
 
 	// Exemplo 6: Validar XML
 	fmt.Println("\n=== Validando XML ===")
-	
+
 	err = client.ValidateXML([]byte(xml))
 	if err != nil {
 		fmt.Printf("❌ XML inválido: %v\n", err)

@@ -15,10 +15,10 @@ func main() {
 
 	// 1. Carregar certificado real
 	fmt.Println("\n1. Carregando certificado real...")
-	
+
 	certPath := "refs/certificates/cert-valido-jan-2026.pfx"
 	fmt.Printf("   Arquivo: %s\n", certPath)
-	
+
 	// ATENÇÃO: Substitua pela senha real do seu certificado
 	password := ""
 	if password == "" {
@@ -27,15 +27,15 @@ func main() {
 		fmt.Println("   Exemplo: password := \"suasenha123\"")
 		return
 	}
-	
+
 	cert, err := certificate.LoadA1FromFile(certPath, password)
 	if err != nil {
 		log.Fatalf("Erro ao carregar certificado: %v", err)
 	}
 	defer cert.Close()
-	
+
 	fmt.Println("   ✅ Certificado carregado com sucesso")
-	
+
 	// Exibir informações do certificado
 	fmt.Printf("   📋 Dados do certificado:\n")
 	fmt.Printf("      Titular: %s\n", cert.GetSubject())
@@ -43,13 +43,13 @@ func main() {
 	fmt.Printf("      Serial: %s\n", cert.GetSerialNumber())
 	fmt.Printf("      Válido: %v\n", cert.IsValid())
 	notBefore, notAfter := cert.GetValidityPeriod()
-	fmt.Printf("      Validade: %s até %s\n", 
-		notBefore.Format("02/01/2006"), 
+	fmt.Printf("      Validade: %s até %s\n",
+		notBefore.Format("02/01/2006"),
 		notAfter.Format("02/01/2006"))
-	
+
 	// 2. Criar cliente NFe
 	fmt.Println("\n2. Criando cliente NFe...")
-	
+
 	config := nfe.ClientConfig{
 		Environment: nfe.Homologation, // Sempre use homologação para testes
 		UF:          nfe.SP,
@@ -64,7 +64,7 @@ func main() {
 
 	// 3. Configurar certificado no cliente
 	fmt.Println("\n3. Configurando certificado no cliente...")
-	
+
 	err = client.SetCertificate(cert)
 	if err != nil {
 		log.Fatalf("Erro ao configurar certificado: %v", err)
@@ -73,7 +73,7 @@ func main() {
 
 	// 4. Testar comunicação com SEFAZ - Status
 	fmt.Println("\n4. Testando comunicação com SEFAZ - Status...")
-	
+
 	ctx := context.Background()
 	statusResponse, err := client.QueryStatus(ctx)
 	if err != nil {
@@ -87,11 +87,11 @@ func main() {
 
 	// 5. Testar consulta por chave (usando chave de exemplo)
 	fmt.Println("\n5. Testando consulta por chave de acesso...")
-	
+
 	// Chave de exemplo válida (44 dígitos)
 	chaveExemplo := "35230714200166000187550010000000051123456789"
 	fmt.Printf("   Chave: %s\n", chaveExemplo)
-	
+
 	queryResponse, err := client.QueryChave(ctx, chaveExemplo)
 	if err != nil {
 		fmt.Printf("   ❌ Erro na consulta: %v\n", err)
@@ -103,7 +103,7 @@ func main() {
 
 	// 6. Demonstrar outras funcionalidades
 	fmt.Println("\n6. Demonstrando outras funcionalidades...")
-	
+
 	// Validar XML de exemplo
 	exemploXML := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -142,14 +142,14 @@ func main() {
 	fmt.Println("   • Cliente NFe configurado: ✅")
 	fmt.Println("   • Comunicação SEFAZ testada: ✅")
 	fmt.Println("   • Funcionalidades básicas: ✅")
-	
+
 	fmt.Println("\n🚀 Próximos passos:")
 	fmt.Println("   1. Implementar geração completa de XMLs NFe")
 	fmt.Println("   2. Implementar assinatura digital real")
-	fmt.Println("   3. Testar autorização de NFe de teste") 
+	fmt.Println("   3. Testar autorização de NFe de teste")
 	fmt.Println("   4. Implementar eventos (cancelamento, CCe)")
 	fmt.Println("   5. Validar contra schemas XSD")
-	
+
 	fmt.Println("\n⚠️  IMPORTANTE:")
 	fmt.Println("   Este exemplo usa ambiente de HOMOLOGAÇÃO.")
 	fmt.Println("   Para produção, altere Environment para nfe.Production.")

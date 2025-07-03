@@ -15,7 +15,7 @@ func main() {
 
 	// 1. Criar cliente NFe
 	fmt.Println("\n1. Criando cliente NFe...")
-	
+
 	config := nfe.ClientConfig{
 		Environment: nfe.Homologation,
 		UF:          nfe.SP,
@@ -30,7 +30,7 @@ func main() {
 
 	// 2. Configurar certificado
 	fmt.Println("\n2. Configurando certificado mock...")
-	
+
 	cert := certificate.NewMockCertificate()
 	err = client.SetCertificate(cert)
 	if err != nil {
@@ -40,7 +40,7 @@ func main() {
 
 	// 3. Consultar status SEFAZ
 	fmt.Println("\n3. Consultando status do SEFAZ...")
-	
+
 	ctx := context.Background()
 	statusResponse, err := client.QueryStatus(ctx)
 	if err != nil {
@@ -53,7 +53,7 @@ func main() {
 
 	// 4. Criar NFe builder
 	fmt.Println("\n4. Criando NFe builder...")
-	
+
 	make := client.CreateNFe()
 	if make == nil {
 		log.Fatal("Erro ao criar NFe builder")
@@ -62,7 +62,7 @@ func main() {
 
 	// 5. Validar XML exemplo
 	fmt.Println("\n5. Validando XML de exemplo...")
-	
+
 	exemploXML := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
 	<infNFe Id="NFe12345">
@@ -82,7 +82,7 @@ func main() {
 
 	// 6. Testar autorização com XML de exemplo
 	fmt.Println("\n6. Testando autorização...")
-	
+
 	authResponse, err := client.Authorize(ctx, exemploXML)
 	if err != nil {
 		log.Fatalf("Erro na autorização: %v", err)
@@ -93,7 +93,7 @@ func main() {
 
 	// 7. Testar consulta por chave
 	fmt.Println("\n7. Testando consulta por chave...")
-	
+
 	chaveExemplo := "12345678901234567890123456789012345678901234"
 	queryResponse, err := client.QueryChave(ctx, chaveExemplo)
 	if err != nil {
@@ -105,8 +105,8 @@ func main() {
 
 	// 8. Testar geração de chave
 	fmt.Println("\n8. Testando geração de chave de acesso...")
-	
-	chave, err := client.GenerateKey("12345678000195", 55, 1, 123, 
+
+	chave, err := client.GenerateKey("12345678000195", 55, 1, 123,
 		time.Now())
 	if err != nil {
 		fmt.Printf("   ❌ Erro: %v\n", err)
@@ -116,7 +116,7 @@ func main() {
 
 	// 9. Métodos auxiliares
 	fmt.Println("\n9. Testando métodos auxiliares...")
-	
+
 	fmt.Printf("   Config: %v\n", client.GetConfig() != nil)
 	fmt.Printf("   Certificado: %v\n", client.GetCertificate() != nil)
 	fmt.Printf("   Contingência ativa: %v\n", client.IsContingencyActive())

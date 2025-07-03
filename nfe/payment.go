@@ -5,50 +5,50 @@ import "encoding/xml"
 
 // Pagamento represents payment information for NFe
 type Pagamento struct {
-	XMLName   xml.Name `xml:"pag"`
-	IndPag    string   `xml:"indPag,omitempty" validate:"omitempty,oneof=0 1"`     // Payment indicator
-	TPag      string   `xml:"tPag" validate:"required,oneof=01 02 03 04 05 10 11 12 13 14 15 16 17 18 19 90 99"` // Payment type
-	XPag      string   `xml:"xPag,omitempty" validate:"omitempty,min=2,max=60"`    // Payment description
-	VPag      string   `xml:"vPag" validate:"required"`                           // Payment value
-	UfPag     string   `xml:"UFPag,omitempty" validate:"omitempty,len=2"`         // Payment UF
-	Card      *Card    `xml:"card,omitempty"`                                     // Card payment
-	CNPJPag   string   `xml:"CNPJPag,omitempty" validate:"omitempty,len=14"`      // Payment company CNPJ
-	UFCred    string   `xml:"UFCred,omitempty" validate:"omitempty,len=2"`        // Credit UF
-	CNPJCredCard string `xml:"CNPJCredCard,omitempty" validate:"omitempty,len=14"` // Credit card company CNPJ
+	XMLName      xml.Name `xml:"pag"`
+	IndPag       string   `xml:"indPag,omitempty" validate:"omitempty,oneof=0 1"`                                   // Payment indicator
+	TPag         string   `xml:"tPag" validate:"required,oneof=01 02 03 04 05 10 11 12 13 14 15 16 17 18 19 90 99"` // Payment type
+	XPag         string   `xml:"xPag,omitempty" validate:"omitempty,min=2,max=60"`                                  // Payment description
+	VPag         string   `xml:"vPag" validate:"required"`                                                          // Payment value
+	UfPag        string   `xml:"UFPag,omitempty" validate:"omitempty,len=2"`                                        // Payment UF
+	Card         *Card    `xml:"card,omitempty"`                                                                    // Card payment
+	CNPJPag      string   `xml:"CNPJPag,omitempty" validate:"omitempty,len=14"`                                     // Payment company CNPJ
+	UFCred       string   `xml:"UFCred,omitempty" validate:"omitempty,len=2"`                                       // Credit UF
+	CNPJCredCard string   `xml:"CNPJCredCard,omitempty" validate:"omitempty,len=14"`                                // Credit card company CNPJ
 }
 
 // Card represents credit/debit card payment information
 type Card struct {
-	XMLName xml.Name `xml:"card"`
-	TpIntegra string `xml:"tpIntegra" validate:"required,oneof=1 2"`              // Integration type
-	CNPJ      string `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`          // Card operator CNPJ
-	TBand     string `xml:"tBand,omitempty" validate:"omitempty,oneof=01 02 03 04 05 06 07 08 09 10 11 12 99"` // Card brand
-	CAut      string `xml:"cAut,omitempty" validate:"omitempty,min=1,max=20"`    // Authorization code
-	CNPJReceb string `xml:"CNPJReceb,omitempty" validate:"omitempty,len=14"`     // Receiver CNPJ
-	IdTermPag string `xml:"idTermPag,omitempty" validate:"omitempty,min=1,max=8"` // Payment terminal ID
+	XMLName   xml.Name `xml:"card"`
+	TpIntegra string   `xml:"tpIntegra" validate:"required,oneof=1 2"`                                           // Integration type
+	CNPJ      string   `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`                                        // Card operator CNPJ
+	TBand     string   `xml:"tBand,omitempty" validate:"omitempty,oneof=01 02 03 04 05 06 07 08 09 10 11 12 99"` // Card brand
+	CAut      string   `xml:"cAut,omitempty" validate:"omitempty,min=1,max=20"`                                  // Authorization code
+	CNPJReceb string   `xml:"CNPJReceb,omitempty" validate:"omitempty,len=14"`                                   // Receiver CNPJ
+	IdTermPag string   `xml:"idTermPag,omitempty" validate:"omitempty,min=1,max=8"`                              // Payment terminal ID
 }
 
 // PaymentType represents payment type codes
 type PaymentType string
 
 const (
-	PaymentTypeMoney           PaymentType = "01" // Dinheiro
-	PaymentTypeCheck           PaymentType = "02" // Cheque
-	PaymentTypeCreditCard      PaymentType = "03" // Cartão de Crédito
-	PaymentTypeDebitCard       PaymentType = "04" // Cartão de Débito
-	PaymentTypeStore           PaymentType = "05" // Crédito Loja
-	PaymentTypeFood            PaymentType = "10" // Vale Alimentação
-	PaymentTypeMeal            PaymentType = "11" // Vale Refeição
-	PaymentTypePresent         PaymentType = "12" // Vale Presente
-	PaymentTypeFuel            PaymentType = "13" // Vale Combustível
-	PaymentTypeDuplicate       PaymentType = "14" // Duplicata Mercantil
-	PaymentTypeBoletoBancario  PaymentType = "15" // Boleto Bancário
-	PaymentTypeDeposito        PaymentType = "16" // Depósito Bancário
-	PaymentTypeInstant         PaymentType = "17" // Pagamento Instantâneo (PIX)
-	PaymentTypeBankTransfer    PaymentType = "18" // Transferência bancária
-	PaymentTypeLoyalty         PaymentType = "19" // Programa de fidelidade
-	PaymentTypeWithoutPayment  PaymentType = "90" // Sem pagamento
-	PaymentTypeOther           PaymentType = "99" // Outros
+	PaymentTypeMoney          PaymentType = "01" // Dinheiro
+	PaymentTypeCheck          PaymentType = "02" // Cheque
+	PaymentTypeCreditCard     PaymentType = "03" // Cartão de Crédito
+	PaymentTypeDebitCard      PaymentType = "04" // Cartão de Débito
+	PaymentTypeStore          PaymentType = "05" // Crédito Loja
+	PaymentTypeFood           PaymentType = "10" // Vale Alimentação
+	PaymentTypeMeal           PaymentType = "11" // Vale Refeição
+	PaymentTypePresent        PaymentType = "12" // Vale Presente
+	PaymentTypeFuel           PaymentType = "13" // Vale Combustível
+	PaymentTypeDuplicate      PaymentType = "14" // Duplicata Mercantil
+	PaymentTypeBoletoBancario PaymentType = "15" // Boleto Bancário
+	PaymentTypeDeposito       PaymentType = "16" // Depósito Bancário
+	PaymentTypeInstant        PaymentType = "17" // Pagamento Instantâneo (PIX)
+	PaymentTypeBankTransfer   PaymentType = "18" // Transferência bancária
+	PaymentTypeLoyalty        PaymentType = "19" // Programa de fidelidade
+	PaymentTypeWithoutPayment PaymentType = "90" // Sem pagamento
+	PaymentTypeOther          PaymentType = "99" // Outros
 )
 
 // String returns the string representation of PaymentType
@@ -185,8 +185,8 @@ func (it IntegrationType) Description() string {
 type PaymentIndicator string
 
 const (
-	PaymentIndicatorCash  PaymentIndicator = "0" // Pagamento à Vista
-	PaymentIndicatorTerm  PaymentIndicator = "1" // Pagamento à Prazo
+	PaymentIndicatorCash PaymentIndicator = "0" // Pagamento à Vista
+	PaymentIndicatorTerm PaymentIndicator = "1" // Pagamento à Prazo
 )
 
 // String returns the string representation of PaymentIndicator
@@ -341,7 +341,7 @@ func ValidatePayment(payment *Pagamento) error {
 	// - Check value format
 	// - Validate card information if present
 	// - Check CNPJ format
-	
+
 	return nil
 }
 
@@ -360,7 +360,7 @@ func CreateCardPayment(value string, card *Card) *Pagamento {
 		// Logic to determine if it's credit or debit based on integration
 		paymentType = PaymentTypeCreditCard
 	}
-	
+
 	return &Pagamento{
 		TPag: paymentType.String(),
 		VPag: value,

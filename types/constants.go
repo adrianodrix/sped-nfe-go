@@ -99,11 +99,11 @@ const (
 
 	// Especiais
 	EX UF = 99 // Exterior (para operações de exportação)
-	
+
 	// Autoridades e Sistemas Centralizados
-	AN   UF = 91 // Ambiente Nacional (Receita Federal)
-	SVAN UF = 92 // Sistema Virtual do Ambiente Nacional 
-	SVRS UF = 93 // Sistema Virtual do Rio Grande do Sul
+	AN    UF = 91 // Ambiente Nacional (Receita Federal)
+	SVAN  UF = 92 // Sistema Virtual do Ambiente Nacional
+	SVRS  UF = 93 // Sistema Virtual do Rio Grande do Sul
 	SVCAN UF = 94 // Sistema Virtual de Contingência do Ambiente Nacional
 	SVCRS UF = 95 // Sistema Virtual de Contingência do Rio Grande do Sul
 )

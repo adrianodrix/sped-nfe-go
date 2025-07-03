@@ -122,7 +122,7 @@ func (c *Contingency) Activate(config ContingencyConfig) (string, error) {
 	c.Type = contingencyType
 	c.Motive = motive
 	c.Timestamp = time.Now().UTC().Unix()
-	
+
 	// Set emission type based on contingency type
 	switch contingencyType {
 	case ContingencySVCAN:
@@ -216,7 +216,7 @@ func ValidateContingencyData(jsonData string) error {
 		EmissionNormal, EmissionEPEC, EmissionFSDA,
 		EmissionSVCAN, EmissionSVCRS, EmissionOffline,
 	}
-	
+
 	validType := false
 	for _, validEmType := range validEmissionTypes {
 		if c.TpEmis == validEmType {
@@ -224,7 +224,7 @@ func ValidateContingencyData(jsonData string) error {
 			break
 		}
 	}
-	
+
 	if !validType {
 		return fmt.Errorf("invalid emission type: %d", c.TpEmis)
 	}
@@ -302,10 +302,10 @@ func (b *ContingencyBuilder) Activate() (*Contingency, string, error) {
 // CreateContingency is a convenience function to create and activate contingency
 func CreateContingency(uf, motive string, contingencyType ...ContingencyType) (*Contingency, string, error) {
 	builder := NewContingencyBuilder().ForState(uf).WithMotive(motive)
-	
+
 	if len(contingencyType) > 0 {
 		builder = builder.WithType(contingencyType[0])
 	}
-	
+
 	return builder.Activate()
 }

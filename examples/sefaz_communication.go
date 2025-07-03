@@ -49,7 +49,7 @@ func main() {
 
 	// 5. Check SEFAZ service status
 	fmt.Println("\n--- Checking SEFAZ Service Status ---")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -68,13 +68,13 @@ func main() {
 
 	// 6. Demonstrate access key consultation structure
 	fmt.Println("\n--- Access Key Consultation Example ---")
-	
+
 	// This is a sample access key format (44 digits)
 	sampleAccessKey := "35230712345678000195550010000000123123456789"
-	
+
 	fmt.Printf("Sample access key: %s\n", sampleAccessKey)
 	fmt.Printf("Length: %d digits\n", len(sampleAccessKey))
-	
+
 	// This would fail with network error in example environment
 	_, err = tools.SefazConsultaChave(ctx, sampleAccessKey)
 	if err != nil {
@@ -84,7 +84,7 @@ func main() {
 
 	// 7. Demonstrate registry consultation structure
 	fmt.Println("\n--- Registry Consultation Example ---")
-	
+
 	// This would also fail with network error in example environment
 	_, err = tools.SefazConsultaCadastro(ctx, config.CNPJ, config.SiglaUF)
 	if err != nil {
@@ -92,18 +92,18 @@ func main() {
 		fmt.Println("   This demonstrates the API structure")
 	}
 
-	// 8. Demonstrate batch processing structure  
+	// 8. Demonstrate batch processing structure
 	fmt.Println("\n--- Batch Processing Example ---")
-	
+
 	// Create a sample batch structure
 	lote := &nfe.LoteNFe{
 		IdLote: fmt.Sprintf("%d", time.Now().Unix()),
 		NFes:   make([]nfe.NFe, 0), // Empty for demo
 	}
-	
+
 	fmt.Printf("Sample batch ID: %s\n", lote.IdLote)
 	fmt.Printf("NFe count: %d\n", len(lote.NFes))
-	
+
 	// This would fail because the batch is empty
 	_, err = tools.SefazEnviaLote(ctx, lote, false)
 	if err != nil {
@@ -113,7 +113,7 @@ func main() {
 
 	// 9. Demonstrate invalidation structure
 	fmt.Println("\n--- Number Invalidation Example ---")
-	
+
 	inutilizacao := &nfe.InutilizacaoRequest{
 		InfInut: nfe.InfInut{
 			XServ:  "INUTILIZAR",
@@ -127,10 +127,10 @@ func main() {
 			XJust:  "Teste de inutilização para demonstração do sistema",
 		},
 	}
-	
+
 	fmt.Printf("Invalidation range: %s to %s\n", inutilizacao.InfInut.NNFIni, inutilizacao.InfInut.NNFFin)
 	fmt.Printf("Justification: %s\n", inutilizacao.InfInut.XJust)
-	
+
 	_, err = tools.SefazInutiliza(ctx, inutilizacao)
 	if err != nil {
 		fmt.Printf("⚠️  Number invalidation failed (expected): %v\n", err)
@@ -138,16 +138,16 @@ func main() {
 
 	// 10. Demonstrate cancellation structure
 	fmt.Println("\n--- Cancellation Example ---")
-	
+
 	// Sample cancellation parameters
 	chaveParaCancelar := "35230712345678000195550010000000123123456789"
 	protocoloCancelamento := "135230000000123"
 	justificativaCancelamento := "Cancelamento para demonstração do sistema de comunicação SEFAZ"
-	
+
 	fmt.Printf("Access key to cancel: %s\n", chaveParaCancelar)
 	fmt.Printf("Protocol: %s\n", protocoloCancelamento)
 	fmt.Printf("Justification: %s\n", justificativaCancelamento)
-	
+
 	_, err = tools.SefazCancela(ctx, chaveParaCancelar, protocoloCancelamento, justificativaCancelamento)
 	if err != nil {
 		fmt.Printf("⚠️  Cancellation failed (expected): %v\n", err)
@@ -155,15 +155,15 @@ func main() {
 
 	// 11. Demonstrate correction letter structure
 	fmt.Println("\n--- Correction Letter Example ---")
-	
+
 	chaveParaCorrigir := "35230712345678000195550010000000123123456789"
 	textoCorrecao := "Correção do endereço do destinatário: Rua das Flores, 123, Bairro Centro"
 	sequenciaCorrecao := 1
-	
+
 	fmt.Printf("Access key to correct: %s\n", chaveParaCorrigir)
 	fmt.Printf("Correction text: %s\n", textoCorrecao)
 	fmt.Printf("Sequence: %d\n", sequenciaCorrecao)
-	
+
 	_, err = tools.SefazCCe(ctx, chaveParaCorrigir, textoCorrecao, sequenciaCorrecao)
 	if err != nil {
 		fmt.Printf("⚠️  Correction letter failed (expected): %v\n", err)
@@ -171,17 +171,17 @@ func main() {
 
 	// 12. Show request/response debugging
 	fmt.Println("\n--- Debug Information ---")
-	
+
 	lastRequest := tools.GetLastRequest()
 	lastResponse := tools.GetLastResponse()
-	
+
 	if lastRequest != "" {
 		fmt.Printf("Last request size: %d bytes\n", len(lastRequest))
 		fmt.Printf("Request preview: %s...\n", lastRequest[:min(100, len(lastRequest))])
 	} else {
 		fmt.Println("No requests made yet")
 	}
-	
+
 	if lastResponse != "" {
 		fmt.Printf("Last response size: %d bytes\n", len(lastResponse))
 		fmt.Printf("Response preview: %s...\n", lastResponse[:min(100, len(lastResponse))])
@@ -191,7 +191,7 @@ func main() {
 
 	// 13. Configuration validation
 	fmt.Println("\n--- Configuration Validation ---")
-	
+
 	err = tools.ValidateConfig()
 	if err != nil {
 		fmt.Printf("⚠️  Configuration validation failed: %v\n", err)
@@ -201,17 +201,17 @@ func main() {
 
 	// 14. Model switching
 	fmt.Println("\n--- Model Switching Example ---")
-	
+
 	currentModel := tools.GetModel()
 	fmt.Printf("Current model: %s (NFe)\n", currentModel)
-	
+
 	err = tools.SetModel("65")
 	if err != nil {
 		fmt.Printf("⚠️  Failed to switch to NFCe: %v\n", err)
 	} else {
 		fmt.Printf("✓ Switched to model: %s (NFCe)\n", tools.GetModel())
 	}
-	
+
 	// Switch back to NFe
 	err = tools.SetModel("55")
 	if err != nil {

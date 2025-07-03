@@ -130,11 +130,11 @@ func (c *SOAPClient) Call(ctx context.Context, request *SOAPRequest) (*SOAPRespo
 			if delay > 30*time.Second {
 				delay = 30 * time.Second
 			}
-			
+
 			if c.enableLogging {
 				logDebug("Retrying SOAP call (attempt %d/%d) after %v", attempt+1, c.maxRetries+1, delay)
 			}
-			
+
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
@@ -197,7 +197,7 @@ func (c *SOAPClient) performRequest(ctx context.Context, request *SOAPRequest, a
 	}
 
 	duration := time.Since(startTime)
-	
+
 	response := &SOAPResponse{
 		StatusCode: httpResp.StatusCode,
 		Headers:    httpResp.Header,
@@ -229,11 +229,11 @@ func (c *SOAPClient) setDefaultHeaders(req *http.Request, soapReq *SOAPRequest) 
 	req.Header.Set("Accept", "text/xml")
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 	req.Header.Set("Connection", "keep-alive")
-	
+
 	if soapReq.Action != "" {
 		req.Header.Set("SOAPAction", fmt.Sprintf("\"%s\"", soapReq.Action))
 	}
-	
+
 	// Content-Length is set automatically by Go's HTTP client
 }
 

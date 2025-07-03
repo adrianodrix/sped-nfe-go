@@ -22,13 +22,13 @@ func (r *Resolver) GetStatusServiceURL(uf string, isProduction bool, model strin
 	typesUF := convertStringToUF(uf)
 	ambiente := convertBoolToAmbiente(isProduction)
 	modelo := convertStringToModelo(model)
-	
-	// Use the existing webservices system  
+
+	// Use the existing webservices system
 	service, err := GetWebserviceURL(typesUF, ambiente, modelo, ServiceStatusServico)
 	if err != nil {
 		return common.WebServiceInfo{}, err
 	}
-	
+
 	// Convert back to common.WebServiceInfo
 	return common.WebServiceInfo{
 		URL:       service.URL,
@@ -42,34 +42,62 @@ func (r *Resolver) GetStatusServiceURL(uf string, isProduction bool, model strin
 // Helper conversion functions
 func convertStringToUF(uf string) types.UF {
 	switch strings.ToUpper(uf) {
-	case "AC": return types.AC
-	case "AL": return types.AL
-	case "AM": return types.AM
-	case "AP": return types.AP
-	case "BA": return types.BA
-	case "CE": return types.CE
-	case "DF": return types.DF
-	case "ES": return types.ES
-	case "GO": return types.GO
-	case "MA": return types.MA
-	case "MG": return types.MG
-	case "MS": return types.MS
-	case "MT": return types.MT
-	case "PA": return types.PA
-	case "PB": return types.PB
-	case "PE": return types.PE
-	case "PI": return types.PI
-	case "PR": return types.PR
-	case "RJ": return types.RJ
-	case "RN": return types.RN
-	case "RO": return types.RO
-	case "RR": return types.RR
-	case "RS": return types.RS
-	case "SC": return types.SC
-	case "SE": return types.SE
-	case "SP": return types.SP
-	case "TO": return types.TO
-	default: return types.SVRS
+	case "AC":
+		return types.AC
+	case "AL":
+		return types.AL
+	case "AM":
+		return types.AM
+	case "AP":
+		return types.AP
+	case "BA":
+		return types.BA
+	case "CE":
+		return types.CE
+	case "DF":
+		return types.DF
+	case "ES":
+		return types.ES
+	case "GO":
+		return types.GO
+	case "MA":
+		return types.MA
+	case "MG":
+		return types.MG
+	case "MS":
+		return types.MS
+	case "MT":
+		return types.MT
+	case "PA":
+		return types.PA
+	case "PB":
+		return types.PB
+	case "PE":
+		return types.PE
+	case "PI":
+		return types.PI
+	case "PR":
+		return types.PR
+	case "RJ":
+		return types.RJ
+	case "RN":
+		return types.RN
+	case "RO":
+		return types.RO
+	case "RR":
+		return types.RR
+	case "RS":
+		return types.RS
+	case "SC":
+		return types.SC
+	case "SE":
+		return types.SE
+	case "SP":
+		return types.SP
+	case "TO":
+		return types.TO
+	default:
+		return types.SVRS
 	}
 }
 

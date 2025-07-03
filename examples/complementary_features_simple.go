@@ -31,7 +31,7 @@ func demonstrateQRCode() {
 		CSC:     "CODIGO_SEGURANCA_CONTRIBUINTE_123456789",
 		CSCId:   "000001",
 	}
-	
+
 	qrCode := factories.NewQRCode(qrConfig)
 	fmt.Printf("✓ QR Code configurado (versão %s)\n", qrCode.Version)
 
@@ -87,7 +87,7 @@ A|4.00|NFe41230714200166000187650010000000051123456789||`
 		Version: "4.00",
 		Layout:  factories.LayoutLocal,
 	})
-	
+
 	if err != nil {
 		log.Printf("Erro ao criar parser: %v", err)
 		return
@@ -114,7 +114,7 @@ A|4.00|NFe41230714200166000187650010000000051123456789||`
 	}
 
 	fmt.Printf("✓ TXT convertido para estrutura de dados (%d seções)\n", len(data))
-	
+
 	// Mostrar algumas informações extraídas
 	if infNFe, ok := data["infNFe"].(map[string]interface{}); ok {
 		fmt.Printf("  - Versão NFe: %v\n", infNFe["versao"])
@@ -242,9 +242,9 @@ func demonstrateContingency() {
 	}
 
 	// Mostrar JSONs de forma segura
-	fmt.Printf("\n✓ JSON de contingência (%d chars): %s...\n", 
+	fmt.Printf("\n✓ JSON de contingência (%d chars): %s...\n",
 		len(jsonData), safeSubstring(jsonData, 60))
-	fmt.Printf("✓ JSON de desativação (%d chars): %s...\n", 
+	fmt.Printf("✓ JSON de desativação (%d chars): %s...\n",
 		len(deactivatedJSON), safeSubstring(deactivatedJSON, 60))
 
 	fmt.Println()

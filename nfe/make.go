@@ -11,56 +11,56 @@ import (
 
 // Make is the main NFe generator following the PHP Make.php pattern
 type Make struct {
-	mu                  sync.RWMutex
-	version             string                // Layout version (4.00)
-	model               DocumentModel         // NFe model (55 or 65)
-	environment         NFEEnvironment        // Environment (1=prod, 2=test)
-	accessKey           *AccessKey            // NFe access key
-	xml                 string                // Generated XML
-	errors              []string              // Validation errors
-	
+	mu          sync.RWMutex
+	version     string         // Layout version (4.00)
+	model       DocumentModel  // NFe model (55 or 65)
+	environment NFEEnvironment // Environment (1=prod, 2=test)
+	accessKey   *AccessKey     // NFe access key
+	xml         string         // Generated XML
+	errors      []string       // Validation errors
+
 	// NFe structure
-	nfe                 *NFe                  // Root element
-	infNFe              *InfNFe               // NFe information
-	identification      *Identificacao        // Identification
-	issuer              *Emitente             // Issuer
-	recipient           *Destinatario         // Recipient
-	items               []Item                // Items/Products
-	transport           *Transporte           // Transport
-	payment             []Pagamento           // Payment information
-	additionalInfo      *InfAdicionais        // Additional information
-	
+	nfe            *NFe           // Root element
+	infNFe         *InfNFe        // NFe information
+	identification *Identificacao // Identification
+	issuer         *Emitente      // Issuer
+	recipient      *Destinatario  // Recipient
+	items          []Item         // Items/Products
+	transport      *Transporte    // Transport
+	payment        []Pagamento    // Payment information
+	additionalInfo *InfAdicionais // Additional information
+
 	// Automatic totalizers
-	totals              *Totalizer            // Automatic totals calculator
-	
+	totals *Totalizer // Automatic totals calculator
+
 	// Configuration
-	checkGTIN           bool                  // Validate GTIN codes
-	removeAccents       bool                  // Remove accents from text
-	roundValues         bool                  // Round monetary values
-	autoCalculate       bool                  // Auto-calculate totals
+	checkGTIN     bool // Validate GTIN codes
+	removeAccents bool // Remove accents from text
+	roundValues   bool // Round monetary values
+	autoCalculate bool // Auto-calculate totals
 }
 
 // Totalizer handles automatic calculation of NFe totals
 type Totalizer struct {
-	mu                  sync.RWMutex
-	productValue        float64               // vProd
-	freightValue        float64               // vFrete
-	insuranceValue      float64               // vSeg
-	discountValue       float64               // vDesc
-	otherValue          float64               // vOutro
-	icmsBaseValue       float64               // vBC
-	icmsValue           float64               // vICMS
-	icmsSTBaseValue     float64               // vBCST
-	icmsSTValue         float64               // vST
-	ipiValue            float64               // vIPI
-	pisValue            float64               // vPIS
-	cofinsValue         float64               // vCOFINS
-	importTaxValue      float64               // vII
-	icmsReliefValue     float64               // vICMSDeson
-	fcpValue            float64               // vFCP
-	fcpSTValue          float64               // vFCPST
-	fcpSTRetValue       float64               // vFCPSTRet
-	totalValue          float64               // vNF
+	mu              sync.RWMutex
+	productValue    float64 // vProd
+	freightValue    float64 // vFrete
+	insuranceValue  float64 // vSeg
+	discountValue   float64 // vDesc
+	otherValue      float64 // vOutro
+	icmsBaseValue   float64 // vBC
+	icmsValue       float64 // vICMS
+	icmsSTBaseValue float64 // vBCST
+	icmsSTValue     float64 // vST
+	ipiValue        float64 // vIPI
+	pisValue        float64 // vPIS
+	cofinsValue     float64 // vCOFINS
+	importTaxValue  float64 // vII
+	icmsReliefValue float64 // vICMSDeson
+	fcpValue        float64 // vFCP
+	fcpSTValue      float64 // vFCPST
+	fcpSTRetValue   float64 // vFCPSTRet
+	totalValue      float64 // vNF
 }
 
 // NewMake creates a new NFe generator
@@ -149,20 +149,20 @@ func (m *Make) SetAutoCalculate(auto bool) *Make {
 func (m *Make) TagInfNFe(id string, version string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if id == "" {
 		return fmt.Errorf("NFe ID is required")
 	}
-	
+
 	if version == "" {
 		version = m.version
 	}
-	
+
 	m.infNFe = &InfNFe{
 		ID:     id,
 		Versao: version,
 	}
-	
+
 	return nil
 }
 
@@ -170,42 +170,42 @@ func (m *Make) TagInfNFe(id string, version string) error {
 func (m *Make) TagIde(ide *Identificacao) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if ide == nil {
 		return fmt.Errorf("identification data is required")
 	}
-	
+
 	// Validate required fields
 	if err := m.validateIdentification(ide); err != nil {
 		return err
 	}
-	
+
 	// Auto-generate cNF if empty
 	if ide.CNF == "" {
 		ide.CNF = GenerateRandomCode(8)
 	}
-	
+
 	// Ensure cNF ≠ nNF (NT2019.001)
 	if len(ide.NNF) >= 8 && ide.CNF == ide.NNF[len(ide.NNF)-8:] {
 		ide.CNF = GenerateRandomCode(8)
 	}
-	
+
 	// Set default values
 	if ide.TpAmb == "" {
 		ide.TpAmb = m.environment.String()
 	}
-	
+
 	if ide.Mod == "" {
 		ide.Mod = m.model.String()
 	}
-	
+
 	// Set issue date/time if empty
 	if ide.DhEmi == "" {
 		ide.DhEmi = FormatDateTime(time.Now())
 	}
-	
+
 	m.identification = ide
-	
+
 	return nil
 }
 
@@ -213,22 +213,22 @@ func (m *Make) TagIde(ide *Identificacao) error {
 func (m *Make) TagEmit(emit *Emitente) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if emit == nil {
 		return fmt.Errorf("issuer data is required")
 	}
-	
+
 	// Validate required fields
 	if err := m.validateIssuer(emit); err != nil {
 		return err
 	}
-	
+
 	// Normalize text fields
 	emit.XNome = m.normalizeText(emit.XNome, 60)
 	emit.XFant = m.normalizeText(emit.XFant, 60)
-	
+
 	m.issuer = emit
-	
+
 	return nil
 }
 
@@ -236,23 +236,23 @@ func (m *Make) TagEmit(emit *Emitente) error {
 func (m *Make) TagDest(dest *Destinatario) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if dest == nil && m.model == ModelNFe {
 		return fmt.Errorf("recipient data is required for NFe")
 	}
-	
+
 	if dest != nil {
 		// Validate recipient data
 		if err := m.validateRecipient(dest); err != nil {
 			return err
 		}
-		
+
 		// Normalize text fields
 		dest.XNome = m.normalizeText(dest.XNome, 60)
 	}
-	
+
 	m.recipient = dest
-	
+
 	return nil
 }
 
@@ -260,23 +260,23 @@ func (m *Make) TagDest(dest *Destinatario) error {
 func (m *Make) TagDet(item *Item) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if item == nil {
 		return fmt.Errorf("item data is required")
 	}
-	
+
 	// Validate item
 	if err := m.validateItem(item); err != nil {
 		return err
 	}
-	
+
 	// Set item sequence number
 	item.NItem = strconv.Itoa(len(m.items) + 1)
-	
+
 	// Normalize text fields
 	item.Prod.XProd = m.normalizeText(item.Prod.XProd, 120)
 	item.InfAdProd = m.normalizeText(item.InfAdProd, 500)
-	
+
 	// Validate GTIN if enabled
 	if m.checkGTIN {
 		if !IsValidGTIN(item.Prod.CEAN) {
@@ -286,20 +286,20 @@ func (m *Make) TagDet(item *Item) error {
 			return fmt.Errorf("invalid tributary GTIN code: %s", item.Prod.CEANTrib)
 		}
 	}
-	
+
 	// Round values if enabled
 	if m.roundValues {
 		m.roundItemValues(&item.Prod)
 	}
-	
+
 	// Add to items list
 	m.items = append(m.items, *item)
-	
+
 	// Update totals if auto-calculate is enabled
 	if m.autoCalculate {
 		m.updateTotalsWithItem(item)
 	}
-	
+
 	return nil
 }
 
@@ -307,18 +307,18 @@ func (m *Make) TagDet(item *Item) error {
 func (m *Make) TagTransp(transp *Transporte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if transp == nil {
 		return fmt.Errorf("transport data is required")
 	}
-	
+
 	// Validate transport
 	if err := ValidateTransport(transp); err != nil {
 		return err
 	}
-	
+
 	m.transport = transp
-	
+
 	return nil
 }
 
@@ -326,18 +326,18 @@ func (m *Make) TagTransp(transp *Transporte) error {
 func (m *Make) TagPag(pag *Pagamento) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if pag == nil {
 		return fmt.Errorf("payment data is required")
 	}
-	
+
 	// Validate payment
 	if err := ValidatePayment(pag); err != nil {
 		return err
 	}
-	
+
 	m.payment = append(m.payment, *pag)
-	
+
 	return nil
 }
 
@@ -345,15 +345,15 @@ func (m *Make) TagPag(pag *Pagamento) error {
 func (m *Make) TagInfAdic(infAdic *InfAdicionais) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if infAdic != nil {
 		// Normalize text fields
 		infAdic.InfAdFisco = m.normalizeText(infAdic.InfAdFisco, 2000)
 		infAdic.InfCpl = m.normalizeText(infAdic.InfCpl, 5000)
 	}
-	
+
 	m.additionalInfo = infAdic
-	
+
 	return nil
 }
 
@@ -363,37 +363,37 @@ func (m *Make) TagInfAdic(infAdic *InfAdicionais) error {
 func (m *Make) BuildNFe() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	// Validate required components
 	if err := m.validateRequired(); err != nil {
 		return err
 	}
-	
+
 	// Generate access key if not set
 	if m.accessKey == nil {
 		if err := m.generateAccessKey(); err != nil {
 			return err
 		}
 	}
-	
+
 	// Calculate totals if auto-calculate is enabled
 	if m.autoCalculate {
 		if err := m.calculateTotals(); err != nil {
 			return err
 		}
 	}
-	
+
 	// Build InfNFe structure
 	if err := m.buildInfNFe(); err != nil {
 		return err
 	}
-	
+
 	// Create NFe root element
 	m.nfe = &NFe{
 		Xmlns:  NFENamespace,
 		InfNFe: *m.infNFe,
 	}
-	
+
 	return nil
 }
 
@@ -401,28 +401,28 @@ func (m *Make) BuildNFe() error {
 func (m *Make) GetXML() (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if m.xml != "" {
 		return m.xml, nil
 	}
-	
+
 	// Build NFe if not built yet
 	if m.nfe == nil {
 		if err := m.BuildNFe(); err != nil {
 			return "", err
 		}
 	}
-	
+
 	// Generate XML
 	xmlData, err := xml.MarshalIndent(m.nfe, "", "")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal NFe XML: %v", err)
 	}
-	
+
 	// Add XML declaration
 	xmlHeader := `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
 	m.xml = xmlHeader + string(xmlData)
-	
+
 	return m.xml, nil
 }
 
@@ -430,11 +430,11 @@ func (m *Make) GetXML() (string, error) {
 func (m *Make) GetAccessKey() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if m.accessKey == nil {
 		return ""
 	}
-	
+
 	return m.accessKey.GetKey()
 }
 
@@ -442,7 +442,7 @@ func (m *Make) GetAccessKey() string {
 func (m *Make) GetErrors() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	return m.errors
 }
 
@@ -450,7 +450,7 @@ func (m *Make) GetErrors() []string {
 func (m *Make) HasErrors() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	return len(m.errors) > 0
 }
 
@@ -458,7 +458,7 @@ func (m *Make) HasErrors() bool {
 func (m *Make) AddError(err string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.errors = append(m.errors, err)
 }
 
@@ -466,7 +466,7 @@ func (m *Make) AddError(err string) {
 func (m *Make) ClearErrors() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.errors = make([]string, 0)
 }
 
@@ -480,23 +480,23 @@ func (m *Make) validateRequired() error {
 	if m.identification == nil {
 		return fmt.Errorf("identification is required")
 	}
-	
+
 	if m.issuer == nil {
 		return fmt.Errorf("issuer is required")
 	}
-	
+
 	if m.model == ModelNFe && m.recipient == nil {
 		return fmt.Errorf("recipient is required for NFe")
 	}
-	
+
 	if len(m.items) == 0 {
 		return fmt.Errorf("at least one item is required")
 	}
-	
+
 	if m.transport == nil {
 		return fmt.Errorf("transport information is required")
 	}
-	
+
 	return nil
 }
 
@@ -504,7 +504,7 @@ func (m *Make) generateAccessKey() error {
 	if m.identification == nil || m.issuer == nil {
 		return fmt.Errorf("identification and issuer are required to generate access key")
 	}
-	
+
 	// Parse issue date
 	issueDate := time.Now()
 	if m.identification.DhEmi != "" {
@@ -512,7 +512,7 @@ func (m *Make) generateAccessKey() error {
 			issueDate = parsed
 		}
 	}
-	
+
 	// Generate access key
 	accessKey, err := NewAccessKeyBuilder().
 		State(m.identification.CUF).
@@ -524,22 +524,22 @@ func (m *Make) generateAccessKey() error {
 		RandomCode(m.identification.CNF).
 		IssueDateTime(issueDate).
 		Build()
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to generate access key: %v", err)
 	}
-	
+
 	m.accessKey = accessKey
-	
+
 	// Update identification with generated values
 	m.identification.CNF = accessKey.RandomCode
 	m.identification.CDV = accessKey.CheckDigit
-	
+
 	// Update InfNFe ID if set
 	if m.infNFe != nil {
 		m.infNFe.ID = "NFe" + accessKey.GetKey()
 	}
-	
+
 	return nil
 }
 
@@ -557,70 +557,70 @@ func (m *Make) buildInfNFe() error {
 		if m.accessKey != nil {
 			keyID = "NFe" + m.accessKey.GetKey()
 		}
-		
+
 		m.infNFe = &InfNFe{
 			ID:     keyID,
 			Versao: m.version,
 		}
 	}
-	
+
 	// Set required components
 	m.infNFe.Ide = *m.identification
 	m.infNFe.Emit = *m.issuer
-	
+
 	if m.recipient != nil {
 		m.infNFe.Dest = m.recipient
 	}
-	
+
 	m.infNFe.Det = m.items
-	
+
 	if m.transport != nil {
 		m.infNFe.Transp = *m.transport
 	}
-	
+
 	if len(m.payment) > 0 {
 		m.infNFe.Pag = m.payment
 	}
-	
+
 	if m.additionalInfo != nil {
 		m.infNFe.InfAdic = m.additionalInfo
 	}
-	
+
 	// Build totals
 	total, err := m.buildTotal()
 	if err != nil {
 		return err
 	}
-	
+
 	m.infNFe.Total = *total
-	
+
 	return nil
 }
 
 func (m *Make) buildTotal() (*Total, error) {
 	// Calculate ICMS totals
 	icmsTot := &ICMSTotal{
-		VBC:            FormatCurrency(m.totals.icmsBaseValue),
-		VICMS:          FormatCurrency(m.totals.icmsValue),
-		VICMSDeson:     FormatCurrency(m.totals.icmsReliefValue),
-		VFCP:           FormatCurrency(m.totals.fcpValue),
-		VBCST:          FormatCurrency(m.totals.icmsSTBaseValue),
-		VST:            FormatCurrency(m.totals.icmsSTValue),
-		VFCPST:         FormatCurrency(m.totals.fcpSTValue),
-		VFCPSTRet:      FormatCurrency(m.totals.fcpSTRetValue),
-		VProd:          FormatCurrency(m.totals.productValue),
-		VFrete:         FormatCurrency(m.totals.freightValue),
-		VSeg:           FormatCurrency(m.totals.insuranceValue),
-		VDesc:          FormatCurrency(m.totals.discountValue),
-		VII:            FormatCurrency(m.totals.importTaxValue),
-		VIPI:           FormatCurrency(m.totals.ipiValue),
-		VIPIDevol:      "0.00",
-		VPIS:           FormatCurrency(m.totals.pisValue),
-		VCOFINS:        FormatCurrency(m.totals.cofinsValue),
-		VOutro:         FormatCurrency(m.totals.otherValue),
-		VNF:            FormatCurrency(m.totals.totalValue),
+		VBC:        FormatCurrency(m.totals.icmsBaseValue),
+		VICMS:      FormatCurrency(m.totals.icmsValue),
+		VICMSDeson: FormatCurrency(m.totals.icmsReliefValue),
+		VFCP:       FormatCurrency(m.totals.fcpValue),
+		VBCST:      FormatCurrency(m.totals.icmsSTBaseValue),
+		VST:        FormatCurrency(m.totals.icmsSTValue),
+		VFCPST:     FormatCurrency(m.totals.fcpSTValue),
+		VFCPSTRet:  FormatCurrency(m.totals.fcpSTRetValue),
+		VProd:      FormatCurrency(m.totals.productValue),
+		VFrete:     FormatCurrency(m.totals.freightValue),
+		VSeg:       FormatCurrency(m.totals.insuranceValue),
+		VDesc:      FormatCurrency(m.totals.discountValue),
+		VII:        FormatCurrency(m.totals.importTaxValue),
+		VIPI:       FormatCurrency(m.totals.ipiValue),
+		VIPIDevol:  "0.00",
+		VPIS:       FormatCurrency(m.totals.pisValue),
+		VCOFINS:    FormatCurrency(m.totals.cofinsValue),
+		VOutro:     FormatCurrency(m.totals.otherValue),
+		VNF:        FormatCurrency(m.totals.totalValue),
 	}
-	
+
 	return &Total{
 		ICMSTot: *icmsTot,
 	}, nil
@@ -700,23 +700,23 @@ func (m *Make) updateTotalsWithItem(item *Item) {
 	if vProd, err := ParseValue(item.Prod.VProd); err == nil && item.Prod.IndTot == "1" {
 		m.totals.productValue += vProd
 	}
-	
+
 	if vFrete, err := ParseValue(item.Prod.VFrete); err == nil {
 		m.totals.freightValue += vFrete
 	}
-	
+
 	if vSeg, err := ParseValue(item.Prod.VSeg); err == nil {
 		m.totals.insuranceValue += vSeg
 	}
-	
+
 	if vDesc, err := ParseValue(item.Prod.VDesc); err == nil {
 		m.totals.discountValue += vDesc
 	}
-	
+
 	if vOutro, err := ParseValue(item.Prod.VOutro); err == nil {
 		m.totals.otherValue += vOutro
 	}
-	
+
 	// Add tax values
 	m.updateTotalsWithTaxes(&item.Imposto)
 }
@@ -726,14 +726,14 @@ func (m *Make) updateTotalsWithTaxes(imposto *Imposto) {
 	if imposto.ICMS != nil {
 		m.updateTotalsWithICMS(imposto.ICMS)
 	}
-	
+
 	// Update IPI totals
 	if imposto.IPI != nil && imposto.IPI.IPITrib != nil {
 		if vIPI, err := ParseValue(imposto.IPI.IPITrib.VIPI); err == nil {
 			m.totals.ipiValue += vIPI
 		}
 	}
-	
+
 	// Update PIS totals
 	if imposto.PIS != nil {
 		if imposto.PIS.PISAliq != nil {
@@ -747,7 +747,7 @@ func (m *Make) updateTotalsWithTaxes(imposto *Imposto) {
 			}
 		}
 	}
-	
+
 	// Update COFINS totals
 	if imposto.COFINS != nil {
 		if imposto.COFINS.COFINSAliq != nil {
@@ -761,7 +761,7 @@ func (m *Make) updateTotalsWithTaxes(imposto *Imposto) {
 			}
 		}
 	}
-	
+
 	// Update Import Tax totals
 	if imposto.II != nil {
 		if vII, err := ParseValue(imposto.II.VII); err == nil {
@@ -786,18 +786,18 @@ func (m *Make) updateTotalsWithICMS(icms *ICMS) {
 func (m *Make) calculateTotals() error {
 	m.totals.mu.Lock()
 	defer m.totals.mu.Unlock()
-	
+
 	// Calculate total NFe value
-	m.totals.totalValue = m.totals.productValue - 
-		m.totals.discountValue - 
-		m.totals.icmsReliefValue + 
-		m.totals.icmsSTValue + 
-		m.totals.freightValue + 
-		m.totals.insuranceValue + 
-		m.totals.otherValue + 
-		m.totals.importTaxValue + 
+	m.totals.totalValue = m.totals.productValue -
+		m.totals.discountValue -
+		m.totals.icmsReliefValue +
+		m.totals.icmsSTValue +
+		m.totals.freightValue +
+		m.totals.insuranceValue +
+		m.totals.otherValue +
+		m.totals.importTaxValue +
 		m.totals.ipiValue
-	
+
 	// Round all values
 	if m.roundValues {
 		m.totals.productValue = RoundCurrency(m.totals.productValue)
@@ -815,6 +815,6 @@ func (m *Make) calculateTotals() error {
 		m.totals.importTaxValue = RoundCurrency(m.totals.importTaxValue)
 		m.totals.totalValue = RoundCurrency(m.totals.totalValue)
 	}
-	
+
 	return nil
 }

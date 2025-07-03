@@ -24,23 +24,21 @@ type Certificate = certificate.Certificate
 func (t *Tools) getStatusServiceInfo() (common.WebServiceInfo, error) {
 	uf := strings.ToUpper(t.config.SiglaUF)
 	isProduction := t.config.TpAmb == types.Production
-	
+
 	// Use the resolver interface to get webservice information
 	return t.resolver.GetStatusServiceURL(uf, isProduction, t.model)
 }
 
-
-
 // Tools provides the main interface for NFe operations with SEFAZ
 type Tools struct {
-	config        *common.Config
-	webservices   *common.WebServiceManager
-	resolver      common.WebserviceResolver  // Interface for webservice URL resolution
-	soapClient    *soap.SOAPClient
-	certificate   interface{}  // Will be properly typed when certificate package is ready
-	model         string       // NFe model (55 or 65)
-	lastRequest   string       // Last SOAP request sent
-	lastResponse  string       // Last SOAP response received
+	config       *common.Config
+	webservices  *common.WebServiceManager
+	resolver     common.WebserviceResolver // Interface for webservice URL resolution
+	soapClient   *soap.SOAPClient
+	certificate  interface{} // Will be properly typed when certificate package is ready
+	model        string      // NFe model (55 or 65)
+	lastRequest  string      // Last SOAP request sent
+	lastResponse string      // Last SOAP response received
 }
 
 // NewTools creates a new Tools instance for NFe operations
@@ -65,7 +63,7 @@ func NewTools(config *common.Config, resolver common.WebserviceResolver) (*Tools
 		UserAgent:     "sped-nfe-go/1.0",
 		EnableLogging: false,
 	}
-	
+
 	// Check for unsafe SSL environment variable (for testing only)
 	if os.Getenv("SPED_NFE_UNSAFE_SSL") == "true" {
 		soapConfig.TLSConfig = &tls.Config{
@@ -104,14 +102,14 @@ func (t *Tools) GetModel() string {
 // SetCertificate sets the digital certificate for requests and configures SSL/TLS authentication
 func (t *Tools) SetCertificate(certificate interface{}) error {
 	t.certificate = certificate
-	
+
 	// Configure SSL/TLS client certificate authentication in SOAP client
 	if cert, ok := certificate.(Certificate); ok && cert != nil {
 		if err := t.soapClient.LoadCertificate(cert); err != nil {
 			return fmt.Errorf("failed to configure SSL certificate in SOAP client: %v", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -174,15 +172,14 @@ func (t *Tools) SefazStatus(ctx context.Context) (*StatusResponse, error) {
 		return nil, fmt.Errorf("failed to extract body content: %v", err)
 	}
 
-
 	// Parse response - handle both direct and wrapped responses
 	var statusResponse StatusResponse
-	
+
 	// Try direct parsing first
 	if err := xml.Unmarshal([]byte(bodyContent), &statusResponse); err != nil {
 		// If that fails, try parsing the wrapped response
 		var wrappedResponse struct {
-			XMLName xml.Name `xml:"nfeResultMsg"`
+			XMLName xml.Name       `xml:"nfeResultMsg"`
 			Result  StatusResponse `xml:"retConsStatServ"`
 		}
 		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
@@ -521,19 +518,19 @@ func (t *Tools) SefazCancela(ctx context.Context, chave, protocolo, justificativ
 		Evento: []Evento{
 			{
 				InfEvento: InfEvento{
-					COrgao:      getStateCode(t.config.SiglaUF),
-					TpAmb:       int(t.config.TpAmb),
-					CNPJ:        t.config.CNPJ,
-					ChNFe:       chave,
-					DhEvento:    FormatDateTime(time.Now()),
-					TpEvento:    "110111", // Cancellation event type
-					NSeqEvento:  "1",
-					VerEvento:   "1.00",
+					COrgao:     getStateCode(t.config.SiglaUF),
+					TpAmb:      int(t.config.TpAmb),
+					CNPJ:       t.config.CNPJ,
+					ChNFe:      chave,
+					DhEvento:   FormatDateTime(time.Now()),
+					TpEvento:   "110111", // Cancellation event type
+					NSeqEvento: "1",
+					VerEvento:  "1.00",
 					DetEvento: DetEvento{
-						Versao:       "1.00",
-						DescEvento:   "Cancelamento",
-						NProt:        protocolo,
-						XJust:        justificativa,
+						Versao:     "1.00",
+						DescEvento: "Cancelamento",
+						NProt:      protocolo,
+						XJust:      justificativa,
 					},
 				},
 			},
@@ -563,19 +560,19 @@ func (t *Tools) SefazCCe(ctx context.Context, chave, correcao string, sequencia 
 		Evento: []Evento{
 			{
 				InfEvento: InfEvento{
-					COrgao:      getStateCode(t.config.SiglaUF),
-					TpAmb:       int(t.config.TpAmb),
-					CNPJ:        t.config.CNPJ,
-					ChNFe:       chave,
-					DhEvento:    FormatDateTime(time.Now()),
-					TpEvento:    "110110", // Correction letter event type
-					NSeqEvento:  strconv.Itoa(sequencia),
-					VerEvento:   "1.00",
+					COrgao:     getStateCode(t.config.SiglaUF),
+					TpAmb:      int(t.config.TpAmb),
+					CNPJ:       t.config.CNPJ,
+					ChNFe:      chave,
+					DhEvento:   FormatDateTime(time.Now()),
+					TpEvento:   "110110", // Correction letter event type
+					NSeqEvento: strconv.Itoa(sequencia),
+					VerEvento:  "1.00",
 					DetEvento: DetEvento{
-						Versao:       "1.00",
-						DescEvento:   "Carta de Correcao Eletronica",
-						XCorrecao:    correcao,
-						XCondUso:     "A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 e pode ser utilizada para regularizacao de erro ocorrido na emissao de documento fiscal, desde que o erro nao esteja relacionado com: I - as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da operacao ou da prestacao; II - a correcao de dados cadastrais que implique mudanca do remetente ou do destinatario; III - a data de emissao ou de saida.",
+						Versao:     "1.00",
+						DescEvento: "Carta de Correcao Eletronica",
+						XCorrecao:  correcao,
+						XCondUso:   "A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 e pode ser utilizada para regularizacao de erro ocorrido na emissao de documento fiscal, desde que o erro nao esteja relacionado com: I - as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da operacao ou da prestacao; II - a correcao de dados cadastrais que implique mudanca do remetente ou do destinatario; III - a data de emissao ou de saida.",
 					},
 				},
 			},
@@ -691,7 +688,7 @@ func getStateCode(uf string) string {
 		"RS": "43", "RO": "11", "RR": "14", "SC": "42", "SP": "35",
 		"SE": "28", "TO": "27",
 	}
-	
+
 	if code, exists := stateCodes[strings.ToUpper(uf)]; exists {
 		return code
 	}
@@ -717,17 +714,17 @@ type StatusRequest struct {
 
 // StatusResponse represents a status service response
 type StatusResponse struct {
-	XMLName     xml.Name `xml:"retConsStatServ"`
-	Versao      string   `xml:"versao,attr"`
-	TpAmb       int      `xml:"tpAmb"`
-	VerAplic    string   `xml:"verAplic"`
-	CStat       string   `xml:"cStat"`
-	XMotivo     string   `xml:"xMotivo"`
-	CUF         string   `xml:"cUF"`
-	DhRecbto    string   `xml:"dhRecbto"`
+	XMLName      xml.Name `xml:"retConsStatServ"`
+	Versao       string   `xml:"versao,attr"`
+	TpAmb        int      `xml:"tpAmb"`
+	VerAplic     string   `xml:"verAplic"`
+	CStat        string   `xml:"cStat"`
+	XMotivo      string   `xml:"xMotivo"`
+	CUF          string   `xml:"cUF"`
+	DhRecbto     string   `xml:"dhRecbto"`
 	TMedResposta string   `xml:"tMedResposta,omitempty"`
-	DhRetorno   string   `xml:"dhRetorno,omitempty"`
-	XObs        string   `xml:"xObs,omitempty"`
+	DhRetorno    string   `xml:"dhRetorno,omitempty"`
+	XObs         string   `xml:"xObs,omitempty"`
 }
 
 // LoteNFe represents a batch of NFe documents
@@ -748,21 +745,21 @@ type EnvioLoteRequest struct {
 
 // EnvioLoteResponse represents an authorization batch response
 type EnvioLoteResponse struct {
-	XMLName   xml.Name `xml:"retEnviNFe"`
-	Versao    string   `xml:"versao,attr"`
-	TpAmb     int      `xml:"tpAmb"`
-	VerAplic  string   `xml:"verAplic"`
-	CStat     string   `xml:"cStat"`
-	XMotivo   string   `xml:"xMotivo"`
-	CUF       string   `xml:"cUF,omitempty"`
-	DhRecbto  string   `xml:"dhRecbto,omitempty"`
-	InfRec    *InfRec  `xml:"infRec,omitempty"`
-	ProtNFe   []ProtNFe `xml:"protNFe,omitempty"`
+	XMLName  xml.Name  `xml:"retEnviNFe"`
+	Versao   string    `xml:"versao,attr"`
+	TpAmb    int       `xml:"tpAmb"`
+	VerAplic string    `xml:"verAplic"`
+	CStat    string    `xml:"cStat"`
+	XMotivo  string    `xml:"xMotivo"`
+	CUF      string    `xml:"cUF,omitempty"`
+	DhRecbto string    `xml:"dhRecbto,omitempty"`
+	InfRec   *InfRec   `xml:"infRec,omitempty"`
+	ProtNFe  []ProtNFe `xml:"protNFe,omitempty"`
 }
 
 // InfRec represents receipt information
 type InfRec struct {
-	NRec     string `xml:"nRec"`
+	NRec         string `xml:"nRec"`
 	TMedResposta string `xml:"tMedResposta,omitempty"`
 }
 
@@ -784,14 +781,14 @@ type ProtNFe struct {
 
 // InfProt represents protocol information
 type InfProt struct {
-	TpAmb     int    `xml:"tpAmb"`
-	VerAplic  string `xml:"verAplic"`
-	ChNFe     string `xml:"chNFe"`
-	DhRecbto  string `xml:"dhRecbto"`
-	NProt     string `xml:"nProt,omitempty"`
-	DigVal    string `xml:"digVal,omitempty"`
-	CStat     string `xml:"cStat"`
-	XMotivo   string `xml:"xMotivo"`
+	TpAmb    int    `xml:"tpAmb"`
+	VerAplic string `xml:"verAplic"`
+	ChNFe    string `xml:"chNFe"`
+	DhRecbto string `xml:"dhRecbto"`
+	NProt    string `xml:"nProt,omitempty"`
+	DigVal   string `xml:"digVal,omitempty"`
+	CStat    string `xml:"cStat"`
+	XMotivo  string `xml:"xMotivo"`
 }
 
 // ConsultaReciboRequest represents a receipt consultation request
@@ -828,16 +825,16 @@ type ConsultaChaveRequest struct {
 
 // ConsultaChaveResponse represents an access key consultation response
 type ConsultaChaveResponse struct {
-	XMLName   xml.Name  `xml:"retConsSitNFe"`
-	Versao    string    `xml:"versao,attr"`
-	TpAmb     int       `xml:"tpAmb"`
-	VerAplic  string    `xml:"verAplic"`
-	CStat     string    `xml:"cStat"`
-	XMotivo   string    `xml:"xMotivo"`
-	CUF       string    `xml:"cUF,omitempty"`
-	DhRecbto  string    `xml:"dhRecbto,omitempty"`
-	ChNFe     string    `xml:"chNFe,omitempty"`
-	ProtNFe   *ProtNFe  `xml:"protNFe,omitempty"`
+	XMLName    xml.Name    `xml:"retConsSitNFe"`
+	Versao     string      `xml:"versao,attr"`
+	TpAmb      int         `xml:"tpAmb"`
+	VerAplic   string      `xml:"verAplic"`
+	CStat      string      `xml:"cStat"`
+	XMotivo    string      `xml:"xMotivo"`
+	CUF        string      `xml:"cUF,omitempty"`
+	DhRecbto   string      `xml:"dhRecbto,omitempty"`
+	ChNFe      string      `xml:"chNFe,omitempty"`
+	ProtNFe    *ProtNFe    `xml:"protNFe,omitempty"`
 	RetCancNFe *RetCancNFe `xml:"retCancNFe,omitempty"`
 }
 
@@ -859,31 +856,31 @@ type InfCanc struct {
 
 // InutilizacaoRequest represents a number invalidation request
 type InutilizacaoRequest struct {
-	XMLName  xml.Name    `xml:"inutNFe"`
-	Xmlns    string      `xml:"xmlns,attr"`
-	Versao   string      `xml:"versao,attr"`
-	InfInut  InfInut     `xml:"infInut"`
+	XMLName xml.Name `xml:"inutNFe"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	Versao  string   `xml:"versao,attr"`
+	InfInut InfInut  `xml:"infInut"`
 }
 
 // InfInut represents invalidation information
 type InfInut struct {
-	TpAmb   int    `xml:"tpAmb"`
-	XServ   string `xml:"xServ"`
-	CUF     string `xml:"cUF"`
-	Ano     string `xml:"ano"`
-	CNPJ    string `xml:"CNPJ"`
-	Mod     string `xml:"mod"`
-	Serie   string `xml:"serie"`
-	NNFIni  string `xml:"nNFIni"`
-	NNFFin  string `xml:"nNFFin"`
-	XJust   string `xml:"xJust"`
+	TpAmb  int    `xml:"tpAmb"`
+	XServ  string `xml:"xServ"`
+	CUF    string `xml:"cUF"`
+	Ano    string `xml:"ano"`
+	CNPJ   string `xml:"CNPJ"`
+	Mod    string `xml:"mod"`
+	Serie  string `xml:"serie"`
+	NNFIni string `xml:"nNFIni"`
+	NNFFin string `xml:"nNFFin"`
+	XJust  string `xml:"xJust"`
 }
 
 // InutilizacaoResponse represents a number invalidation response
 type InutilizacaoResponse struct {
-	XMLName    xml.Name   `xml:"retInutNFe"`
-	Versao     string     `xml:"versao,attr"`
-	InfInut    InfInutRet `xml:"infInut"`
+	XMLName xml.Name   `xml:"retInutNFe"`
+	Versao  string     `xml:"versao,attr"`
+	InfInut InfInutRet `xml:"infInut"`
 }
 
 // InfInutRet represents invalidation response information
@@ -914,46 +911,46 @@ type EventoRequest struct {
 
 // Evento represents an event
 type Evento struct {
-	XMLName   xml.Name   `xml:"evento"`
-	Versao    string     `xml:"versao,attr"`
-	InfEvento InfEvento  `xml:"infEvento"`
+	XMLName   xml.Name  `xml:"evento"`
+	Versao    string    `xml:"versao,attr"`
+	InfEvento InfEvento `xml:"infEvento"`
 }
 
 // InfEvento represents event information
 type InfEvento struct {
-	COrgao     string     `xml:"cOrgao"`
-	TpAmb      int        `xml:"tpAmb"`
-	CNPJ       string     `xml:"CNPJ,omitempty"`
-	CPF        string     `xml:"CPF,omitempty"`
-	ChNFe      string     `xml:"chNFe"`
-	DhEvento   string     `xml:"dhEvento"`
-	TpEvento   string     `xml:"tpEvento"`
-	NSeqEvento string     `xml:"nSeqEvento"`
-	VerEvento  string     `xml:"verEvento"`
-	DetEvento  DetEvento  `xml:"detEvento"`
+	COrgao     string    `xml:"cOrgao"`
+	TpAmb      int       `xml:"tpAmb"`
+	CNPJ       string    `xml:"CNPJ,omitempty"`
+	CPF        string    `xml:"CPF,omitempty"`
+	ChNFe      string    `xml:"chNFe"`
+	DhEvento   string    `xml:"dhEvento"`
+	TpEvento   string    `xml:"tpEvento"`
+	NSeqEvento string    `xml:"nSeqEvento"`
+	VerEvento  string    `xml:"verEvento"`
+	DetEvento  DetEvento `xml:"detEvento"`
 }
 
 // DetEvento represents event details
 type DetEvento struct {
 	Versao     string `xml:"versao,attr"`
 	DescEvento string `xml:"descEvento"`
-	NProt      string `xml:"nProt,omitempty"`        // For cancellation
-	XJust      string `xml:"xJust,omitempty"`        // For cancellation
-	XCorrecao  string `xml:"xCorrecao,omitempty"`    // For correction letter
-	XCondUso   string `xml:"xCondUso,omitempty"`     // For correction letter
+	NProt      string `xml:"nProt,omitempty"`     // For cancellation
+	XJust      string `xml:"xJust,omitempty"`     // For cancellation
+	XCorrecao  string `xml:"xCorrecao,omitempty"` // For correction letter
+	XCondUso   string `xml:"xCondUso,omitempty"`  // For correction letter
 }
 
 // EventoResponse represents an event response
 type EventoResponse struct {
-	XMLName   xml.Name      `xml:"retEnvEvento"`
-	Versao    string        `xml:"versao,attr"`
-	IdLote    string        `xml:"idLote"`
-	TpAmb     int           `xml:"tpAmb"`
-	VerAplic  string        `xml:"verAplic"`
-	COrgao    string        `xml:"cOrgao"`
-	CStat     string        `xml:"cStat"`
-	XMotivo   string        `xml:"xMotivo"`
-	RetEvento []RetEvento   `xml:"retEvento"`
+	XMLName   xml.Name    `xml:"retEnvEvento"`
+	Versao    string      `xml:"versao,attr"`
+	IdLote    string      `xml:"idLote"`
+	TpAmb     int         `xml:"tpAmb"`
+	VerAplic  string      `xml:"verAplic"`
+	COrgao    string      `xml:"cOrgao"`
+	CStat     string      `xml:"cStat"`
+	XMotivo   string      `xml:"xMotivo"`
+	RetEvento []RetEvento `xml:"retEvento"`
 }
 
 // RetEvento represents event return information
@@ -963,20 +960,20 @@ type RetEvento struct {
 
 // InfEventoRet represents event return details
 type InfEventoRet struct {
-	TpAmb      int    `xml:"tpAmb"`
-	VerAplic   string `xml:"verAplic"`
-	COrgao     string `xml:"cOrgao"`
-	CStat      string `xml:"cStat"`
-	XMotivo    string `xml:"xMotivo"`
-	ChNFe      string `xml:"chNFe"`
-	TpEvento   string `xml:"tpEvento"`
-	XEvento    string `xml:"xEvento"`
-	NSeqEvento string `xml:"nSeqEvento"`
-	CNPJDest   string `xml:"CNPJDest,omitempty"`
-	CPFDest    string `xml:"CPFDest,omitempty"`
-	EmailDest  string `xml:"emailDest,omitempty"`
+	TpAmb       int    `xml:"tpAmb"`
+	VerAplic    string `xml:"verAplic"`
+	COrgao      string `xml:"cOrgao"`
+	CStat       string `xml:"cStat"`
+	XMotivo     string `xml:"xMotivo"`
+	ChNFe       string `xml:"chNFe"`
+	TpEvento    string `xml:"tpEvento"`
+	XEvento     string `xml:"xEvento"`
+	NSeqEvento  string `xml:"nSeqEvento"`
+	CNPJDest    string `xml:"CNPJDest,omitempty"`
+	CPFDest     string `xml:"CPFDest,omitempty"`
+	EmailDest   string `xml:"emailDest,omitempty"`
 	DhRegEvento string `xml:"dhRegEvento"`
-	NProt      string `xml:"nProt"`
+	NProt       string `xml:"nProt"`
 }
 
 // ConsultaCadastroRequest represents a registry consultation request
@@ -998,10 +995,10 @@ type InfCons struct {
 
 // ConsultaCadastroResponse represents a registry consultation response
 type ConsultaCadastroResponse struct {
-	XMLName   xml.Name   `xml:"retConsCad"`
-	Versao    string     `xml:"versao,attr"`
-	InfCons   InfConsRet `xml:"infCons"`
-	InfCad    []InfCad   `xml:"infCad"`
+	XMLName xml.Name   `xml:"retConsCad"`
+	Versao  string     `xml:"versao,attr"`
+	InfCons InfConsRet `xml:"infCons"`
+	InfCad  []InfCad   `xml:"infCad"`
 }
 
 // InfConsRet represents consultation return information

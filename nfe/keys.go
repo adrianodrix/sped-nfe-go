@@ -9,17 +9,17 @@ import (
 
 // AccessKey represents an NFe access key with its components
 type AccessKey struct {
-	State          string    // UF code (2 digits)
-	YearMonth      string    // AAMM (4 digits)
-	Document       string    // CNPJ (14 digits)
-	Model          string    // Document model (2 digits)
-	Series         string    // Series (3 digits)
-	Number         string    // Number (9 digits)
-	EmissionType   string    // Emission type (1 digit)
-	RandomCode     string    // Random code (8 digits)
-	CheckDigit     string    // Check digit (1 digit)
-	FullKey        string    // Complete 44-digit key
-	IssueDateTime  time.Time // Issue date/time for AAMM calculation
+	State         string    // UF code (2 digits)
+	YearMonth     string    // AAMM (4 digits)
+	Document      string    // CNPJ (14 digits)
+	Model         string    // Document model (2 digits)
+	Series        string    // Series (3 digits)
+	Number        string    // Number (9 digits)
+	EmissionType  string    // Emission type (1 digit)
+	RandomCode    string    // Random code (8 digits)
+	CheckDigit    string    // Check digit (1 digit)
+	FullKey       string    // Complete 44-digit key
+	IssueDateTime time.Time // Issue date/time for AAMM calculation
 }
 
 // NewAccessKey creates a new access key
@@ -111,11 +111,11 @@ func (ak *AccessKey) GenerateRandomCode() *AccessKey {
 func (ak *AccessKey) CalculateCheckDigit() *AccessKey {
 	// Build key without check digit
 	keyWithoutDV := ak.buildKeyWithoutCheckDigit()
-	
+
 	// Calculate check digit using modulo 11
 	checkDigit := CalculateModulo11(keyWithoutDV)
 	ak.CheckDigit = strconv.Itoa(checkDigit)
-	
+
 	return ak
 }
 
@@ -125,23 +125,23 @@ func (ak *AccessKey) Build() error {
 	if err := ak.validate(); err != nil {
 		return err
 	}
-	
+
 	// Calculate year-month if not set
 	if ak.YearMonth == "" {
 		ak.YearMonth = FormatYearMonth(ak.IssueDateTime)
 	}
-	
+
 	// Generate random code if not set
 	if ak.RandomCode == "" {
 		ak.GenerateRandomCode()
 	}
-	
+
 	// Calculate check digit
 	ak.CalculateCheckDigit()
-	
+
 	// Build full key
 	ak.FullKey = ak.buildFullKey()
-	
+
 	return nil
 }
 
@@ -159,7 +159,7 @@ func (ak *AccessKey) GetFormattedKey() string {
 	if len(key) != 44 {
 		return key
 	}
-	
+
 	// Format: NNNN NNNN NNNN NNNN NNNN NNNN NNNN NNNN NNNN NNNN NNNN
 	formatted := ""
 	for i := 0; i < len(key); i += 4 {
@@ -172,7 +172,7 @@ func (ak *AccessKey) GetFormattedKey() string {
 		}
 		formatted += key[i:end]
 	}
-	
+
 	return formatted
 }
 
@@ -181,11 +181,11 @@ func (ak *AccessKey) IsValid() bool {
 	if ak.FullKey == "" {
 		return false
 	}
-	
+
 	if len(ak.FullKey) != 44 {
 		return false
 	}
-	
+
 	// Validate check digit
 	keyWithoutDV := ak.FullKey[:43]
 	expectedCheckDigit := CalculateModulo11(keyWithoutDV)
@@ -193,18 +193,18 @@ func (ak *AccessKey) IsValid() bool {
 	if err != nil {
 		return false
 	}
-	
+
 	return expectedCheckDigit == actualCheckDigit
 }
 
 // ParseAccessKey parses a 44-digit access key into its components
 func ParseAccessKey(key string) (*AccessKey, error) {
 	key = OnlyNumbers(key)
-	
+
 	if len(key) != 44 {
 		return nil, fmt.Errorf("access key must have exactly 44 digits, got %d", len(key))
 	}
-	
+
 	ak := &AccessKey{
 		State:        key[0:2],
 		YearMonth:    key[2:6],
@@ -217,19 +217,19 @@ func ParseAccessKey(key string) (*AccessKey, error) {
 		CheckDigit:   key[43:44],
 		FullKey:      key,
 	}
-	
+
 	// Parse year-month to set issue date
 	if len(ak.YearMonth) == 4 {
 		year, _ := strconv.Atoi("20" + ak.YearMonth[:2]) // Assume 20XX
 		month, _ := strconv.Atoi(ak.YearMonth[2:4])
 		ak.IssueDateTime = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	}
-	
+
 	// Validate check digit
 	if !ak.IsValid() {
 		return nil, fmt.Errorf("invalid access key check digit")
 	}
-	
+
 	return ak, nil
 }
 
@@ -238,51 +238,51 @@ func (ak *AccessKey) validate() error {
 	if ak.State == "" {
 		return fmt.Errorf("state code is required")
 	}
-	
+
 	if len(ak.State) != 2 {
 		return fmt.Errorf("state code must have exactly 2 digits")
 	}
-	
+
 	if ak.Document == "" {
 		return fmt.Errorf("document (CNPJ) is required")
 	}
-	
+
 	if len(ak.Document) != 14 {
 		return fmt.Errorf("document (CNPJ) must have exactly 14 digits")
 	}
-	
+
 	if ak.Model == "" {
 		return fmt.Errorf("document model is required")
 	}
-	
+
 	if len(ak.Model) != 2 {
 		return fmt.Errorf("document model must have exactly 2 digits")
 	}
-	
+
 	if ak.Series == "" {
 		return fmt.Errorf("series is required")
 	}
-	
+
 	if len(ak.Series) != 3 {
 		return fmt.Errorf("series must have exactly 3 digits")
 	}
-	
+
 	if ak.Number == "" {
 		return fmt.Errorf("document number is required")
 	}
-	
+
 	if len(ak.Number) != 9 {
 		return fmt.Errorf("document number must have exactly 9 digits")
 	}
-	
+
 	if ak.EmissionType == "" {
 		return fmt.Errorf("emission type is required")
 	}
-	
+
 	if len(ak.EmissionType) != 1 {
 		return fmt.Errorf("emission type must have exactly 1 digit")
 	}
-	
+
 	return nil
 }
 
@@ -292,7 +292,7 @@ func (ak *AccessKey) buildKeyWithoutCheckDigit() string {
 	if yearMonth == "" {
 		yearMonth = FormatYearMonth(ak.IssueDateTime)
 	}
-	
+
 	return ak.State + yearMonth + ak.Document + ak.Model + ak.Series + ak.Number + ak.EmissionType + ak.RandomCode
 }
 
@@ -404,7 +404,7 @@ func GenerateAccessKeyFromIdentification(ide *Identificacao, cnpj string) (*Acce
 	series, _ := strconv.Atoi(ide.Serie)
 	number, _ := strconv.Atoi(ide.NNF)
 	emissionType := EmissionNormal
-	
+
 	// Parse emission type
 	switch ide.TpEmis {
 	case "1":
@@ -424,13 +424,13 @@ func GenerateAccessKeyFromIdentification(ide *Identificacao, cnpj string) (*Acce
 	case "9":
 		emissionType = EmissionOffline
 	}
-	
+
 	// Parse model
 	model := ModelNFe
 	if ide.Mod == "65" {
 		model = ModelNFCe
 	}
-	
+
 	builder := NewAccessKeyBuilder().
 		State(ide.CUF).
 		Document(cnpj).
@@ -438,19 +438,19 @@ func GenerateAccessKeyFromIdentification(ide *Identificacao, cnpj string) (*Acce
 		Series(series).
 		Number(number).
 		EmissionType(emissionType)
-	
+
 	// Parse issue date if available
 	if ide.DhEmi != "" {
 		if issueDate, err := ParseDateTime(ide.DhEmi); err == nil {
 			builder.IssueDateTime(issueDate)
 		}
 	}
-	
+
 	// Use existing cNF if available
 	if ide.CNF != "" {
 		builder.RandomCode(ide.CNF)
 	}
-	
+
 	return builder.Build()
 }
 

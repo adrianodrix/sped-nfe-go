@@ -192,11 +192,11 @@ func TestXMLSigningIntegration(t *testing.T) {
 
 // Helper function to check if a string contains a substring
 func stringContains(haystack, needle string) bool {
-	return len(haystack) >= len(needle) && 
-		   (haystack == needle || 
-		    haystack[:len(needle)] == needle ||
-		    haystack[len(haystack)-len(needle):] == needle ||
-		    stringContainsAt(haystack, needle))
+	return len(haystack) >= len(needle) &&
+		(haystack == needle ||
+			haystack[:len(needle)] == needle ||
+			haystack[len(haystack)-len(needle):] == needle ||
+			stringContainsAt(haystack, needle))
 }
 
 func stringContainsAt(haystack, needle string) bool {

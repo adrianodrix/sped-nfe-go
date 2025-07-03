@@ -51,31 +51,31 @@ type AuthResponse struct {
 
 // QueryResponse represents the response from NFe queries.
 type QueryResponse struct {
-	Success     bool              `json:"success"`
-	Status      int               `json:"status"`
-	StatusText  string            `json:"statusText"`
-	Key         string            `json:"key,omitempty"`
-	Protocol    string            `json:"protocol,omitempty"`
-	Authorized  bool              `json:"authorized"`
-	Cancelled   bool              `json:"cancelled"`
-	Messages    []ResponseMessage `json:"messages,omitempty"`
-	XML         []byte            `json:"xml,omitempty"`
-	LastEvent   *EventInfo        `json:"lastEvent,omitempty"`
-	QueryAt     time.Time         `json:"queryAt"`
+	Success    bool              `json:"success"`
+	Status     int               `json:"status"`
+	StatusText string            `json:"statusText"`
+	Key        string            `json:"key,omitempty"`
+	Protocol   string            `json:"protocol,omitempty"`
+	Authorized bool              `json:"authorized"`
+	Cancelled  bool              `json:"cancelled"`
+	Messages   []ResponseMessage `json:"messages,omitempty"`
+	XML        []byte            `json:"xml,omitempty"`
+	LastEvent  *EventInfo        `json:"lastEvent,omitempty"`
+	QueryAt    time.Time         `json:"queryAt"`
 }
 
 // EventResponse represents the response from fiscal events.
 type EventResponse struct {
-	Success       bool              `json:"success"`
-	Status        int               `json:"status"`
-	StatusText    string            `json:"statusText"`
-	EventType     string            `json:"eventType"`
-	Key           string            `json:"key"`
-	Protocol      string            `json:"protocol,omitempty"`
-	Sequence      int               `json:"sequence,omitempty"`
-	Messages      []ResponseMessage `json:"messages,omitempty"`
-	XML           []byte            `json:"xml,omitempty"`
-	ProcessedAt   time.Time         `json:"processedAt"`
+	Success     bool              `json:"success"`
+	Status      int               `json:"status"`
+	StatusText  string            `json:"statusText"`
+	EventType   string            `json:"eventType"`
+	Key         string            `json:"key"`
+	Protocol    string            `json:"protocol,omitempty"`
+	Sequence    int               `json:"sequence,omitempty"`
+	Messages    []ResponseMessage `json:"messages,omitempty"`
+	XML         []byte            `json:"xml,omitempty"`
+	ProcessedAt time.Time         `json:"processedAt"`
 }
 
 // ClientStatusResponse represents the SEFAZ status response.
@@ -92,10 +92,10 @@ type ClientStatusResponse struct {
 
 // ResponseMessage represents a message in responses.
 type ResponseMessage struct {
-	Code        string `json:"code"`
-	Message     string `json:"message"`
-	Correction  string `json:"correction,omitempty"`
-	Type        string `json:"type"` // info, warning, error
+	Code       string `json:"code"`
+	Message    string `json:"message"`
+	Correction string `json:"correction,omitempty"`
+	Type       string `json:"type"` // info, warning, error
 }
 
 // EventInfo represents information about fiscal events.
@@ -148,7 +148,7 @@ func NewClient(config ClientConfig) (*NFEClient, error) {
 	commonConfig := &common.Config{
 		TpAmb:       types.Environment(config.Environment),
 		Timeout:     config.Timeout,
-		RazaoSocial: "NFE Client", // Default minimal value
+		RazaoSocial: "NFE Client",     // Default minimal value
 		CNPJ:        "00000000000191", // Default test CNPJ
 		SiglaUF:     ufStr,
 		Schemes:     "./schemes", // Default schemes path
@@ -175,13 +175,13 @@ func (c *NFEClient) ensureTools() error {
 	if c.tools == nil {
 		// Create webservice resolver
 		resolver := webservices.NewResolver()
-		
+
 		tools, err := NewTools(c.config, resolver)
 		if err != nil {
 			return fmt.Errorf("failed to create tools: %v", err)
 		}
 		c.tools = tools
-		
+
 		// Set certificate if already configured
 		if c.certificate != nil {
 			if err := c.tools.SetCertificate(c.certificate); err != nil {
@@ -493,12 +493,12 @@ func (c *NFEClient) Invalidate(ctx context.Context, serie, numeroInicial, numero
 	if err != nil {
 		return nil, fmt.Errorf("failed to create invalidation request: %v", err)
 	}
-	
+
 	response, err := c.tools.SefazInutiliza(ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to invalidate NFe numbers: %v", err)
 	}
-	
+
 	return c.convertInutilizacaoToEventResponse(response), nil
 }
 
@@ -506,7 +506,7 @@ func (c *NFEClient) Invalidate(ctx context.Context, serie, numeroInicial, numero
 func (c *NFEClient) ValidateXML(xml []byte) error {
 	// Basic validation - check if it's valid XML and has required elements
 	xmlStr := string(xml)
-	
+
 	if !strings.Contains(xmlStr, "<NFe") && !strings.Contains(xmlStr, "<nfe") {
 		return fmt.Errorf("not a valid NFe XML: missing NFe element")
 	}
@@ -532,22 +532,22 @@ func (c *NFEClient) GenerateKey(cnpj string, modelo, serie, numero int, dhEmi ti
 	if serie < 1 || numero < 1 {
 		return "", fmt.Errorf("series and number must be positive")
 	}
-	
+
 	// Generate a mock 44-digit access key
 	mockKey := fmt.Sprintf("%02d%s%s%02d%03d%09d%08d%d",
-		int(c.uf), // UF code
+		int(c.uf),            // UF code
 		dhEmi.Format("0601"), // YYMM
-		cnpj, // CNPJ
-		modelo, // Model
-		serie, // Series
-		numero, // Number
-		12345678, // Random number
-		1) // Check digit
-	
+		cnpj,                 // CNPJ
+		modelo,               // Model
+		serie,                // Series
+		numero,               // Number
+		12345678,             // Random number
+		1)                    // Check digit
+
 	if len(mockKey) != 44 {
 		return "", fmt.Errorf("generated key has invalid length: %d", len(mockKey))
 	}
-	
+
 	return mockKey, nil
 }
 
@@ -613,7 +613,7 @@ func (c *NFEClient) GetContingency() *factories.Contingency {
 func (c *NFEClient) ActivateContingency(motive string, contingencyType ...factories.ContingencyType) error {
 	// TODO: Implement UF.String() method or use int conversion
 	uf := fmt.Sprintf("%02d", int(c.uf)) // Use client UF as string
-	
+
 	var cType factories.ContingencyType
 	if len(contingencyType) > 0 {
 		cType = contingencyType[0]
@@ -660,7 +660,7 @@ func (c *NFEClient) signIfNeeded(xml []byte) ([]byte, error) {
 
 	// Create XML signer with SEFAZ-compatible configuration
 	signer := certificate.CreateXMLSigner(c.certificate)
-	
+
 	// Sign the NFe XML specifically
 	signedXML, err := signer.SignNFeXML(string(xml))
 	if err != nil {

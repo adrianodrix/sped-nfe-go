@@ -78,7 +78,7 @@ func TestNewClient(t *testing.T) {
 				// if client.tools == nil {
 				//	t.Error("Tools should not be nil")
 				// }
-				
+
 				// Check defaults
 				if tt.config.Timeout == 0 && client.timeout != 30*time.Second {
 					t.Error("Default timeout should be 30 seconds")

@@ -20,8 +20,8 @@ func TestNewParser(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "empty config uses defaults",
-			config: ParserConfig{},
+			name:        "empty config uses defaults",
+			config:      ParserConfig{},
 			expectError: false,
 		},
 		{
@@ -104,7 +104,7 @@ B|41|00000005|Venda de "produtos"|55|001|5|2023-12-25T15:30:00-03:00||1|1|411490
 		t.Run(tt.name, func(t *testing.T) {
 			errors := parser.ValidateTXT(tt.txtData)
 			hasErrors := len(errors) > 0
-			
+
 			if tt.expectError && !hasErrors {
 				t.Error("Expected validation errors but got none")
 			}

@@ -62,6 +62,16 @@ func main() {
 	fmt.Printf("   ✅ XML gerado: %d bytes\n", len(xml))
 	fmt.Printf("   🔑 Chave de acesso: %s\n\n", chave)
 
+	// Exemplo 6: Validar XML
+	fmt.Println("\n=== Validando XML ===")
+
+	err = client.ValidateXML([]byte(xml))
+	if err != nil {
+		fmt.Printf("❌ XML inválido: %v\n", err)
+	} else {
+		fmt.Printf("✅ XML válido\n")
+	}
+
 	// ETAPA 4: Assinar XML
 	fmt.Println("🔏 ETAPA 4: Assinando XML digitalmente...")
 	xmlAssinado, err := assinarXML(cert, xml)
@@ -127,9 +137,9 @@ func carregarCertificado(password string) (certificate.Certificate, error) {
 // configurarCliente cria e configura o cliente NFe com certificado
 func configurarCliente(cert certificate.Certificate) (*nfe.NFEClient, error) {
 	config := nfe.ClientConfig{
-		Environment: nfe.Homologation, // Ambiente de homologação
-		UF:          nfe.PR,           // Paraná
-		Timeout:     50,               // 50 segundos
+		Environment: nfe.Production, // Ambiente de homologação
+		UF:          nfe.PR,         // Paraná
+		Timeout:     30,             // 50 segundos
 	}
 
 	client, err := nfe.NewClient(config)

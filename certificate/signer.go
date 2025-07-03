@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/xml"
 	"fmt"
 	"strings"
 	"time"
@@ -74,7 +75,7 @@ func DefaultSignerConfig() *SignerConfig {
 		SignatureAlgorithm:        "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
 		CanonicalizationAlgorithm: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
 		IncludeCertificate:        true,
-		SignatureElementID:        "xmldsig",
+		SignatureElementID:        "",
 		AddTimestamp:              false,
 		ValidateXML:               true,
 	}
@@ -241,7 +242,7 @@ func (signer *XMLSigner) validateXMLStructure(doc *etree.Document) error {
 	}
 
 	// Check for existing signatures
-	existingSignatures := doc.FindElements(".//ds:Signature")
+	existingSignatures := doc.FindElements(".//Signature")
 	if len(existingSignatures) > 0 {
 		return errors.NewValidationError("XML already contains signatures", "signatures", fmt.Sprintf("%d", len(existingSignatures)))
 	}
@@ -268,9 +269,9 @@ func (signer *XMLSigner) extractSignatureInfo(signedXML string) (*SignatureInfo,
 		return nil, errors.NewValidationError("failed to parse signed XML", "xml", err.Error())
 	}
 
-	// Find signature elements
-	sigValueElem := doc.FindElement(".//ds:SignatureValue")
-	digestValueElem := doc.FindElement(".//ds:DigestValue")
+	// Find signature elements (without ds: prefix)
+	sigValueElem := doc.FindElement(".//SignatureValue")
+	digestValueElem := doc.FindElement(".//DigestValue")
 
 	info := &SignatureInfo{
 		Timestamp: time.Now(),
@@ -286,7 +287,7 @@ func (signer *XMLSigner) extractSignatureInfo(signedXML string) (*SignatureInfo,
 	}
 
 	if signer.config.IncludeCertificate {
-		certElem := doc.FindElement(".//ds:X509Certificate")
+		certElem := doc.FindElement(".//X509Certificate")
 		if certElem != nil {
 			info.Certificate = certElem.Text()
 		}
@@ -300,17 +301,9 @@ func (signer *XMLSigner) createSignatureTemplate(referenceURI string, digest []b
 	digestValue := base64.StdEncoding.EncodeToString(digest)
 	digestMethod := signer.getDigestMethodURI()
 
-	template := fmt.Sprintf(`<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="%s">
-  <ds:SignedInfo>
-    <ds:CanonicalizationMethod Algorithm="%s"/>
-    <ds:SignatureMethod Algorithm="%s"/>
-    <ds:Reference URI="%s">
-      <ds:DigestMethod Algorithm="%s"/>
-      <ds:DigestValue>%s</ds:DigestValue>
-    </ds:Reference>
-  </ds:SignedInfo>
-  <ds:SignatureValue>{{SIGNATURE_VALUE}}</ds:SignatureValue>`,
-		signer.config.SignatureElementID,
+	// Create signature element without formatting to avoid error 588
+	// SEFAZ error 588: "Nao e permitida a presenca de caracteres de edicao"
+	template := fmt.Sprintf(`<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="%s"/><SignatureMethod Algorithm="%s"/><Reference URI="%s"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="%s"/><DigestValue>%s</DigestValue></Reference></SignedInfo><SignatureValue>{{SIGNATURE_VALUE}}</SignatureValue>`,
 		signer.config.CanonicalizationAlgorithm,
 		signer.config.SignatureAlgorithm,
 		referenceURI,
@@ -321,17 +314,11 @@ func (signer *XMLSigner) createSignatureTemplate(referenceURI string, digest []b
 		cert := signer.certificate.GetCertificate()
 		if cert != nil {
 			certData := base64.StdEncoding.EncodeToString(cert.Raw)
-			template += fmt.Sprintf(`
-  <ds:KeyInfo>
-    <ds:X509Data>
-      <ds:X509Certificate>%s</ds:X509Certificate>
-    </ds:X509Data>
-  </ds:KeyInfo>`, certData)
+			template += fmt.Sprintf(`<KeyInfo><X509Data><X509Certificate>%s</X509Certificate></X509Data></KeyInfo>`, certData)
 		}
 	}
 
-	template += `
-</ds:Signature>`
+	template += `</Signature>`
 
 	return template
 }
@@ -341,7 +328,7 @@ func (signer *XMLSigner) extractSignedInfo(template string) string {
 	doc := etree.NewDocument()
 	doc.ReadFromString(template)
 
-	signedInfo := doc.FindElement(".//ds:SignedInfo")
+	signedInfo := doc.FindElement(".//SignedInfo")
 	if signedInfo == nil {
 		return ""
 	}
@@ -353,9 +340,43 @@ func (signer *XMLSigner) extractSignedInfo(template string) string {
 	return result
 }
 
+// extractSignedInfoCanonical extracts the SignedInfo element with canonical formatting
+func (signer *XMLSigner) extractSignedInfoCanonical(template string) string {
+	doc := etree.NewDocument()
+	doc.ReadFromString(template)
+
+	signedInfo := doc.FindElement(".//SignedInfo")
+	if signedInfo == nil {
+		return ""
+	}
+
+	doc2 := etree.NewDocument()
+	doc2.SetRoot(signedInfo.Copy())
+	
+	// Apply canonical XML settings (C14N)
+	doc2.WriteSettings = etree.WriteSettings{
+		CanonicalAttrVal: true,
+		CanonicalEndTags: true,
+		CanonicalText:    true,
+		UseCRLF:          false,
+	}
+	
+	result, _ := doc2.WriteToString()
+	return result
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+
 // SignNFeXML signs an NFe XML document following SEFAZ requirements
 func (signer *XMLSigner) SignNFeXML(nfeXML string) (string, error) {
-	// NFe specific signing - signs the infNFe element
+	// NFe specific signing - signs the infNFe element with correct placement
 	doc := etree.NewDocument()
 	if err := doc.ReadFromString(nfeXML); err != nil {
 		return "", errors.NewValidationError("failed to parse NFe XML", "xml", err.Error())
@@ -373,13 +394,121 @@ func (signer *XMLSigner) SignNFeXML(nfeXML string) (string, error) {
 		return "", errors.NewValidationError("infNFe element must have Id attribute", "attribute", "Id")
 	}
 
-	// Sign the XML
-	signedXML, _, err := signer.SignXMLElement(nfeXML, idAttr.Value)
+	// Find NFe root element (parent of infNFe)
+	nfeElement := infNFeElement.Parent()
+	if nfeElement == nil || nfeElement.Tag != "NFe" {
+		return "", errors.NewValidationError("NFe root element not found", "element", "NFe")
+	}
+
+	// Sign the NFe specifically (custom logic for NFe structure)
+	return signer.signNFeSpecifically(doc, infNFeElement, nfeElement, idAttr.Value)
+}
+
+// signNFeSpecifically signs the NFe with correct signature placement
+func (signer *XMLSigner) signNFeSpecifically(doc *etree.Document, infNFeElement, nfeElement *etree.Element, elementID string) (string, error) {
+	// 🚀 FINAL FIX: Use ucarion/c14n library for PHP libxml compatibility
+	// This should produce the exact same canonicalization as PHP's libxml
+	
+	// Remove existing signature if any (for enveloped-signature)
+	existingSig := doc.FindElement(".//Signature")
+	if existingSig != nil {
+		existingSig.Parent().RemoveChild(existingSig)
+	}
+	
+	// Get the infNFe element XML string with its namespace
+	tempDoc := etree.NewDocument()
+	infNFeCopy := infNFeElement.Copy()
+	
+	// Ensure proper namespace for canonicalization
+	if infNFeCopy.SelectAttr("xmlns") == nil {
+		infNFeCopy.CreateAttr("xmlns", "http://www.portalfiscal.inf.br/nfe")
+	}
+	
+	tempDoc.SetRoot(infNFeCopy)
+	infNFeString, err := tempDoc.WriteToString()
 	if err != nil {
 		return "", err
 	}
 
-	return signedXML, nil
+	fmt.Printf("🔬 DEBUG - infNFe antes C14N (primeiros 300 chars): %s...\n", 
+		infNFeString[:min(300, len(infNFeString))])
+
+	// 🚀 Use project's own canonicalization implementation (more reliable)
+	config := &CanonicalizationConfig{
+		Method:          C14N10Inclusive,  // C14N 1.0 inclusive como no exemplo PHP
+		InclusivePrefix: "",
+		WithComments:    false,
+		TrimWhitespace:  true,
+		SortAttributes:  true,
+		RemoveXMLDecl:   true,
+	}
+	
+	canonicalizer := NewXMLCanonicalizer(config)
+	canonicalBytes, err := canonicalizer.Canonicalize(infNFeString)
+	if err != nil {
+		return "", fmt.Errorf("canonicalization failed: %v", err)
+	}
+
+	fmt.Printf("🔬 DEBUG - infNFe pós C14N próprio (primeiros 300 chars): %s...\n", 
+		string(canonicalBytes)[:min(300, len(canonicalBytes))])
+	
+	digest := signer.calculateDigest(canonicalBytes)
+	digestBase64 := base64.StdEncoding.EncodeToString(digest)
+	fmt.Printf("🔬 DEBUG - Digest calculado (ucarion/c14n): %s\n", digestBase64)
+
+	// Generate signature template for the infNFe element
+	template := signer.createSignatureTemplate("#"+elementID, digest)
+
+	// Parse template
+	signatureDoc := etree.NewDocument()
+	if err := signatureDoc.ReadFromString(template); err != nil {
+		return "", err
+	}
+
+	signature := signatureDoc.Root()
+	if signature == nil {
+		return "", fmt.Errorf("failed to parse signature template")
+	}
+
+	// Insert signature as sibling to infNFe (inside NFe element) - correct for NFe structure
+	nfeElement.AddChild(signature.Copy())
+
+	// Calculate signature for the SignedInfo element with canonicalization
+	signedInfo := signer.extractSignedInfoCanonical(template)
+	fmt.Printf("🔬 DEBUG - SignedInfo para assinatura (primeiros 150 chars): %s...\n", 
+		signedInfo[:min(150, len(signedInfo))])
+	
+	signatureValue, err := signer.Sign([]byte(signedInfo))
+	if err != nil {
+		return "", err
+	}
+
+	// Update signature value in the document (without ds: prefix)
+	sigValueElement := doc.FindElement(".//SignatureValue")
+	if sigValueElement != nil {
+		sigValueElement.SetText(base64.StdEncoding.EncodeToString(signatureValue))
+	}
+
+	// Return the signed document without XML declaration
+	doc.WriteSettings = etree.WriteSettings{
+		CanonicalAttrVal: false,
+		CanonicalEndTags: false,
+		CanonicalText:    false,
+		UseCRLF:          false,
+	}
+	result, err := doc.WriteToString()
+	if err != nil {
+		return "", err
+	}
+
+	// Remove XML declaration if present (for compatibility with lote XML)
+	if strings.HasPrefix(result, "<?xml") {
+		if idx := strings.Index(result, "?>"); idx >= 0 {
+			result = strings.TrimSpace(result[idx+2:])
+		}
+	}
+
+	return result, nil
 }
 
 // ValidateNFeSignature validates an NFe XML signature
@@ -547,4 +676,20 @@ func ValidateXMLSignature(signedXML string) error {
 	}
 
 	return nil
+}
+
+// simpleTokenReader implements c14n.RawTokenReader interface
+type simpleTokenReader struct {
+	tokens []xml.Token
+	index  int
+}
+
+// RawToken implements the RawTokenReader interface
+func (r *simpleTokenReader) RawToken() (xml.Token, error) {
+	if r.index >= len(r.tokens) {
+		return nil, fmt.Errorf("EOF")
+	}
+	token := r.tokens[r.index]
+	r.index++
+	return token, nil
 }

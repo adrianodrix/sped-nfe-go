@@ -784,7 +784,89 @@ func (m *Make) updateTotalsWithICMS(icms *ICMS) {
 			m.totals.icmsValue += vICMS
 		}
 	}
-	// Add other ICMS types as needed...
+	
+	// ICMS20 - Base reduzida
+	if icms.ICMS20 != nil {
+		if vBC, err := ParseValue(icms.ICMS20.VBC); err == nil {
+			m.totals.icmsBaseValue += vBC
+		}
+		if vICMS, err := ParseValue(icms.ICMS20.VICMS); err == nil {
+			m.totals.icmsValue += vICMS
+		}
+		if vICMSDeson, err := ParseValue(icms.ICMS20.VICMSDeson); err == nil {
+			m.totals.icmsReliefValue += vICMSDeson
+		}
+	}
+	
+	// ICMS40 - Isenta
+	if icms.ICMS40 != nil {
+		if vICMSDeson, err := ParseValue(icms.ICMS40.VICMSDeson); err == nil {
+			m.totals.icmsReliefValue += vICMSDeson
+		}
+	}
+	
+	// ICMS41 - Não tributada
+	if icms.ICMS41 != nil {
+		if vICMSDeson, err := ParseValue(icms.ICMS41.VICMSDeson); err == nil {
+			m.totals.icmsReliefValue += vICMSDeson
+		}
+	}
+	
+	// ICMS50 - Suspensão
+	if icms.ICMS50 != nil {
+		if vICMSDeson, err := ParseValue(icms.ICMS50.VICMSDeson); err == nil {
+			m.totals.icmsReliefValue += vICMSDeson
+		}
+	}
+	
+	// ICMS60 - ICMS ST anterior
+	if icms.ICMS60 != nil {
+		if vBCST, err := ParseValue(icms.ICMS60.VBCST); err == nil {
+			m.totals.icmsSTBaseValue += vBCST
+		}
+		if vICMSSubst, err := ParseValue(icms.ICMS60.VICMSSubst); err == nil {
+			m.totals.icmsSTValue += vICMSSubst
+		}
+		if vICMSDeson, err := ParseValue(icms.ICMS60.VICMSDeson); err == nil {
+			m.totals.icmsReliefValue += vICMSDeson
+		}
+	}
+	
+	// ICMS70 - Base reduzida com ST
+	if icms.ICMS70 != nil {
+		if vBC, err := ParseValue(icms.ICMS70.VBC); err == nil {
+			m.totals.icmsBaseValue += vBC
+		}
+		if vICMS, err := ParseValue(icms.ICMS70.VICMS); err == nil {
+			m.totals.icmsValue += vICMS
+		}
+		if vBCST, err := ParseValue(icms.ICMS70.VBCST); err == nil {
+			m.totals.icmsSTBaseValue += vBCST
+		}
+		if vICMSST, err := ParseValue(icms.ICMS70.VICMSST); err == nil {
+			m.totals.icmsSTValue += vICMSST
+		}
+		// ICMS70 não tem VICMSDeson
+	}
+	
+	// ICMS90 - Outras
+	if icms.ICMS90 != nil {
+		if vBC, err := ParseValue(icms.ICMS90.VBC); err == nil {
+			m.totals.icmsBaseValue += vBC
+		}
+		if vICMS, err := ParseValue(icms.ICMS90.VICMS); err == nil {
+			m.totals.icmsValue += vICMS
+		}
+		if vBCST, err := ParseValue(icms.ICMS90.VBCST); err == nil {
+			m.totals.icmsSTBaseValue += vBCST
+		}
+		if vICMSST, err := ParseValue(icms.ICMS90.VICMSST); err == nil {
+			m.totals.icmsSTValue += vICMSST
+		}
+		if vICMSDeson, err := ParseValue(icms.ICMS90.VICMSDeson); err == nil {
+			m.totals.icmsReliefValue += vICMSDeson
+		}
+	}
 }
 
 func (m *Make) calculateTotals() error {

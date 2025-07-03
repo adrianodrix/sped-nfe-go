@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/adrianodrix/sped-nfe-go/errors"
@@ -102,8 +103,8 @@ func DefaultXMLDSigConfig() *XMLDSigConfig {
 	return &XMLDSigConfig{
 		SignatureMethod:        "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
 		DigestMethod:           "http://www.w3.org/2000/09/xmldsig#sha1",
-		CanonicalizationMethod: "http://www.w3.org/2001/10/xml-exc-c14n#",
-		TransformMethods:       []string{"http://www.w3.org/2000/09/xmldsig#enveloped-signature", "http://www.w3.org/2001/10/xml-exc-c14n#"},
+		CanonicalizationMethod: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+		TransformMethods:       []string{"http://www.w3.org/2000/09/xmldsig#enveloped-signature", "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"},
 		IncludeCertificate:     true,
 		IncludeKeyInfo:         true,
 		SignatureLocation:      LocationAsLastChild,
@@ -220,8 +221,215 @@ func (signer *XMLDSigSigner) SignNFeXML(nfeXML string) (*XMLDSigResult, error) {
 		return nil, errors.NewValidationError("infNFe element must have Id attribute", "attribute", "Id")
 	}
 
-	// Sign the infNFe element
-	return signer.SignXMLElement(nfeXML, idAttr.Value)
+	// Find NFe root element (parent of infNFe)
+	nfeElement := infNFeElement.Parent()
+	if nfeElement == nil || nfeElement.Tag != "NFe" {
+		return nil, errors.NewValidationError("NFe root element not found", "element", "NFe")
+	}
+
+	// Sign the NFe specifically (custom logic for NFe structure)
+	return signer.signNFeElementSpecifically(doc, infNFeElement, nfeElement, idAttr.Value)
+}
+
+// signNFeElementSpecifically signs the NFe with correct signature placement
+func (signer *XMLDSigSigner) signNFeElementSpecifically(doc *etree.Document, infNFeElement, nfeElement *etree.Element, elementID string) (*XMLDSigResult, error) {
+	// Calculate digest for the infNFe element using canonicalization
+	infNFeContent, err := signer.canonicalizeElement(infNFeElement)
+	if err != nil {
+		return nil, err
+	}
+
+	digest := signer.calculateDigest([]byte(infNFeContent))
+	digestValue := base64.StdEncoding.EncodeToString(digest)
+
+	// Create signature element manually with correct digest
+	signature := signer.createSignatureElementWithDigest("#"+elementID, digestValue)
+
+	// Insert signature as sibling to infNFe (inside NFe element) - correct for NFe structure
+	nfeElement.AddChild(signature)
+
+	// Calculate and insert signature value
+	err = signer.calculateAndInsertSignatureValue(doc, signature)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := doc.WriteToString()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the result
+	xmlResult := &XMLDSigResult{
+		SignedXML:       result,
+		Algorithm:       signer.config.SignatureMethod,
+		Timestamp:       time.Now(),
+		CertificateData: base64.StdEncoding.EncodeToString(signer.certificate.GetCertificate().Raw),
+	}
+
+	return xmlResult, nil
+}
+
+// canonicalizeElement canonicalizes an XML element according to C14N specification for SEFAZ
+func (signer *XMLDSigSigner) canonicalizeElement(element *etree.Element) (string, error) {
+	// For SEFAZ compatibility, we need to use the exact XML representation of the infNFe element
+	// without any modifications, just ensuring proper encoding
+	
+	// Create a temporary document with just this element
+	tempDoc := etree.NewDocument()
+	tempDoc.SetRoot(element.Copy())
+	
+	// Configure etree for consistent output
+	tempDoc.Indent(0)  // No indentation
+	tempDoc.WriteSettings.CanonicalEndTags = true
+	tempDoc.WriteSettings.CanonicalText = true
+	tempDoc.WriteSettings.CanonicalAttrVal = true
+	
+	// Get XML bytes directly without declaration
+	xmlBytes, err := tempDoc.WriteToBytes()
+	if err != nil {
+		return "", err
+	}
+	
+	xmlString := string(xmlBytes)
+	
+	// Remove XML declaration if present (SEFAZ doesn't include it in digest calculation)
+	if strings.HasPrefix(xmlString, "<?xml") {
+		if idx := strings.Index(xmlString, "?>"); idx >= 0 {
+			xmlString = strings.TrimSpace(xmlString[idx+2:])
+		}
+	}
+	
+	// Additional cleanup for SEFAZ compatibility
+	// Ensure consistent attribute ordering and spacing
+	xmlString = strings.ReplaceAll(xmlString, "\n", "")
+	xmlString = strings.ReplaceAll(xmlString, "\r", "")
+	xmlString = strings.ReplaceAll(xmlString, "\t", "")
+	
+	return xmlString, nil
+}
+
+// canonicalizeSignedInfo canonicalizes SignedInfo element specifically for signature calculation
+func (signer *XMLDSigSigner) canonicalizeSignedInfo(signedInfo *etree.Element) ([]byte, error) {
+	// Create a clean copy of SignedInfo
+	tempDoc := etree.NewDocument()
+	tempDoc.SetRoot(signedInfo.Copy())
+	
+	// Configure etree for consistent output
+	tempDoc.Indent(0)  // No indentation
+	tempDoc.WriteSettings.CanonicalEndTags = true
+	tempDoc.WriteSettings.CanonicalText = true
+	tempDoc.WriteSettings.CanonicalAttrVal = true
+	
+	// Get XML bytes directly
+	xmlBytes, err := tempDoc.WriteToBytes()
+	if err != nil {
+		return nil, err
+	}
+	
+	xmlString := string(xmlBytes)
+	
+	// Remove XML declaration if present
+	if strings.HasPrefix(xmlString, "<?xml") {
+		if idx := strings.Index(xmlString, "?>"); idx >= 0 {
+			xmlString = strings.TrimSpace(xmlString[idx+2:])
+		}
+	}
+	
+	// Cleanup for SEFAZ compatibility
+	xmlString = strings.ReplaceAll(xmlString, "\n", "")
+	xmlString = strings.ReplaceAll(xmlString, "\r", "")
+	xmlString = strings.ReplaceAll(xmlString, "\t", "")
+	
+	return []byte(xmlString), nil
+}
+
+// createSignatureElementWithDigest creates a signature element with a specific digest value
+func (signer *XMLDSigSigner) createSignatureElementWithDigest(referenceURI, digestValue string) *etree.Element {
+	// Create signature element with proper namespace (SEFAZ compliance)
+	signature := etree.NewElement("Signature")
+	signature.CreateAttr("xmlns", "http://www.w3.org/2000/09/xmldsig#")
+
+	// Create SignedInfo
+	signedInfo := signature.CreateElement("SignedInfo")
+
+	// Canonicalization method
+	canonicalization := signedInfo.CreateElement("CanonicalizationMethod")
+	canonicalization.CreateAttr("Algorithm", signer.config.CanonicalizationMethod)
+
+	// Signature method
+	signatureMethod := signedInfo.CreateElement("SignatureMethod")
+	signatureMethod.CreateAttr("Algorithm", signer.config.SignatureMethod)
+
+	// Reference
+	reference := signedInfo.CreateElement("Reference")
+	if referenceURI != "" {
+		reference.CreateAttr("URI", referenceURI)
+	}
+
+	// Transforms
+	if len(signer.config.TransformMethods) > 0 {
+		transforms := reference.CreateElement("Transforms")
+		for _, transformMethod := range signer.config.TransformMethods {
+			transform := transforms.CreateElement("Transform")
+			transform.CreateAttr("Algorithm", transformMethod)
+		}
+	}
+
+	// Digest method
+	digestMethod := reference.CreateElement("DigestMethod")
+	digestMethod.CreateAttr("Algorithm", signer.config.DigestMethod)
+
+	// Digest value
+	reference.CreateElement("DigestValue").SetText(digestValue)
+
+	// Signature value (placeholder)
+	signature.CreateElement("SignatureValue").SetText("")
+
+	// Key info
+	if signer.config.IncludeKeyInfo {
+		keyInfo := signature.CreateElement("KeyInfo")
+		if signer.config.IncludeCertificate {
+			x509Data := keyInfo.CreateElement("X509Data")
+			cert := signer.certificate.GetCertificate()
+			if cert != nil {
+				x509Certificate := x509Data.CreateElement("X509Certificate")
+				certData := base64.StdEncoding.EncodeToString(cert.Raw)
+				x509Certificate.SetText(certData)
+			}
+		}
+	}
+
+	return signature
+}
+
+// calculateAndInsertSignatureValue calculates and inserts the signature value
+func (signer *XMLDSigSigner) calculateAndInsertSignatureValue(doc *etree.Document, signature *etree.Element) error {
+	// Find SignedInfo element
+	signedInfo := signature.FindElement("SignedInfo")
+	if signedInfo == nil {
+		return fmt.Errorf("SignedInfo element not found")
+	}
+
+	// Canonicalize SignedInfo properly using C14N
+	signedInfoBytes, err := signer.canonicalizeSignedInfo(signedInfo)
+	if err != nil {
+		return err
+	}
+
+	// Sign the canonicalized SignedInfo content
+	signatureBytes, err := signer.certificate.Sign(signedInfoBytes, signer.config.HashAlgorithm)
+	if err != nil {
+		return err
+	}
+
+	// Insert signature value
+	signatureValue := signature.FindElement("SignatureValue")
+	if signatureValue != nil {
+		signatureValue.SetText(base64.StdEncoding.EncodeToString(signatureBytes))
+	}
+
+	return nil
 }
 
 // VerifyXMLSignature verifies an XML signature using XMLDSig
@@ -237,17 +445,17 @@ func (signer *XMLDSigSigner) VerifyXMLSignature(signedXML string) error {
 	}
 
 	// Perform basic signature validation
-	sigElement := doc.FindElement(".//ds:Signature")
+	sigElement := doc.FindElement(".//Signature")
 	if sigElement == nil {
 		return errors.NewCertificateError("no signature found in XML", nil)
 	}
 
 	// Validate signature structure
-	if sigElement.FindElement(".//ds:SignatureValue") == nil {
+	if sigElement.FindElement(".//SignatureValue") == nil {
 		return errors.NewCertificateError("signature value not found", nil)
 	}
 
-	if sigElement.FindElement(".//ds:DigestValue") == nil {
+	if sigElement.FindElement(".//DigestValue") == nil {
 		return errors.NewCertificateError("digest value not found", nil)
 	}
 
@@ -333,11 +541,11 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 		// Look for signature within the specific element
 		element := signer.findElementByID(doc, elementID)
 		if element != nil {
-			signatureElement = element.FindElement(".//ds:Signature")
+			signatureElement = element.FindElement(".//Signature")
 		}
 	} else {
 		// Look for signature anywhere in document
-		signatureElement = doc.FindElement(".//ds:Signature")
+		signatureElement = doc.FindElement(".//Signature")
 	}
 
 	if signatureElement == nil {
@@ -345,7 +553,7 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 	}
 
 	// Calculate digest for the SignedInfo element
-	signedInfoElement := signatureElement.FindElement(".//ds:SignedInfo")
+	signedInfoElement := signatureElement.FindElement(".//SignedInfo")
 	if signedInfoElement == nil {
 		return nil, fmt.Errorf("SignedInfo element not found")
 	}
@@ -356,7 +564,7 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 		element := signer.findElementByID(doc, elementID)
 		if element != nil {
 			// Remove the signature element temporarily for digest calculation
-			tempSig := element.FindElement(".//ds:Signature")
+			tempSig := element.FindElement(".//Signature")
 			if tempSig != nil {
 				element.RemoveChild(tempSig)
 				// Create a temporary document to get bytes
@@ -374,7 +582,7 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 	} else {
 		// Sign the entire document
 		docCopy := doc.Copy()
-		sigElem := docCopy.FindElement(".//ds:Signature")
+		sigElem := docCopy.FindElement(".//Signature")
 		if sigElem != nil {
 			sigElem.Parent().RemoveChild(sigElem)
 		}
@@ -390,20 +598,18 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 	digestValue := base64.StdEncoding.EncodeToString(digest)
 
 	// Update DigestValue in the signature
-	digestValueElement := signatureElement.FindElement(".//ds:DigestValue")
+	digestValueElement := signatureElement.FindElement(".//DigestValue")
 	if digestValueElement != nil {
 		digestValueElement.SetText(digestValue)
 	}
 
-	// Canonicalize SignedInfo and sign it
-	tempDoc := etree.NewDocument()
-	tempDoc.SetRoot(signedInfoElement.Copy())
-	signedInfoBytes, err := tempDoc.WriteToBytes()
+	// Canonicalize SignedInfo properly and sign it
+	signedInfoBytes, err := signer.canonicalizeSignedInfo(signedInfoElement)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sign the SignedInfo
+	// Sign the canonicalized SignedInfo
 	signature, err := signer.certificate.Sign(signedInfoBytes, signer.config.HashAlgorithm)
 	if err != nil {
 		return nil, err
@@ -411,7 +617,7 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 
 	// Update SignatureValue in the signature
 	signatureValue := base64.StdEncoding.EncodeToString(signature)
-	signatureValueElement := signatureElement.FindElement(".//ds:SignatureValue")
+	signatureValueElement := signatureElement.FindElement(".//SignatureValue")
 	if signatureValueElement != nil {
 		signatureValueElement.SetText(signatureValue)
 	}
@@ -421,54 +627,54 @@ func (signer *XMLDSigSigner) performManualSigning(doc *etree.Document, elementID
 
 // createSignatureElement creates a complete signature element
 func (signer *XMLDSigSigner) createSignatureElement(referenceURI, elementID string) *etree.Element {
-	// Create signature element
-	signature := etree.NewElement("ds:Signature")
-	signature.CreateAttr("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#")
+	// Create signature element with proper namespace (SEFAZ compatibility)
+	signature := etree.NewElement("Signature")
+	signature.CreateAttr("xmlns", "http://www.w3.org/2000/09/xmldsig#")
 
 	// Create SignedInfo
-	signedInfo := signature.CreateElement("ds:SignedInfo")
+	signedInfo := signature.CreateElement("SignedInfo")
 
 	// Canonicalization method
-	canonicalization := signedInfo.CreateElement("ds:CanonicalizationMethod")
+	canonicalization := signedInfo.CreateElement("CanonicalizationMethod")
 	canonicalization.CreateAttr("Algorithm", signer.config.CanonicalizationMethod)
 
 	// Signature method
-	signatureMethod := signedInfo.CreateElement("ds:SignatureMethod")
+	signatureMethod := signedInfo.CreateElement("SignatureMethod")
 	signatureMethod.CreateAttr("Algorithm", signer.config.SignatureMethod)
 
 	// Reference
-	reference := signedInfo.CreateElement("ds:Reference")
+	reference := signedInfo.CreateElement("Reference")
 	if referenceURI != "" {
 		reference.CreateAttr("URI", referenceURI)
 	}
 
 	// Transforms
 	if len(signer.config.TransformMethods) > 0 {
-		transforms := reference.CreateElement("ds:Transforms")
+		transforms := reference.CreateElement("Transforms")
 		for _, transformMethod := range signer.config.TransformMethods {
-			transform := transforms.CreateElement("ds:Transform")
+			transform := transforms.CreateElement("Transform")
 			transform.CreateAttr("Algorithm", transformMethod)
 		}
 	}
 
 	// Digest method
-	digestMethod := reference.CreateElement("ds:DigestMethod")
+	digestMethod := reference.CreateElement("DigestMethod")
 	digestMethod.CreateAttr("Algorithm", signer.config.DigestMethod)
 
 	// Digest value (placeholder)
-	reference.CreateElement("ds:DigestValue").SetText("PLACEHOLDER_DIGEST_VALUE")
+	reference.CreateElement("DigestValue").SetText("PLACEHOLDER_DIGEST_VALUE")
 
 	// Signature value (placeholder)
-	signature.CreateElement("ds:SignatureValue").SetText("PLACEHOLDER_SIGNATURE_VALUE")
+	signature.CreateElement("SignatureValue").SetText("PLACEHOLDER_SIGNATURE_VALUE")
 
 	// Key info
 	if signer.config.IncludeKeyInfo {
-		keyInfo := signature.CreateElement("ds:KeyInfo")
+		keyInfo := signature.CreateElement("KeyInfo")
 		if signer.config.IncludeCertificate {
-			x509Data := keyInfo.CreateElement("ds:X509Data")
+			x509Data := keyInfo.CreateElement("X509Data")
 			cert := signer.certificate.GetCertificate()
 			if cert != nil {
-				x509Certificate := x509Data.CreateElement("ds:X509Certificate")
+				x509Certificate := x509Data.CreateElement("X509Certificate")
 				certData := base64.StdEncoding.EncodeToString(cert.Raw)
 				x509Certificate.SetText(certData)
 			}
@@ -487,23 +693,23 @@ func (signer *XMLDSigSigner) createDetachedSignatureElement(content []byte, refe
 	signature := signer.createSignatureElement(referenceURI, "")
 
 	// Update the digest value
-	digestValueElement := signature.FindElement(".//ds:DigestValue")
+	digestValueElement := signature.FindElement(".//DigestValue")
 	if digestValueElement != nil {
 		digestValueElement.SetText(digestValue)
 	}
 
 	// Create SignedInfo for signing
-	signedInfoElement := signature.FindElement(".//ds:SignedInfo")
+	signedInfoElement := signature.FindElement(".//SignedInfo")
 	if signedInfoElement != nil {
-		tempDoc := etree.NewDocument()
-		tempDoc.SetRoot(signedInfoElement.Copy())
-		signedInfoBytes, _ := tempDoc.WriteToBytes()
-		signatureBytes, err := signer.certificate.Sign(signedInfoBytes, signer.config.HashAlgorithm)
+		signedInfoBytes, err := signer.canonicalizeSignedInfo(signedInfoElement)
 		if err == nil {
-			signatureValue := base64.StdEncoding.EncodeToString(signatureBytes)
-			signatureValueElement := signature.FindElement(".//ds:SignatureValue")
-			if signatureValueElement != nil {
-				signatureValueElement.SetText(signatureValue)
+			signatureBytes, err := signer.certificate.Sign(signedInfoBytes, signer.config.HashAlgorithm)
+			if err == nil {
+				signatureValue := base64.StdEncoding.EncodeToString(signatureBytes)
+				signatureValueElement := signature.FindElement(".//SignatureValue")
+				if signatureValueElement != nil {
+					signatureValueElement.SetText(signatureValue)
+				}
 			}
 		}
 	}
@@ -585,22 +791,22 @@ func (signer *XMLDSigSigner) extractSignatureResult(signedXML string) (*XMLDSigR
 	}
 
 	// Extract signature value
-	if sigValueElem := doc.FindElement(".//ds:SignatureValue"); sigValueElem != nil {
+	if sigValueElem := doc.FindElement(".//SignatureValue"); sigValueElem != nil {
 		result.SignatureValue = sigValueElem.Text()
 	}
 
 	// Extract digest value
-	if digestValueElem := doc.FindElement(".//ds:DigestValue"); digestValueElem != nil {
+	if digestValueElem := doc.FindElement(".//DigestValue"); digestValueElem != nil {
 		result.DigestValue = digestValueElem.Text()
 	}
 
 	// Extract certificate data
-	if certElem := doc.FindElement(".//ds:X509Certificate"); certElem != nil {
+	if certElem := doc.FindElement(".//X509Certificate"); certElem != nil {
 		result.CertificateData = certElem.Text()
 	}
 
 	// Extract reference information
-	references := doc.FindElements(".//ds:Reference")
+	references := doc.FindElements(".//Reference")
 	for _, ref := range references {
 		refInfo := ReferenceInfo{}
 
@@ -608,13 +814,13 @@ func (signer *XMLDSigSigner) extractSignatureResult(signedXML string) (*XMLDSigR
 			refInfo.URI = uriAttr.Value
 		}
 
-		if digestMethodElem := ref.FindElement(".//ds:DigestMethod"); digestMethodElem != nil {
+		if digestMethodElem := ref.FindElement(".//DigestMethod"); digestMethodElem != nil {
 			if algAttr := digestMethodElem.SelectAttr("Algorithm"); algAttr != nil {
 				refInfo.DigestMethod = algAttr.Value
 			}
 		}
 
-		if digestValueElem := ref.FindElement(".//ds:DigestValue"); digestValueElem != nil {
+		if digestValueElem := ref.FindElement(".//DigestValue"); digestValueElem != nil {
 			refInfo.DigestValue = digestValueElem.Text()
 		}
 
@@ -643,17 +849,17 @@ func ValidateXMLDSigSignature(signedXML string) error {
 	}
 
 	// Find signature element
-	sigElement := doc.FindElement(".//ds:Signature")
+	sigElement := doc.FindElement(".//Signature")
 	if sigElement == nil {
 		return errors.NewCertificateError("no signature found in XML", nil)
 	}
 
 	// Validate signature structure (basic validation)
-	if sigElement.FindElement(".//ds:SignatureValue") == nil {
+	if sigElement.FindElement(".//SignatureValue") == nil {
 		return errors.NewCertificateError("signature value not found", nil)
 	}
 
-	if sigElement.FindElement(".//ds:DigestValue") == nil {
+	if sigElement.FindElement(".//DigestValue") == nil {
 		return errors.NewCertificateError("digest value not found", nil)
 	}
 
@@ -667,7 +873,7 @@ func ExtractCertificateFromSignature(signedXML string) (*x509.Certificate, error
 		return nil, errors.NewValidationError("failed to parse signed XML", "xml", err.Error())
 	}
 
-	certElem := doc.FindElement(".//ds:X509Certificate")
+	certElem := doc.FindElement(".//X509Certificate")
 	if certElem == nil {
 		return nil, errors.NewValidationError("no certificate found in signature", "certificate", "")
 	}

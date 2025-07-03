@@ -350,21 +350,6 @@ Exemplos:
 - **Documentação**: `#{issue}: Add documentation for {component}`
 - **Correções**: `#{issue}: Fix {problem} in {component}`
 
-### 🎯 Ordem de Implementação
-
-As issues devem ser implementadas na ordem de dependências:
-
-1. **Issue #1**: Base e configuração (sem dependências)
-2. **Issue #2**: Utilitários brasileiros (depende #1)
-3. **Issue #3**: Cliente SOAP (depende #1)
-4. **Issue #4**: Certificados digitais (depende #1)
-5. **Issue #5**: Estruturas de dados (depende #1, #2)
-6. **Issue #6**: Geração XML (depende #2, #5)
-7. **Issue #7**: Comunicação SEFAZ (depende #3, #4, #6)
-8. **Issue #8**: Conversão TXT (depende #5, #6)
-9. **Issue #9**: Funcionalidades complementares (depende #5, #7)
-10. **Issue #10**: Cliente principal (depende todas anteriores)
-
 ### ✅ Critérios para Finalizar Issue
 
 Uma issue só pode ser finalizada quando:

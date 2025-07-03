@@ -10,6 +10,7 @@ import (
 // mockCertificate implements the Certificate interface for testing
 type mockCertificate struct {
 	cert      *x509.Certificate
+	key       crypto.PrivateKey
 	valid     bool
 	signError error
 }
@@ -26,6 +27,10 @@ func (m *mockCertificate) GetPublicKey() crypto.PublicKey {
 		return m.cert.PublicKey
 	}
 	return nil
+}
+
+func (m *mockCertificate) GetPrivateKey() crypto.PrivateKey {
+	return m.key
 }
 
 func (m *mockCertificate) GetCertificate() *x509.Certificate {

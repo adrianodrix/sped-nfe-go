@@ -794,13 +794,28 @@ func (c *NFEClient) convertToAuthResponse(response *EnvioLoteResponse, originalX
 	return authResponse
 }
 
-func (c *NFEClient) createLoteFromXML(xml []byte) (*LoteNFe, error) {
-	// TODO: Parse XML and create proper LoteNFe
-	// For now, create a basic structure
-	lote := &LoteNFe{
-		IdLote: "1",
-		NFes:   []NFe{}, // TODO: Parse NFe from XML
+func (c *NFEClient) createLoteFromXML(xmlData []byte) (*LoteNFe, error) {
+	if len(xmlData) == 0 {
+		return nil, fmt.Errorf("XML content cannot be empty")
 	}
+
+	// Parse the signed NFe XML
+	var nfe NFe
+	if err := xml.Unmarshal(xmlData, &nfe); err != nil {
+		return nil, fmt.Errorf("failed to parse NFe XML: %v", err)
+	}
+
+	// Validate the parsed NFe
+	if err := c.validateParsedNFe(&nfe); err != nil {
+		return nil, fmt.Errorf("NFe validation failed: %v", err)
+	}
+
+	// Create LoteNFe with the parsed NFe
+	lote := &LoteNFe{
+		IdLote: "1", // Default batch ID
+		NFes:   []NFe{nfe},
+	}
+
 	return lote, nil
 }
 

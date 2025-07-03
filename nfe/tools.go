@@ -251,10 +251,18 @@ func (t *Tools) SefazEnviaLote(ctx context.Context, lote *LoteNFe, sincrono bool
 		return nil, fmt.Errorf("failed to extract body content: %v", err)
 	}
 
-	// Parse response
+	// Parse response - try direct parsing first
 	var envioResponse EnvioLoteResponse
 	if err := xml.Unmarshal([]byte(bodyContent), &envioResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal envio lote response: %v", err)
+		// If that fails, try parsing the wrapped response (nfeResultMsg format)
+		var wrappedResponse struct {
+			XMLName xml.Name          `xml:"nfeResultMsg"`
+			Result  EnvioLoteResponse `xml:"retEnviNFe"`
+		}
+		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
+			return nil, fmt.Errorf("failed to unmarshal envio lote response: %v (also tried wrapped format: %v)", err, err2)
+		}
+		envioResponse = wrappedResponse.Result
 	}
 
 	return &envioResponse, nil

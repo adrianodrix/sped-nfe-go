@@ -361,8 +361,7 @@ func (m *Make) TagInfAdic(infAdic *InfAdicionais) error {
 
 // BuildNFe assembles the complete NFe structure
 func (m *Make) BuildNFe() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	// Note: No lock here since this is called from GetXML which already holds the lock
 
 	// Validate required components
 	if err := m.validateRequired(); err != nil {
@@ -696,6 +695,11 @@ func (m *Make) roundItemValues(prod *Produto) {
 }
 
 func (m *Make) updateTotalsWithItem(item *Item) {
+	// Avoid infinite loops by checking if we're already calculating
+	if m.totals == nil {
+		return
+	}
+
 	// Add item values to totals
 	if vProd, err := ParseValue(item.Prod.VProd); err == nil && item.Prod.IndTot == "1" {
 		m.totals.productValue += vProd

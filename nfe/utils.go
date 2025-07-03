@@ -475,15 +475,44 @@ func IsValidGTIN(gtin string) bool {
 		return false
 	}
 
-	// Validate check digit using modulo 10
+	// Validate check digit using GTIN algorithm (not Luhn)
 	if len(gtin) < 2 {
 		return false
 	}
 
-	checkDigit := CalculateModulo10(gtin[:len(gtin)-1])
+	checkDigit := calculateGTINCheckDigit(gtin[:len(gtin)-1])
 	expectedDigit, _ := strconv.Atoi(string(gtin[len(gtin)-1]))
 
 	return checkDigit == expectedDigit
+}
+
+// calculateGTINCheckDigit calculates the check digit for a GTIN using the correct algorithm
+func calculateGTINCheckDigit(partialGTIN string) int {
+	sum := 0
+
+	// Calculate weighted sum from right to left
+	// Odd positions (from right) get weight 3, even positions get weight 1
+	for i, digit := range partialGTIN {
+		digitValue, _ := strconv.Atoi(string(digit))
+
+		// Position from right (1-indexed)
+		positionFromRight := len(partialGTIN) - i
+
+		// Odd positions from right get weight 3, even positions get weight 1
+		weight := 1
+		if positionFromRight%2 == 1 {
+			weight = 3
+		}
+
+		sum += digitValue * weight
+	}
+
+	// Calculate check digit
+	remainder := sum % 10
+	if remainder == 0 {
+		return 0
+	}
+	return 10 - remainder
 }
 
 // FormatDecimal formats decimal value for NFe

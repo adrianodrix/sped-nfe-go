@@ -142,45 +142,45 @@ var NFe55Config = WebserviceConfig{
 		Homologacao: &Environment{
 			RecepcaoEvento: &Service{
 				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
-				URL: "https://hom1.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+				URL: "https://hom1.types.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
 			},
 			NfeDistribuicaoDFe: &Service{
 				Method: "nfeDistDFeInteresse", Operation: "NFeDistribuicaoDFe", Version: "1.01",
-				URL: "https://hom1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+				URL: "https://hom1.types.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
 			},
 			NfeConsultaDest: &Service{
 				Method: "nfeConsultaNFDest", Operation: "NfeConsultaDest", Version: "1.01",
-				URL: "https://hom.nfe.fazenda.gov.br/NFeConsultaDest/NFeConsultaDest.asmx",
+				URL: "https://hom.types.fazenda.gov.br/NFeConsultaDest/NFeConsultaDest.asmx",
 			},
 			NfeDownloadNF: &Service{
 				Method: "nfeDownloadNF", Operation: "NfeDownloadNF", Version: "4.00",
-				URL: "https://hom.nfe.fazenda.gov.br/NfeDownloadNF/NfeDownloadNF.asmx",
+				URL: "https://hom.types.fazenda.gov.br/NfeDownloadNF/NfeDownloadNF.asmx",
 			},
 			RecepcaoEPEC: &Service{
 				Method: "nfeRecepcaoEvento", Operation: "RecepcaoEvento", Version: "4.00",
-				URL: "https://hom.nfe.fazenda.gov.br/RecepcaoEvento/RecepcaoEvento.asmx",
+				URL: "https://hom.types.fazenda.gov.br/RecepcaoEvento/RecepcaoEvento.asmx",
 			},
 		},
 		Producao: &Environment{
 			RecepcaoEvento: &Service{
 				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
-				URL: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+				URL: "https://www.types.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
 			},
 			NfeDistribuicaoDFe: &Service{
 				Method: "nfeDistDFeInteresse", Operation: "NFeDistribuicaoDFe", Version: "1.01",
-				URL: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+				URL: "https://www1.types.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
 			},
 			NfeConsultaDest: &Service{
 				Method: "nfeConsultaNFDest", Operation: "NfeConsultaDest", Version: "1.01",
-				URL: "https://www.nfe.fazenda.gov.br/NFeConsultaDest/NFeConsultaDest.asmx",
+				URL: "https://www.types.fazenda.gov.br/NFeConsultaDest/NFeConsultaDest.asmx",
 			},
 			NfeDownloadNF: &Service{
 				Method: "nfeDownloadNF", Operation: "NfeDownloadNF", Version: "4.00",
-				URL: "https://www.nfe.fazenda.gov.br/NfeDownloadNF/NfeDownloadNF.asmx",
+				URL: "https://www.types.fazenda.gov.br/NfeDownloadNF/NfeDownloadNF.asmx",
 			},
 			RecepcaoEPEC: &Service{
 				Method: "nfeRecepcaoEvento", Operation: "RecepcaoEvento", Version: "4.00",
-				URL: "https://www.nfe.fazenda.gov.br/RecepcaoEvento/RecepcaoEvento.asmx",
+				URL: "https://www.types.fazenda.gov.br/RecepcaoEvento/RecepcaoEvento.asmx",
 			},
 		},
 	},
@@ -188,31 +188,31 @@ var NFe55Config = WebserviceConfig{
 		Homologacao: &Environment{
 			NfeStatusServico: &Service{
 				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
 			},
 			NfeAutorizacao: &Service{
 				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
 			},
 			NfeConsultaProtocolo: &Service{
 				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/NFeConsultaProtocolo4/NFeConsultaProtocolo4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/NFeConsultaProtocolo4/NFeConsultaProtocolo4.asmx",
 			},
 			NfeInutilizacao: &Service{
 				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/NFeInutilizacao4/NFeInutilizacao4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/NFeInutilizacao4/NFeInutilizacao4.asmx",
 			},
 			NfeRetAutorizacao: &Service{
 				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
 			},
 			RecepcaoEvento: &Service{
 				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
 			},
 			NfeConsultaCadastro: &Service{
 				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
-				URL: "https://hnfe.sefaz.ba.gov.br/webservices/CadConsultaCadastro4/CadConsultaCadastro4.asmx",
+				URL: "https://htypes.sefaz.ba.gov.br/webservices/CadConsultaCadastro4/CadConsultaCadastro4.asmx",
 			},
 		},
 		Producao: &Environment{
@@ -243,6 +243,61 @@ var NFe55Config = WebserviceConfig{
 			NfeConsultaCadastro: &Service{
 				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "2.00",
 				URL: "https://nfe.sefaz.ba.gov.br/webservices/CadConsultaCadastro4/CadConsultaCadastro4.asmx",
+			},
+		},
+	},
+	// PR (Paraná) - SEFAZ PR
+	"PR": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeStatusServico4?wsdl",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4?wsdl",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeConsultaProtocolo4?wsdl",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeInutilizacao4?wsdl",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeRetAutorizacao4?wsdl",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeRecepcaoEvento4?wsdl",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.sefa.pr.gov.br/nfe/NFeStatusServico4?wsdl",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4?wsdl",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.sefa.pr.gov.br/nfe/NFeConsultaProtocolo4?wsdl",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.sefa.pr.gov.br/nfe/NFeInutilizacao4?wsdl",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefa.pr.gov.br/nfe/NFeRetAutorizacao4?wsdl",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
+				URL: "https://nfe.sefa.pr.gov.br/nfe/NFeRecepcaoEvento4?wsdl",
 			},
 		},
 	},
@@ -298,6 +353,132 @@ var NFe55Config = WebserviceConfig{
 			RecepcaoEvento: &Service{
 				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "1.00",
 				URL: "https://nfe.svrs.rs.gov.br/ws/recepcaoevento/recepcaoevento4.asmx",
+			},
+		},
+	},
+	// São Paulo (SP)
+	"SP": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeconsultaprotocolo4.asmx",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeinutilizacao4.asmx",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nferecepcaoevento4.asmx",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "4.00",
+				URL: "https://homologacao.nfe.fazenda.sp.gov.br/ws/cadconsultacadastro4.asmx",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/nfeconsultaprotocolo4.asmx",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/nfeinutilizacao4.asmx",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/nferecepcaoevento4.asmx",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "4.00",
+				URL: "https://nfe.fazenda.sp.gov.br/ws/cadconsultacadastro4.asmx",
+			},
+		},
+	},
+	// Rio Grande do Sul (RS)
+	"RS": &StateWebservices{
+		Homologacao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe-homologacao.sefazrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe-homologacao.sefazrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe-homologacao.sefazrs.rs.gov.br/ws/NfeConsulta/NfeConsulta4.asmx",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe-homologacao.sefazrs.rs.gov.br/ws/nfeinutilizacao/nfeinutilizacao4.asmx",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe-homologacao.sefazrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "4.00",
+				URL: "https://nfe-homologacao.sefazrs.rs.gov.br/ws/recepcaoevento/recepcaoevento4.asmx",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "4.00",
+				URL: "https://cad-homologacao.svrs.rs.gov.br/ws/cadconsultacadastro/cadconsultacadastro4.asmx",
+			},
+		},
+		Producao: &Environment{
+			NfeStatusServico: &Service{
+				Method: "nfeStatusServicoNF", Operation: "NFeStatusServico4", Version: "4.00",
+				URL: "https://nfe.sefazrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+			},
+			NfeAutorizacao: &Service{
+				Method: "nfeAutorizacaoLote", Operation: "NFeAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefazrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+			},
+			NfeConsultaProtocolo: &Service{
+				Method: "nfeConsultaNF", Operation: "NFeConsultaProtocolo4", Version: "4.00",
+				URL: "https://nfe.sefazrs.rs.gov.br/ws/NfeConsulta/NfeConsulta4.asmx",
+			},
+			NfeInutilizacao: &Service{
+				Method: "nfeInutilizacaoNF", Operation: "NFeInutilizacao4", Version: "4.00",
+				URL: "https://nfe.sefazrs.rs.gov.br/ws/nfeinutilizacao/nfeinutilizacao4.asmx",
+			},
+			NfeRetAutorizacao: &Service{
+				Method: "nfeRetAutorizacaoLote", Operation: "NFeRetAutorizacao4", Version: "4.00",
+				URL: "https://nfe.sefazrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+			},
+			RecepcaoEvento: &Service{
+				Method: "nfeRecepcaoEvento", Operation: "NFeRecepcaoEvento4", Version: "4.00",
+				URL: "https://nfe.sefazrs.rs.gov.br/ws/recepcaoevento/recepcaoevento4.asmx",
+			},
+			NfeConsultaCadastro: &Service{
+				Method: "consultaCadastro", Operation: "CadConsultaCadastro4", Version: "4.00",
+				URL: "https://cad.svrs.rs.gov.br/ws/cadconsultacadastro/cadconsultacadastro4.asmx",
 			},
 		},
 	},

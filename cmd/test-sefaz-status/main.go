@@ -73,7 +73,7 @@ func main() {
 	config := nfe.ClientConfig{
 		Environment: nfe.Production, // 🔴 PRODUÇÃO
 		UF:          nfe.PR,         // Paraná (baseado no certificado EMPARI de Maringá)
-		Timeout:     45,             // Timeout maior para produção
+		Timeout:     60,             // Timeout maior para produção
 	}
 
 	client, err := nfe.NewClient(config)

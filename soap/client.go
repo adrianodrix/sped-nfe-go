@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/adrianodrix/sped-nfe-go/certificate"
 	"github.com/adrianodrix/sped-nfe-go/errors"
 )
 
@@ -301,6 +302,59 @@ func (c *SOAPClient) SetTLSConfig(tlsConfig *tls.Config) {
 	if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
 		transport.TLSClientConfig = tlsConfig
 	}
+}
+
+// LoadCertificate configures SSL/TLS client certificate authentication for SEFAZ communication
+// This method is essential for SEFAZ webservices which require ICP-Brasil certificate authentication
+func (c *SOAPClient) LoadCertificate(cert certificate.Certificate) error {
+	if cert == nil {
+		return errors.NewCertificateError("certificate cannot be nil", nil)
+	}
+
+	// Get the certificate and private key for TLS configuration
+	x509Cert := cert.GetCertificate()
+	if x509Cert == nil {
+		return errors.NewCertificateError("invalid certificate: X509 certificate is nil", nil)
+	}
+
+	// Get the private key
+	privateKey := cert.GetPrivateKey()
+	if privateKey == nil {
+		return errors.NewCertificateError("invalid certificate: private key is nil", nil)
+	}
+
+	// Create TLS certificate from X509 certificate and private key
+	tlsCert := tls.Certificate{
+		Certificate: [][]byte{x509Cert.Raw},
+		PrivateKey:  privateKey,
+	}
+
+	// Update TLS configuration with client certificate
+	if c.tlsConfig == nil {
+		c.tlsConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			MaxVersion: tls.VersionTLS13,
+		}
+	}
+
+	// Set the client certificate for mutual TLS authentication
+	c.tlsConfig.Certificates = []tls.Certificate{tlsCert}
+
+	// Update the HTTP client transport with new TLS config
+	if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
+		transport.TLSClientConfig = c.tlsConfig
+	} else {
+		// Create new transport if needed
+		c.httpClient.Transport = &http.Transport{
+			TLSClientConfig:     c.tlsConfig,
+			MaxIdleConns:        10,
+			MaxIdleConnsPerHost: 2,
+			IdleConnTimeout:     90 * time.Second,
+			DisableCompression:  false,
+		}
+	}
+
+	return nil
 }
 
 // GetTimeout returns the current timeout setting

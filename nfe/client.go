@@ -429,7 +429,8 @@ func (c *NFEClient) Cancel(ctx context.Context, chave, justificativa string) (*E
 		return nil, fmt.Errorf("failed to create cancellation event: %v", err)
 	}
 
-	response, err := c.tools.SefazEvento(ctx, eventoReq)
+	// Convert the old event request to the new format  
+	response, err := c.tools.SefazCancela(ctx, chave, justificativa, eventoReq.Evento[0].InfEvento.DetEvento.NProt, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to cancel NFe: %v", err)
 	}
@@ -453,13 +454,8 @@ func (c *NFEClient) CCe(ctx context.Context, chave, correcao string, sequencia i
 		return nil, err
 	}
 
-	// Create CCe event
-	eventoReq, err := c.createCCeEventRequest(chave, correcao, sequencia)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create CCe event: %v", err)
-	}
-
-	response, err := c.tools.SefazEvento(ctx, eventoReq)
+	// Use the new SefazCCe function
+	response, err := c.tools.SefazCCe(ctx, chave, correcao, sequencia, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to send CCe: %v", err)
 	}
@@ -860,10 +856,23 @@ func (c *NFEClient) convertToEventResponse(response interface{}, eventType strin
 		ProcessedAt: time.Now(),
 	}
 
-	// TODO: Implement proper conversion based on response type
-	// For now, return basic structure
-	event.Success = true
-	event.Status = 135 // Evento registrado e vinculado a NFe
+	// Handle EventResponseNFe type
+	if nfeResp, ok := response.(*EventResponseNFe); ok {
+		event.Success = nfeResp.CStat == "128" || nfeResp.CStat == "135" || nfeResp.CStat == "136"
+		if statusCode, err := strconv.Atoi(nfeResp.CStat); err == nil {
+			event.Status = statusCode
+		}
+		event.StatusText = nfeResp.XMotivo
+		
+		// Add event protocol if available
+		if len(nfeResp.RetEvento) > 0 {
+			event.Protocol = nfeResp.RetEvento[0].InfEvento.NProt
+		}
+	} else {
+		// Fallback for other response types
+		event.Success = true
+		event.Status = 135 // Evento registrado e vinculado a NFe
+	}
 
 	return event
 }

@@ -449,26 +449,164 @@ func (t *Tools) SefazInutiliza(ctx context.Context, inutilizacao *InutilizacaoRe
 	return &inutResponse, nil
 }
 
-// Event Service Operations
-
-// SefazEvento sends a generic event to SEFAZ
-func (t *Tools) SefazEvento(ctx context.Context, evento *EventoRequest) (*EventoResponse, error) {
-	if evento == nil {
-		return nil, fmt.Errorf("evento request cannot be nil")
+// SefazCCe sends a correction letter (carta de correção) event to SEFAZ
+func (t *Tools) SefazCCe(ctx context.Context, chave string, xCorrecao string, nSeqEvento int, dhEvento *time.Time, lote string) (*EventResponseNFe, error) {
+	if chave == "" || xCorrecao == "" {
+		return nil, fmt.Errorf("CCe: chave or xCorrecao is empty")
 	}
 
-	// Set common fields
-	evento.Versao = t.config.Versao
+	// Validate and clean correction text
+	xCorrecao = strings.TrimSpace(xCorrecao)
+	if len(xCorrecao) > 1000 {
+		xCorrecao = xCorrecao[:1000]
+	}
+	
+	// Standard correction letter usage condition text
+	xCondUso := "A Carta de Correcao e disciplinada pelo paragrafo " +
+		"1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 " +
+		"e pode ser utilizada para regularizacao de erro ocorrido " +
+		"na emissao de documento fiscal, desde que o erro nao esteja " +
+		"relacionado com: I - as variaveis que determinam o valor " +
+		"do imposto tais como: base de calculo, aliquota, " +
+		"diferenca de preco, quantidade, valor da operacao ou da " +
+		"prestacao; II - a correcao de dados cadastrais que implique " +
+		"mudanca do remetente ou do destinatario; III - a data de " +
+		"emissao ou de saida."
+
+	tagAdic := fmt.Sprintf("<xCorrecao>%s</xCorrecao><xCondUso>%s</xCondUso>", xCorrecao, xCondUso)
+
+	return t.SefazEvento(ctx, chave, EVT_CCE, nSeqEvento, tagAdic, dhEvento, lote)
+}
+
+// SefazCancela sends a cancellation event to SEFAZ
+func (t *Tools) SefazCancela(ctx context.Context, chave string, xJust string, nProt string, dhEvento *time.Time, lote string) (*EventResponseNFe, error) {
+	if chave == "" || xJust == "" || nProt == "" {
+		return nil, fmt.Errorf("cancellation: chave, xJust or nProt is empty")
+	}
+
+	// Validate and clean justification text
+	xJust = strings.TrimSpace(xJust)
+	if len(xJust) > 255 {
+		xJust = xJust[:255]
+	}
+
+	tagAdic := fmt.Sprintf("<nProt>%s</nProt><xJust>%s</xJust>", nProt, xJust)
+
+	return t.SefazEvento(ctx, chave, EVT_CANCELA, 1, tagAdic, dhEvento, lote)
+}
+
+// SefazCancelaPorSubstituicao sends a cancellation by substitution event to SEFAZ
+func (t *Tools) SefazCancelaPorSubstituicao(ctx context.Context, chave string, xJust string, nProt string, chNFeRef string, verAplic string, dhEvento *time.Time, lote string) (*EventResponseNFe, error) {
+	if chave == "" || xJust == "" || nProt == "" || chNFeRef == "" {
+		return nil, fmt.Errorf("cancellation by substitution: chave, xJust, nProt or chNFeRef is empty")
+	}
+
+	// Validate and clean justification text
+	xJust = strings.TrimSpace(xJust)
+	if len(xJust) > 255 {
+		xJust = xJust[:255]
+	}
+
+	tagAdic := fmt.Sprintf("<nProt>%s</nProt><xJust>%s</xJust><chNFeRef>%s</chNFeRef><verAplic>%s</verAplic>", nProt, xJust, chNFeRef, verAplic)
+
+	return t.SefazEvento(ctx, chave, EVT_CANCELASUBSTITUICAO, 1, tagAdic, dhEvento, lote)
+}
+
+// SefazManifesta sends a manifestation event to SEFAZ
+func (t *Tools) SefazManifesta(ctx context.Context, chave string, tpEvento int, xJust string, nSeqEvento int, dhEvento *time.Time, lote string) (*EventResponseNFe, error) {
+	if chave == "" {
+		return nil, fmt.Errorf("manifestation: chave is empty")
+	}
+
+	// Validate event type for manifestation
+	validTypes := []int{EVT_CIENCIA, EVT_CONFIRMACAO, EVT_DESCONHECIMENTO, EVT_NAO_REALIZADA}
+	valid := false
+	for _, validType := range validTypes {
+		if tpEvento == validType {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return nil, fmt.Errorf("invalid event type for manifestation: %d", tpEvento)
+	}
+
+	// Some manifestation events require justification
+	if (tpEvento == EVT_DESCONHECIMENTO || tpEvento == EVT_NAO_REALIZADA) && xJust == "" {
+		return nil, fmt.Errorf("manifestation event %d requires justification", tpEvento)
+	}
+
+	var tagAdic string
+	if xJust != "" {
+		// Validate and clean justification text
+		xJust = strings.TrimSpace(xJust)
+		if len(xJust) > 255 {
+			xJust = xJust[:255]
+		}
+		tagAdic = fmt.Sprintf("<xJust>%s</xJust>", xJust)
+	}
+
+	return t.SefazEvento(ctx, chave, tpEvento, nSeqEvento, tagAdic, dhEvento, lote)
+}
+
+// SefazEvento is the generic function for sending events to SEFAZ
+func (t *Tools) SefazEvento(ctx context.Context, chave string, tpEvento int, nSeqEvento int, tagAdic string, dhEvento *time.Time, lote string) (*EventResponseNFe, error) {
+	if chave == "" {
+		return nil, fmt.Errorf("chave is required")
+	}
+	if len(chave) != 44 {
+		return nil, fmt.Errorf("chave must be 44 characters long")
+	}
+
+	// Validate NFe key and extract UF
+	uf, err := t.extractUFFromChave(chave)
+	if err != nil {
+		return nil, fmt.Errorf("invalid chave: %v", err)
+	}
+
+	// Get event info
+	eventInfo, err := GetEventInfo(tpEvento)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set default values
+	if nSeqEvento == 0 {
+		nSeqEvento = 1
+	}
+	if lote == "" {
+		lote = strconv.FormatInt(time.Now().Unix(), 10)
+	}
+
+	// Create event parameters
+	params := EventParams{
+		UF:         uf,
+		ChNFe:      chave,
+		TpEvento:   tpEvento,
+		NSeqEvento: nSeqEvento,
+		TagAdic:    tagAdic,
+		DhEvento:   dhEvento,
+		Lote:       lote,
+		CNPJ:       t.config.CNPJ,
+		TpAmb:      strconv.Itoa(int(t.config.TpAmb)),
+		VerEvento:  eventInfo.Version,
+	}
+
+	// Create event XML
+	eventXML, err := CreateEventXML(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create event XML: %v", err)
+	}
 
 	// Convert to XML
-	requestXML, err := xml.Marshal(evento)
+	requestXML, err := xml.Marshal(eventXML)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal evento request: %v", err)
+		return nil, fmt.Errorf("failed to marshal event request: %v", err)
 	}
 
 	// Get webservice info
 	env := common.Environment(t.config.TpAmb)
-	serviceInfo, err := t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeRecepcaoEvento, env, t.model)
+	serviceInfo, err := t.webservices.GetServiceURL(uf, common.NFeRecepcaoEvento, env, t.model)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service URL: %v", err)
 	}
@@ -498,97 +636,38 @@ func (t *Tools) SefazEvento(ctx context.Context, evento *EventoRequest) (*Evento
 	}
 
 	// Parse response
-	var eventoResponse EventoResponse
-	if err := xml.Unmarshal([]byte(bodyContent), &eventoResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal evento response: %v", err)
+	var eventResponse EventResponseNFe
+	if err := xml.Unmarshal([]byte(bodyContent), &eventResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event response: %v", err)
 	}
 
-	return &eventoResponse, nil
+	return &eventResponse, nil
 }
 
-// SefazCancela cancels an NFe (cancellation event)
-func (t *Tools) SefazCancela(ctx context.Context, chave, protocolo, justificativa string) (*EventoResponse, error) {
+// extractUFFromChave extracts the UF from the NFe access key
+func (t *Tools) extractUFFromChave(chave string) (string, error) {
 	if len(chave) != 44 {
-		return nil, fmt.Errorf("access key must have 44 digits")
+		return "", fmt.Errorf("invalid chave length: %d", len(chave))
 	}
 
-	if protocolo == "" {
-		return nil, fmt.Errorf("protocol cannot be empty")
+	// The UF code is in positions 0-1 of the access key
+	ufCode := chave[0:2]
+	
+	// Map UF codes to UF names
+	ufMap := map[string]string{
+		"12": "AC", "27": "AL", "16": "AP", "23": "AM", "29": "BA", "85": "CE", "53": "DF",
+		"32": "ES", "52": "GO", "21": "MA", "51": "MT", "50": "MS", "31": "MG", "15": "PA",
+		"25": "PB", "41": "PR", "26": "PE", "22": "PI", "33": "RJ", "20": "RN", "43": "RS",
+		"11": "RO", "14": "RR", "42": "SC", "35": "SP", "28": "SE", "17": "TO",
 	}
 
-	if len(justificativa) < 15 {
-		return nil, fmt.Errorf("justification must have at least 15 characters")
+	if uf, exists := ufMap[ufCode]; exists {
+		return uf, nil
 	}
 
-	// Create cancellation event
-	evento := &EventoRequest{
-		IdLote: generateLoteId(),
-		Evento: []Evento{
-			{
-				InfEvento: InfEvento{
-					COrgao:     getStateCode(t.config.SiglaUF),
-					TpAmb:      int(t.config.TpAmb),
-					CNPJ:       t.config.CNPJ,
-					ChNFe:      chave,
-					DhEvento:   FormatDateTime(time.Now()),
-					TpEvento:   "110111", // Cancellation event type
-					NSeqEvento: "1",
-					VerEvento:  "1.00",
-					DetEvento: DetEvento{
-						Versao:     "1.00",
-						DescEvento: "Cancelamento",
-						NProt:      protocolo,
-						XJust:      justificativa,
-					},
-				},
-			},
-		},
-	}
-
-	return t.SefazEvento(ctx, evento)
+	return "", fmt.Errorf("invalid UF code in chave: %s", ufCode)
 }
 
-// SefazCCe sends a correction letter (carta de correção eletrônica)
-func (t *Tools) SefazCCe(ctx context.Context, chave, correcao string, sequencia int) (*EventoResponse, error) {
-	if len(chave) != 44 {
-		return nil, fmt.Errorf("access key must have 44 digits")
-	}
-
-	if len(correcao) < 15 {
-		return nil, fmt.Errorf("correction text must have at least 15 characters")
-	}
-
-	if sequencia < 1 {
-		return nil, fmt.Errorf("sequence must be greater than 0")
-	}
-
-	// Create correction letter event
-	evento := &EventoRequest{
-		IdLote: generateLoteId(),
-		Evento: []Evento{
-			{
-				InfEvento: InfEvento{
-					COrgao:     getStateCode(t.config.SiglaUF),
-					TpAmb:      int(t.config.TpAmb),
-					CNPJ:       t.config.CNPJ,
-					ChNFe:      chave,
-					DhEvento:   FormatDateTime(time.Now()),
-					TpEvento:   "110110", // Correction letter event type
-					NSeqEvento: strconv.Itoa(sequencia),
-					VerEvento:  "1.00",
-					DetEvento: DetEvento{
-						Versao:     "1.00",
-						DescEvento: "Carta de Correcao Eletronica",
-						XCorrecao:  correcao,
-						XCondUso:   "A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 e pode ser utilizada para regularizacao de erro ocorrido na emissao de documento fiscal, desde que o erro nao esteja relacionado com: I - as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da operacao ou da prestacao; II - a correcao de dados cadastrais que implique mudanca do remetente ou do destinatario; III - a data de emissao ou de saida.",
-					},
-				},
-			},
-		},
-	}
-
-	return t.SefazEvento(ctx, evento)
-}
 
 // Registry Service Operations
 

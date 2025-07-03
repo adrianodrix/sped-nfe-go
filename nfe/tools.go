@@ -559,8 +559,32 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 		request.InfInut.CNPJ = documento
 	}
 
-	// 8. Sign the XML (placeholder - to be implemented)
-	// TODO: Implement XML signing with certificate
+	// 8. Sign the XML if certificate is available
+	if t.certificate != nil {
+		if cert, ok := t.certificate.(Certificate); ok && cert != nil {
+			// Convert request to XML for signing
+			requestXML, err := xml.Marshal(request)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal request for signing: %v", err)
+			}
+
+			// Sign the XML using XMLDSig
+			signer := certificate.CreateXMLDSigSigner(cert)
+			signResult, err := signer.SignXMLElement(string(requestXML), idInut)
+			if err != nil {
+				return nil, fmt.Errorf("failed to sign inutilization XML: %v", err)
+			}
+
+			// Parse the signed XML back to request structure
+			var signedRequest InutilizacaoRequest
+			if err := xml.Unmarshal([]byte(signResult.SignedXML), &signedRequest); err != nil {
+				return nil, fmt.Errorf("failed to parse signed XML: %v", err)
+			}
+
+			// Use the signed request
+			request = &signedRequest
+		}
+	}
 
 	// 9. Call the base function
 	return t.SefazInutiliza(ctx, request)

@@ -3,20 +3,39 @@ package nfe
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/xml"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/adrianodrix/sped-nfe-go/certificate"
 	"github.com/adrianodrix/sped-nfe-go/common"
 	"github.com/adrianodrix/sped-nfe-go/soap"
+	"github.com/adrianodrix/sped-nfe-go/types"
 )
+
+// Type alias for Certificate interface
+type Certificate = certificate.Certificate
+
+// getStatusServiceInfo returns the webservice info for NFe status service using the resolver interface
+func (t *Tools) getStatusServiceInfo() (common.WebServiceInfo, error) {
+	uf := strings.ToUpper(t.config.SiglaUF)
+	isProduction := t.config.TpAmb == types.Production
+	
+	// Use the resolver interface to get webservice information
+	return t.resolver.GetStatusServiceURL(uf, isProduction, t.model)
+}
+
+
 
 // Tools provides the main interface for NFe operations with SEFAZ
 type Tools struct {
 	config        *common.Config
 	webservices   *common.WebServiceManager
+	resolver      common.WebserviceResolver  // Interface for webservice URL resolution
 	soapClient    *soap.SOAPClient
 	certificate   interface{}  // Will be properly typed when certificate package is ready
 	model         string       // NFe model (55 or 65)
@@ -25,9 +44,13 @@ type Tools struct {
 }
 
 // NewTools creates a new Tools instance for NFe operations
-func NewTools(config *common.Config) (*Tools, error) {
+func NewTools(config *common.Config, resolver common.WebserviceResolver) (*Tools, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config cannot be nil")
+	}
+
+	if resolver == nil {
+		return nil, fmt.Errorf("webservice resolver cannot be nil")
 	}
 
 	if err := common.ValidateConfig(config); err != nil {
@@ -42,6 +65,13 @@ func NewTools(config *common.Config) (*Tools, error) {
 		UserAgent:     "sped-nfe-go/1.0",
 		EnableLogging: false,
 	}
+	
+	// Check for unsafe SSL environment variable (for testing only)
+	if os.Getenv("SPED_NFE_UNSAFE_SSL") == "true" {
+		soapConfig.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
 
 	soapClient := soap.NewSOAPClient(soapConfig)
 
@@ -51,6 +81,7 @@ func NewTools(config *common.Config) (*Tools, error) {
 	return &Tools{
 		config:      config,
 		webservices: wsManager,
+		resolver:    resolver,
 		soapClient:  soapClient,
 		model:       "55", // Default to NFe
 	}, nil
@@ -70,9 +101,18 @@ func (t *Tools) GetModel() string {
 	return t.model
 }
 
-// SetCertificate sets the digital certificate for requests
-func (t *Tools) SetCertificate(certificate interface{}) {
+// SetCertificate sets the digital certificate for requests and configures SSL/TLS authentication
+func (t *Tools) SetCertificate(certificate interface{}) error {
 	t.certificate = certificate
+	
+	// Configure SSL/TLS client certificate authentication in SOAP client
+	if cert, ok := certificate.(Certificate); ok && cert != nil {
+		if err := t.soapClient.LoadCertificate(cert); err != nil {
+			return fmt.Errorf("failed to configure SSL certificate in SOAP client: %v", err)
+		}
+	}
+	
+	return nil
 }
 
 // GetLastRequest returns the last SOAP request sent
@@ -105,8 +145,7 @@ func (t *Tools) SefazStatus(ctx context.Context) (*StatusResponse, error) {
 	}
 
 	// Get webservice info
-	env := common.Environment(t.config.TpAmb)
-	serviceInfo, err := t.webservices.GetServiceURL(t.config.SiglaUF, common.NFeStatusServico, env, t.model)
+	serviceInfo, err := t.getStatusServiceInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service URL: %v", err)
 	}
@@ -135,10 +174,21 @@ func (t *Tools) SefazStatus(ctx context.Context) (*StatusResponse, error) {
 		return nil, fmt.Errorf("failed to extract body content: %v", err)
 	}
 
-	// Parse response
+
+	// Parse response - handle both direct and wrapped responses
 	var statusResponse StatusResponse
+	
+	// Try direct parsing first
 	if err := xml.Unmarshal([]byte(bodyContent), &statusResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal status response: %v", err)
+		// If that fails, try parsing the wrapped response
+		var wrappedResponse struct {
+			XMLName xml.Name `xml:"nfeResultMsg"`
+			Result  StatusResponse `xml:"retConsStatServ"`
+		}
+		if err2 := xml.Unmarshal([]byte(bodyContent), &wrappedResponse); err2 != nil {
+			return nil, fmt.Errorf("failed to unmarshal status response: %v (also tried wrapped format: %v)", err, err2)
+		}
+		statusResponse = wrappedResponse.Result
 	}
 
 	return &statusResponse, nil

@@ -7,6 +7,7 @@ import (
 
 	"github.com/adrianodrix/sped-nfe-go/common"
 	"github.com/adrianodrix/sped-nfe-go/types"
+	"github.com/adrianodrix/sped-nfe-go/webservices"
 )
 
 func TestNewTools(t *testing.T) {
@@ -21,7 +22,7 @@ func TestNewTools(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, err := NewTools(config)
+	tools, err := NewTools(config, webservices.NewResolver())
 	if err != nil {
 		t.Fatalf("NewTools should not return error with valid config: %v", err)
 	}
@@ -39,7 +40,7 @@ func TestNewTools(t *testing.T) {
 	}
 
 	// Test with nil config
-	_, err = NewTools(nil)
+	_, err = NewTools(nil, webservices.NewResolver())
 	if err == nil {
 		t.Error("NewTools should return error with nil config")
 	}
@@ -50,7 +51,7 @@ func TestNewTools(t *testing.T) {
 		CNPJ:  "invalid",
 	}
 
-	_, err = NewTools(invalidConfig)
+	_, err = NewTools(invalidConfig, webservices.NewResolver())
 	if err == nil {
 		t.Error("NewTools should return error with invalid config")
 	}
@@ -67,7 +68,7 @@ func TestSetModel(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	// Test valid models
 	err := tools.SetModel("55")
@@ -106,7 +107,7 @@ func TestSetCertificate(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	// Test setting certificate
 	cert := "test_certificate"
@@ -128,7 +129,7 @@ func TestToolsValidateConfig(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	err := tools.ValidateConfig()
 	if err != nil {
@@ -147,7 +148,7 @@ func TestSetTimeout(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	newTimeout := 60 * time.Second
 	tools.SetTimeout(newTimeout)
@@ -167,7 +168,7 @@ func TestEnableDebug(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	// Test enabling debug
 	tools.EnableDebug(true)
@@ -271,7 +272,7 @@ func TestSefazStatusStructure(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, err := NewTools(config)
+	tools, err := NewTools(config, webservices.NewResolver())
 	if err != nil {
 		t.Fatalf("NewTools failed: %v", err)
 	}
@@ -322,7 +323,7 @@ func TestContextHandling(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	// Test context creation and cancellation
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -352,7 +353,7 @@ func TestToolsErrorHandling(t *testing.T) {
 		Timeout:     30,
 	}
 
-	tools, _ := NewTools(config)
+	tools, _ := NewTools(config, webservices.NewResolver())
 
 	// Test SefazConsultaChave with invalid key
 	ctx := context.Background()

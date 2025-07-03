@@ -20,6 +20,9 @@ type Certificate interface {
 	// GetPublicKey returns the certificate's public key
 	GetPublicKey() crypto.PublicKey
 	
+	// GetPrivateKey returns the certificate's private key for TLS authentication
+	GetPrivateKey() crypto.PrivateKey
+	
 	// GetCertificate returns the X.509 certificate
 	GetCertificate() *x509.Certificate
 	
@@ -281,4 +284,14 @@ func ParseCertificatesFromDER(der []byte) ([]*x509.Certificate, error) {
 	}
 
 	return certs, nil
+}
+
+// ValidateForNFe validates if a certificate is suitable for NFe operations
+func ValidateForNFe(cert Certificate) error {
+	if cert == nil {
+		return errors.NewValidationError("certificate cannot be nil", "certificate", "")
+	}
+	
+	x509Cert := cert.GetCertificate()
+	return ValidateForNFeUse(x509Cert)
 }

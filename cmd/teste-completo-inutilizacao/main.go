@@ -64,12 +64,12 @@ func main() {
 
 	fmt.Printf("\n🔧 ETAPA 2: Configurando cliente NFe...\n")
 
-	// Create config for production
+	// Create config for production - testing different states
 	config := &common.Config{
 		TpAmb:       types.Production, // Usando produção para testar URLs reais
 		RazaoSocial: "EMPARI INFORMATICA LTDA",
 		CNPJ:        "10541434000152",
-		SiglaUF:     "PR", // Paraná (mesmo estado do problema de autorização)
+		SiglaUF:     "SP", // SÃO PAULO (para testar se problema é específico do Paraná)
 		Schemes:     "PL_009_V4",
 		Versao:      "4.00",
 		Timeout:     60,
@@ -228,8 +228,19 @@ func main() {
 	fmt.Printf("      ✅ Status: %s\n", statusInfo.URL)
 	fmt.Printf("      ❌ Autorização: %s (problema conhecido)\n", authInfo.URL)
 	if err != nil {
-		fmt.Printf("      ❌ Inutilização: %s (mesmo problema)\n", inutInfo.URL)
-		fmt.Printf("\n💡 CONCLUSÃO: Problema não é específico da URL, mas sim do SEFAZ Paraná ou configuração SOAP\n")
+		errorStr := err.Error()
+		fmt.Printf("      ❌ Inutilização: %s (erro: %s)\n", inutInfo.URL, errorStr)
+		
+		if contains(errorStr, "tls: bad certificate") {
+			fmt.Printf("\n💡 CONCLUSÃO: Problema de certificado SSL do servidor SEFAZ!\n")
+			fmt.Printf("   🔍 Causa identificada: Certificado SSL do servidor SEFAZ inválido\n")
+			fmt.Printf("   📊 Estado testado: São Paulo (SP)\n")
+			fmt.Printf("   ⚠️  Se SP também falha, problema é mais amplo que apenas Paraná\n")
+		} else if contains(errorStr, "Content-Length: 0") || contains(errorStr, "VAZIO") {
+			fmt.Printf("\n💡 CONCLUSÃO: Problema não é específico da URL, mas sim do SEFAZ ou configuração SOAP\n")
+		} else {
+			fmt.Printf("\n💡 CONCLUSÃO: Novo tipo de erro identificado: %s\n", errorStr)
+		}
 	} else {
 		fmt.Printf("      ✅ Inutilização: %s (funcionou!)\n", inutInfo.URL)
 		fmt.Printf("\n💡 CONCLUSÃO: Problema É específico do serviço de autorização!\n")
@@ -237,10 +248,18 @@ func main() {
 
 	fmt.Printf("\n🚀 Próximos passos sugeridos:\n")
 	if err != nil {
-		fmt.Printf("   1. Investigar configuração específica do SEFAZ Paraná\n")
-		fmt.Printf("   2. Verificar headers SOAP enviados\n")
-		fmt.Printf("   3. Testar com outros estados (SP, MG)\n")
-		fmt.Printf("   4. Analisar diferenças na estrutura SOAP\n")
+		errorStr := err.Error()
+		if contains(errorStr, "tls: bad certificate") {
+			fmt.Printf("   1. ✅ CONFIRMADO: Problema é certificado SSL do servidor SEFAZ\n")
+			fmt.Printf("   2. Testar com SPED_NFE_UNSAFE_SSL=true para bypass SSL\n")
+			fmt.Printf("   3. Verificar se outros estados também têm problema SSL\n")
+			fmt.Printf("   4. Entrar em contato com SEFAZ sobre certificados SSL inválidos\n")
+		} else {
+			fmt.Printf("   1. Investigar configuração específica do SEFAZ\n")
+			fmt.Printf("   2. Verificar headers SOAP enviados\n")
+			fmt.Printf("   3. Testar com outros estados\n")
+			fmt.Printf("   4. Analisar diferenças na estrutura SOAP\n")
+		}
 	} else {
 		fmt.Printf("   1. Comparar estrutura SOAP entre inutilização e autorização\n")
 		fmt.Printf("   2. Verificar headers específicos do serviço de autorização\n")

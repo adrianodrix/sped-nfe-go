@@ -1,5 +1,5 @@
 // Teste completo para validação do serviço de inutilização NFe
-// Este teste valida uma URL diferente da autorização para confirmar se o problema é específico
+// Este teste valida TODOS os estados brasileiros para mapear problemas TLS/SSL
 package main
 
 import (
@@ -17,9 +17,9 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SPED-NFE-GO - Teste Completo de Inutilização ===")
-	fmt.Println("🎯 Objetivo: Validar URL diferente da autorização para diagnóstico")
-	fmt.Println("📋 Fluxo: Configuração → Inutilização → Análise SOAP")
+	fmt.Println("=== SPED-NFE-GO - Teste Completo de Inutilização (TODOS OS ESTADOS) ===")
+	fmt.Println("🎯 Objetivo: Mapear problemas TLS/SSL em todos os estados brasileiros")
+	fmt.Println("📋 Fluxo: Configuração → Loop Estados → Análise Comparativa")
 
 	// Configure unsafe SSL for testing (disable certificate verification)
 	os.Setenv("SPED_NFE_UNSAFE_SSL", "true")
@@ -50,8 +50,8 @@ func main() {
 	defer cert.Close()
 
 	notBefore, notAfter := cert.GetValidityPeriod()
-	fmt.Printf("   📅 Válido: %s até %s\n", 
-		notBefore.Format("2006-01-02"), 
+	fmt.Printf("   📅 Válido: %s até %s\n",
+		notBefore.Format("2006-01-02"),
 		notAfter.Format("2006-01-02"))
 	fmt.Printf("   ✅ Certificado válido: %s\n", cert.GetSubject())
 
@@ -62,31 +62,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("\n🔧 ETAPA 2: Configurando cliente NFe...\n")
-
-	// Create config for production - testing different states
-	config := &common.Config{
-		TpAmb:       types.Production, // Usando produção para testar URLs reais
-		RazaoSocial: "EMPARI INFORMATICA LTDA",
-		CNPJ:        "10541434000152",
-		SiglaUF:     "SP", // SÃO PAULO (para testar se problema é específico do Paraná)
-		Schemes:     "PL_009_V4",
-		Versao:      "4.00",
-		Timeout:     60,
-	}
-
-	// Create Tools with resolver
-	tools, err := nfe.NewTools(config, webservices.NewResolver())
-	if err != nil {
-		log.Fatalf("❌ Falha na etapa 2: erro ao criar tools: %v", err)
-	}
-
-	fmt.Printf("   ✅ Cliente NFe configurado\n")
-
-	// Configure certificate
-	// TODO: Set certificate when signing is implemented
-
-	fmt.Printf("\n📋 ETAPA 3: Preparando dados de inutilização...\n")
+	fmt.Printf("\n🔧 ETAPA 2: Preparando parâmetros de teste...\n")
 
 	// Test parameters
 	nSerie := 1
@@ -100,172 +76,186 @@ func main() {
 
 	// Validate parameters
 	if err := nfe.ValidateInutilizacaoParams(nSerie, nIni, nFin, xJust); err != nil {
-		log.Fatalf("❌ Falha na etapa 3: validação de parâmetros: %v", err)
+		log.Fatalf("❌ Falha na validação de parâmetros: %v", err)
 	}
 
 	fmt.Printf("   ✅ Parâmetros validados\n")
 
-	fmt.Printf("\n🔍 ETAPA 4: Analisando configurações de webservice...\n")
-
-	// Get service info for analysis
-	statusInfo, err := tools.GetStatusServiceInfo()
-	if err != nil {
-		log.Fatalf("❌ Erro ao obter info do serviço de status: %v", err)
+	// Lista de todos os estados brasileiros
+	estados := []string{
+		"AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+		"MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+		"RS", "RO", "RR", "SC", "SP", "SE", "TO",
 	}
 
-	authInfo, err := tools.GetAuthorizationServiceInfo()
-	if err != nil {
-		log.Fatalf("❌ Erro ao obter info do serviço de autorização: %v", err)
-	}
+	fmt.Printf("\n🚀 ETAPA 3: Testando inutilização em TODOS os estados brasileiros...\n")
+	fmt.Printf("   📋 Estados a testar: %d\n", len(estados))
+	fmt.Printf("   ⏱️  Timeout por estado: 30 segundos\n")
+	fmt.Printf("   ⚠️  ATENÇÃO: Testes reais com certificado de produção!\n\n")
 
-	// Get inutilização service info using resolver
-	resolver := webservices.NewResolver()
-	inutInfo, err := resolver.GetInutilizacaoServiceURL(config.SiglaUF, config.TpAmb == types.Production, "55")
-	if err != nil {
-		log.Fatalf("❌ Erro ao obter info do serviço de inutilização: %v", err)
-	}
+	// Resultados por categoria
+	sucessos := make([]string, 0)
+	errosTLS := make([]string, 0)
+	errosRede := make([]string, 0)
+	errosSOAP := make([]string, 0)
+	errosOutros := make([]string, 0)
 
-	fmt.Printf("   📊 URLs de webservice:\n")
-	fmt.Printf("      Status:        %s\n", statusInfo.URL)
-	fmt.Printf("      Autorização:   %s\n", authInfo.URL)
-	fmt.Printf("      Inutilização:  %s\n", inutInfo.URL)
+	for i, uf := range estados {
+		fmt.Printf("🔄 [%d/%d] Testando %s...\n", i+1, len(estados), uf)
 
-	fmt.Printf("   🔍 SOAPActions:\n")
-	fmt.Printf("      Status:        %s\n", statusInfo.Action)
-	fmt.Printf("      Autorização:   %s\n", authInfo.Action)
-	fmt.Printf("      Inutilização:  %s\n", inutInfo.Action)
+		// Create config for this state
+		config := &common.Config{
+			TpAmb:       types.Production,
+			RazaoSocial: "EMPARI INFORMATICA LTDA",
+			CNPJ:        "10541434000152",
+			SiglaUF:     uf,
+			Schemes:     "PL_009_V4",
+			Versao:      "4.00",
+			Timeout:     30, // Timeout menor para acelerar
+		}
 
-	// Compare URLs
-	if statusInfo.URL == authInfo.URL {
-		fmt.Printf("   ⚠️  Status e Autorização usam a mesma URL\n")
-	} else {
-		fmt.Printf("   ✅ Status e Autorização usam URLs diferentes\n")
-	}
+		// Create Tools with resolver
+		tools, err := nfe.NewTools(config, webservices.NewResolver())
+		if err != nil {
+			fmt.Printf("   ❌ %s: Erro ao criar tools: %v\n", uf, err)
+			errosOutros = append(errosOutros, uf+": "+err.Error())
+			continue
+		}
 
-	if authInfo.URL == inutInfo.URL {
-		fmt.Printf("   ⚠️  Autorização e Inutilização usam a mesma URL\n")
-	} else {
-		fmt.Printf("   ✅ Autorização e Inutilização usam URLs diferentes\n")
-	}
+		// Get service info
+		resolver := webservices.NewResolver()
+		inutInfo, err := resolver.GetInutilizacaoServiceURL(uf, true, "55")
+		if err != nil {
+			fmt.Printf("   ❌ %s: Erro ao obter URL: %v\n", uf, err)
+			errosOutros = append(errosOutros, uf+": "+err.Error())
+			continue
+		}
 
-	fmt.Printf("\n🚀 ETAPA 5: Testando inutilização...\n")
-	fmt.Printf("   📤 Enviando requisição de inutilização para SEFAZ...\n")
-	fmt.Printf("   ⚠️  ATENÇÃO: Este é um teste real com certificado de produção!\n")
+		fmt.Printf("   🔗 %s: %s\n", uf, inutInfo.URL)
 
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+		// Create context with timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
-	// Test inutilização (this will use a different URL than authorization)
-	startTime := time.Now()
-	response, err := tools.SefazInutilizaNumeros(ctx, nSerie, nIni, nFin, xJust)
-	duration := time.Since(startTime)
+		// Test inutilização
+		startTime := time.Now()
+		response, err := tools.SefazInutilizaNumeros(ctx, nSerie, nIni, nFin, xJust)
+		duration := time.Since(startTime)
+		cancel()
 
-	fmt.Printf("   ⏱️  Tempo de resposta: %v\n", duration)
+		if err == nil {
+			fmt.Printf("   ✅ %s: SUCESSO! (%v) - Status: %s\n", uf, duration, response.InfInut.CStat)
+			sucessos = append(sucessos, uf)
+		} else {
+			errorStr := err.Error()
+			fmt.Printf("   ❌ %s: ERRO (%v)\n", uf, duration)
 
-	if err != nil {
-		fmt.Printf("   ❌ Erro na inutilização: %v\n", err)
-
-		// Debug information
-		fmt.Printf("\n🔍 Informações de Debug:\n")
-		if lastRequest := tools.GetLastRequest(); lastRequest != "" {
-			fmt.Printf("   📤 SOAP Request enviado: %d bytes\n", len(lastRequest))
-			if len(lastRequest) > 500 {
-				fmt.Printf("   📄 Request (primeiros 300 chars): %s...\n", lastRequest[:300])
+			// Categorizar erros
+			if contains(errorStr, "tls:") || contains(errorStr, "certificate") || contains(errorStr, "ssl") {
+				fmt.Printf("      🔒 TLS: %s\n", getShortError(errorStr))
+				errosTLS = append(errosTLS, uf+": "+getShortError(errorStr))
+			} else if contains(errorStr, "timeout") || contains(errorStr, "connection") || contains(errorStr, "network") {
+				fmt.Printf("      🌐 REDE: %s\n", getShortError(errorStr))
+				errosRede = append(errosRede, uf+": "+getShortError(errorStr))
+			} else if contains(errorStr, "soap") || contains(errorStr, "Content-Length: 0") || contains(errorStr, "VAZIO") {
+				fmt.Printf("      📄 SOAP: %s\n", getShortError(errorStr))
+				errosSOAP = append(errosSOAP, uf+": "+getShortError(errorStr))
 			} else {
-				fmt.Printf("   📄 Request: %s\n", lastRequest)
+				fmt.Printf("      ❓ OUTRO: %s\n", getShortError(errorStr))
+				errosOutros = append(errosOutros, uf+": "+getShortError(errorStr))
 			}
 		}
 
-		if lastResponse := tools.GetLastResponse(); lastResponse != "" {
-			fmt.Printf("   📥 SOAP Response recebido: %d bytes\n", len(lastResponse))
-			if len(lastResponse) > 500 {
-				fmt.Printf("   📄 Response (primeiros 300 chars): %s...\n", lastResponse[:300])
-			} else {
-				fmt.Printf("   📄 Response: %s\n", lastResponse)
-			}
-		} else {
-			fmt.Printf("   📥 SOAP Response: [VAZIO] - mesmo problema da autorização!\n")
-		}
-
-		// Analyze error type
-		errorStr := err.Error()
-		fmt.Printf("\n📋 Análise do Erro:\n")
-		if contains(errorStr, "Content-Length: 0") || contains(errorStr, "VAZIO") {
-			fmt.Printf("   🎯 CONFIRMADO: Mesmo problema da autorização!\n")
-			fmt.Printf("   📊 Resultado: URLs diferentes, mesmo problema\n")
-			fmt.Printf("   💡 Conclusão: Problema não é específico da URL de autorização\n")
-			fmt.Printf("   🔍 Causas possíveis:\n")
-			fmt.Printf("      • Problema no certificado SSL/TLS\n")
-			fmt.Printf("      • Headers SOAP incorretos\n")
-			fmt.Printf("      • Configuração do SEFAZ Paraná\n")
-			fmt.Printf("      • Problema na estrutura do envelope SOAP\n")
-		} else if contains(errorStr, "timeout") {
-			fmt.Printf("   ⏰ Timeout na comunicação\n")
-		} else if contains(errorStr, "certificate") {
-			fmt.Printf("   🔒 Problema de certificado SSL\n")
-		} else {
-			fmt.Printf("   ❓ Erro não categorizado: %s\n", errorStr)
-		}
-
-	} else {
-		fmt.Printf("   🎉 SUCESSO! Inutilização funcionou!\n")
-		fmt.Printf("   📊 Status: %s - %s\n", response.InfInut.CStat, response.InfInut.GetMessage())
-		fmt.Printf("   ✅ Success: %v\n", response.InfInut.IsSuccess())
-
-		if response.InfInut.IsSuccess() {
-			fmt.Printf("   🎯 DESCOBERTA: Inutilização funciona, autorização não!\n")
-			fmt.Printf("   📊 Conclusão: Problema É específico da URL/serviço de autorização\n")
-		}
-
-		fmt.Printf("   🔢 Protocolo: %s\n", response.InfInut.NProt)
-		fmt.Printf("   📅 Data/Hora: %s\n", response.InfInut.DhRecbto)
+		fmt.Println()
 	}
 
-	fmt.Printf("\n🎯 ANÁLISE FINAL:\n")
-	fmt.Printf("   📋 Teste realizado com sucesso\n")
-	fmt.Printf("   🔗 URLs testadas:\n")
-	fmt.Printf("      ✅ Status: %s\n", statusInfo.URL)
-	fmt.Printf("      ❌ Autorização: %s (problema conhecido)\n", authInfo.URL)
-	if err != nil {
-		errorStr := err.Error()
-		fmt.Printf("      ❌ Inutilização: %s (erro: %s)\n", inutInfo.URL, errorStr)
-		
-		if contains(errorStr, "tls: bad certificate") {
-			fmt.Printf("\n💡 CONCLUSÃO: Problema de certificado SSL do servidor SEFAZ!\n")
-			fmt.Printf("   🔍 Causa identificada: Certificado SSL do servidor SEFAZ inválido\n")
-			fmt.Printf("   📊 Estado testado: São Paulo (SP)\n")
-			fmt.Printf("   ⚠️  Se SP também falha, problema é mais amplo que apenas Paraná\n")
-		} else if contains(errorStr, "Content-Length: 0") || contains(errorStr, "VAZIO") {
-			fmt.Printf("\n💡 CONCLUSÃO: Problema não é específico da URL, mas sim do SEFAZ ou configuração SOAP\n")
-		} else {
-			fmt.Printf("\n💡 CONCLUSÃO: Novo tipo de erro identificado: %s\n", errorStr)
-		}
+	fmt.Printf("\n🎯 ANÁLISE FINAL - Resultados por Estado:\n")
+	fmt.Printf("════════════════════════════════════════════════\n")
+
+	fmt.Printf("\n✅ SUCESSOS (%d estados):\n", len(sucessos))
+	if len(sucessos) == 0 {
+		fmt.Printf("   Nenhum estado funcionou\n")
 	} else {
-		fmt.Printf("      ✅ Inutilização: %s (funcionou!)\n", inutInfo.URL)
-		fmt.Printf("\n💡 CONCLUSÃO: Problema É específico do serviço de autorização!\n")
+		for _, estado := range sucessos {
+			fmt.Printf("   • %s\n", estado)
+		}
 	}
 
-	fmt.Printf("\n🚀 Próximos passos sugeridos:\n")
-	if err != nil {
-		errorStr := err.Error()
-		if contains(errorStr, "tls: bad certificate") {
-			fmt.Printf("   1. ✅ CONFIRMADO: Problema é certificado SSL do servidor SEFAZ\n")
-			fmt.Printf("   2. Testar com SPED_NFE_UNSAFE_SSL=true para bypass SSL\n")
-			fmt.Printf("   3. Verificar se outros estados também têm problema SSL\n")
-			fmt.Printf("   4. Entrar em contato com SEFAZ sobre certificados SSL inválidos\n")
-		} else {
-			fmt.Printf("   1. Investigar configuração específica do SEFAZ\n")
-			fmt.Printf("   2. Verificar headers SOAP enviados\n")
-			fmt.Printf("   3. Testar com outros estados\n")
-			fmt.Printf("   4. Analisar diferenças na estrutura SOAP\n")
-		}
+	fmt.Printf("\n🔒 ERROS TLS/SSL (%d estados):\n", len(errosTLS))
+	if len(errosTLS) == 0 {
+		fmt.Printf("   Nenhum erro TLS encontrado\n")
 	} else {
-		fmt.Printf("   1. Comparar estrutura SOAP entre inutilização e autorização\n")
-		fmt.Printf("   2. Verificar headers específicos do serviço de autorização\n")
-		fmt.Printf("   3. Analisar diferenças nos envelopes\n")
-		fmt.Printf("   4. Investigar requisitos específicos do NFeAutorizacao4\n")
+		for _, erro := range errosTLS {
+			fmt.Printf("   • %s\n", erro)
+		}
 	}
+
+	fmt.Printf("\n🌐 ERROS DE REDE (%d estados):\n", len(errosRede))
+	if len(errosRede) == 0 {
+		fmt.Printf("   Nenhum erro de rede encontrado\n")
+	} else {
+		for _, erro := range errosRede {
+			fmt.Printf("   • %s\n", erro)
+		}
+	}
+
+	fmt.Printf("\n📄 ERROS SOAP (%d estados):\n", len(errosSOAP))
+	if len(errosSOAP) == 0 {
+		fmt.Printf("   Nenhum erro SOAP encontrado\n")
+	} else {
+		for _, erro := range errosSOAP {
+			fmt.Printf("   • %s\n", erro)
+		}
+	}
+
+	fmt.Printf("\n❓ OUTROS ERROS (%d estados):\n", len(errosOutros))
+	if len(errosOutros) == 0 {
+		fmt.Printf("   Nenhum outro erro encontrado\n")
+	} else {
+		for _, erro := range errosOutros {
+			fmt.Printf("   • %s\n", erro)
+		}
+	}
+
+	fmt.Printf("\n🚀 CONCLUSÕES E PRÓXIMOS PASSOS:\n")
+	fmt.Printf("════════════════════════════════════════════════\n")
+
+	if len(sucessos) > 0 {
+		fmt.Printf("✅ IMPLEMENTAÇÃO FUNCIONAL: %d estados funcionaram!\n", len(sucessos))
+		fmt.Printf("   💡 Nossa implementação SOAP está correta\n")
+		fmt.Printf("   💡 Estruturas XML estão corretas\n")
+		fmt.Printf("   💡 Processo de inutilização está funcionando\n")
+	}
+
+	if len(errosTLS) > 0 {
+		fmt.Printf("\n🔒 PROBLEMAS TLS IDENTIFICADOS (%d estados):\n", len(errosTLS))
+		fmt.Printf("   💡 Implementar configuração TLS mais robusta\n")
+		fmt.Printf("   💡 Adicionar suporte a diferentes cipher suites\n")
+		fmt.Printf("   💡 Configurar renegociação TLS quando necessário\n")
+		fmt.Printf("   💡 Testar com SPED_NFE_UNSAFE_SSL=true\n")
+	}
+
+	if len(errosRede) > 0 {
+		fmt.Printf("\n🌐 PROBLEMAS DE CONECTIVIDADE (%d estados):\n", len(errosRede))
+		fmt.Printf("   💡 Verificar conectividade de rede\n")
+		fmt.Printf("   💡 Aumentar timeouts se necessário\n")
+		fmt.Printf("   💡 Implementar retry automático\n")
+	}
+
+	if len(errosSOAP) > 0 {
+		fmt.Printf("\n📄 PROBLEMAS SOAP (%d estados):\n", len(errosSOAP))
+		fmt.Printf("   💡 Verificar headers SOAP enviados\n")
+		fmt.Printf("   💡 Analisar estrutura dos envelopes\n")
+		fmt.Printf("   💡 Comparar com especificação SEFAZ\n")
+	}
+
+	// Estatísticas finais
+	total := len(estados)
+	sucessoPercent := float64(len(sucessos)) / float64(total) * 100
+	fmt.Printf("\n📊 ESTATÍSTICAS GERAIS:\n")
+	fmt.Printf("   🎯 Taxa de sucesso: %.1f%% (%d/%d)\n", sucessoPercent, len(sucessos), total)
+	fmt.Printf("   🔒 Problemas TLS: %.1f%% (%d/%d)\n", float64(len(errosTLS))/float64(total)*100, len(errosTLS), total)
+	fmt.Printf("   🌐 Problemas rede: %.1f%% (%d/%d)\n", float64(len(errosRede))/float64(total)*100, len(errosRede), total)
+	fmt.Printf("   📄 Problemas SOAP: %.1f%% (%d/%d)\n", float64(len(errosSOAP))/float64(total)*100, len(errosSOAP), total)
 }
 
 func contains(s, substr string) bool {
@@ -279,3 +269,28 @@ func contains(s, substr string) bool {
 	})()
 }
 
+func getShortError(err string) string {
+	// Extrair apenas a parte mais relevante do erro
+	if contains(err, "tls: bad certificate") {
+		return "bad certificate"
+	}
+	if contains(err, "tls: no renegotiation") {
+		return "no renegotiation"
+	}
+	if contains(err, "connection refused") {
+		return "connection refused"
+	}
+	if contains(err, "timeout") {
+		return "timeout"
+	}
+	if contains(err, "Content-Length: 0") {
+		return "empty response"
+	}
+	
+	// Se for muito longo, truncar
+	if len(err) > 60 {
+		return err[:60] + "..."
+	}
+	
+	return err
+}

@@ -8,18 +8,18 @@ import (
 
 // WebServiceInfo represents information about a SEFAZ webservice
 type WebServiceInfo struct {
-	URL       string `json:"url" xml:"url"`                // Service URL
-	Method    string `json:"method" xml:"method"`          // SOAP method name
-	Operation string `json:"operation" xml:"operation"`    // SOAP operation
-	Version   string `json:"version" xml:"version"`        // Service version
-	Action    string `json:"action" xml:"action"`          // SOAP action header
+	URL       string `json:"url" xml:"url"`             // Service URL
+	Method    string `json:"method" xml:"method"`       // SOAP method name
+	Operation string `json:"operation" xml:"operation"` // SOAP operation
+	Version   string `json:"version" xml:"version"`     // Service version
+	Action    string `json:"action" xml:"action"`       // SOAP action header
 }
 
 // UFServices represents services available for a specific state
 type UFServices struct {
-	Sigla        string                    `json:"sigla" xml:"sigla"`
-	Homologacao  map[string]WebServiceInfo `json:"homologacao" xml:"homologacao"`
-	Producao     map[string]WebServiceInfo `json:"producao" xml:"producao"`
+	Sigla       string                    `json:"sigla" xml:"sigla"`
+	Homologacao map[string]WebServiceInfo `json:"homologacao" xml:"homologacao"`
+	Producao    map[string]WebServiceInfo `json:"producao" xml:"producao"`
 }
 
 // WebServiceType represents the type of webservice
@@ -27,15 +27,15 @@ type WebServiceType string
 
 const (
 	// NFe Model 55 Services
-	NFeStatusServico      WebServiceType = "NfeStatusServico"      // Service status check
-	NFeAutorizacao        WebServiceType = "NfeAutorizacao"        // Authorization service
-	NFeRetAutorizacao     WebServiceType = "NfeRetAutorizacao"     // Authorization return/query
-	NFeConsultaProtocolo  WebServiceType = "NfeConsultaProtocolo"  // Protocol consultation
-	NFeInutilizacao       WebServiceType = "NfeInutilizacao"       // Number invalidation
-	NFeConsultaCadastro   WebServiceType = "NfeConsultaCadastro"   // Registry consultation
-	NFeRecepcaoEvento     WebServiceType = "NfeRecepcaoEvento"     // Event reception
-	NFeDistribuicaoDFe    WebServiceType = "NfeDistribuicaoDFe"    // DFe distribution
-	NFeDownloadNF         WebServiceType = "NfeDownloadNF"         // NFe download
+	NFeStatusServico     WebServiceType = "NfeStatusServico"     // Service status check
+	NFeAutorizacao       WebServiceType = "NfeAutorizacao"       // Authorization service
+	NFeRetAutorizacao    WebServiceType = "NfeRetAutorizacao"    // Authorization return/query
+	NFeConsultaProtocolo WebServiceType = "NfeConsultaProtocolo" // Protocol consultation
+	NFeInutilizacao      WebServiceType = "NfeInutilizacao"      // Number invalidation
+	NFeConsultaCadastro  WebServiceType = "NfeConsultaCadastro"  // Registry consultation
+	NFeRecepcaoEvento    WebServiceType = "NfeRecepcaoEvento"    // Event reception
+	NFeDistribuicaoDFe   WebServiceType = "NfeDistribuicaoDFe"   // DFe distribution
+	NFeDownloadNF        WebServiceType = "NfeDownloadNF"        // NFe download
 
 	// NFCe Model 65 Services
 	NFCeStatusServico     WebServiceType = "NfceStatusServico"     // NFCe service status
@@ -46,9 +46,9 @@ const (
 	NFCeRecepcaoEvento    WebServiceType = "NfceRecepcaoEvento"    // NFCe event reception
 
 	// Special services
-	AN                    WebServiceType = "AN"                    // Ambiente Nacional
-	EPEC                  WebServiceType = "EPEC"                  // EPEC service
-	CadConsultaCadastro2  WebServiceType = "CadConsultaCadastro2"  // Registry consultation v2
+	AN                   WebServiceType = "AN"                   // Ambiente Nacional
+	EPEC                 WebServiceType = "EPEC"                 // EPEC service
+	CadConsultaCadastro2 WebServiceType = "CadConsultaCadastro2" // Registry consultation v2
 )
 
 // Environment represents the service environment
@@ -63,18 +63,18 @@ const (
 type AuthorizerType string
 
 const (
-	AuthorizerSEFAZ   AuthorizerType = "SEFAZ"   // State SEFAZ
-	AuthorizerSVRS    AuthorizerType = "SVRS"    // Virtual RS
-	AuthorizerSVAN    AuthorizerType = "SVAN"    // Virtual AN
-	AuthorizerSVCAN   AuthorizerType = "SVCAN"   // Virtual CAN
-	AuthorizerSVCRS   AuthorizerType = "SVCRS"   // Virtual CRS
+	AuthorizerSEFAZ AuthorizerType = "SEFAZ" // State SEFAZ
+	AuthorizerSVRS  AuthorizerType = "SVRS"  // Virtual RS
+	AuthorizerSVAN  AuthorizerType = "SVAN"  // Virtual AN
+	AuthorizerSVCAN AuthorizerType = "SVCAN" // Virtual CAN
+	AuthorizerSVCRS AuthorizerType = "SVCRS" // Virtual CRS
 )
 
 // WebServiceManager manages SEFAZ webservice URLs
 type WebServiceManager struct {
-	services       map[string]UFServices  // Services by state
+	services       map[string]UFServices        // Services by state
 	authorizers    map[string]map[string]string // Authorizers by model and state
-	contingencyMap map[string]string      // Contingency mappings
+	contingencyMap map[string]string            // Contingency mappings
 }
 
 // NewWebServiceManager creates a new webservice manager
@@ -84,13 +84,13 @@ func NewWebServiceManager() *WebServiceManager {
 		authorizers:    make(map[string]map[string]string),
 		contingencyMap: make(map[string]string),
 	}
-	
+
 	// Initialize default authorizers
 	wsm.initializeAuthorizers()
-	
+
 	// Initialize default services
 	wsm.initializeDefaultServices()
-	
+
 	return wsm
 }
 
@@ -101,13 +101,13 @@ func (wsm *WebServiceManager) GetServiceURL(uf string, service WebServiceType, e
 	if err != nil {
 		return WebServiceInfo{}, err
 	}
-	
+
 	// Get services for the authorizer
 	services, exists := wsm.services[authorizer]
 	if !exists {
 		return WebServiceInfo{}, fmt.Errorf("no services found for authorizer: %s", authorizer)
 	}
-	
+
 	// Select environment
 	var envServices map[string]WebServiceInfo
 	switch env {
@@ -118,30 +118,30 @@ func (wsm *WebServiceManager) GetServiceURL(uf string, service WebServiceType, e
 	default:
 		return WebServiceInfo{}, fmt.Errorf("invalid environment: %d", env)
 	}
-	
+
 	// Get specific service
 	serviceInfo, exists := envServices[string(service)]
 	if !exists {
 		return WebServiceInfo{}, fmt.Errorf("service %s not found for %s in environment %d", service, authorizer, env)
 	}
-	
+
 	return serviceInfo, nil
 }
 
 // GetAuthorizer returns the authorizer for a given state and model
 func (wsm *WebServiceManager) GetAuthorizer(uf string, model string) (string, error) {
 	uf = strings.ToUpper(uf)
-	
+
 	modelMap, exists := wsm.authorizers[model]
 	if !exists {
 		return "", fmt.Errorf("model %s not supported", model)
 	}
-	
+
 	authorizer, exists := modelMap[uf]
 	if !exists {
 		return "", fmt.Errorf("state %s not supported for model %s", uf, model)
 	}
-	
+
 	return authorizer, nil
 }
 
@@ -154,7 +154,7 @@ func (wsm *WebServiceManager) AddService(uf string, env Environment, service Web
 			Producao:    make(map[string]WebServiceInfo),
 		}
 	}
-	
+
 	switch env {
 	case Production:
 		wsm.services[uf].Producao[string(service)] = info
@@ -175,12 +175,12 @@ func (wsm *WebServiceManager) GetAvailableServices(uf string, env Environment, m
 	if err != nil {
 		return nil, err
 	}
-	
+
 	services, exists := wsm.services[authorizer]
 	if !exists {
 		return nil, fmt.Errorf("no services found for authorizer: %s", authorizer)
 	}
-	
+
 	var envServices map[string]WebServiceInfo
 	switch env {
 	case Production:
@@ -190,12 +190,12 @@ func (wsm *WebServiceManager) GetAvailableServices(uf string, env Environment, m
 	default:
 		return nil, fmt.Errorf("invalid environment: %d", env)
 	}
-	
+
 	var availableServices []WebServiceType
 	for serviceName := range envServices {
 		availableServices = append(availableServices, WebServiceType(serviceName))
 	}
-	
+
 	return availableServices, nil
 }
 
@@ -203,21 +203,21 @@ func (wsm *WebServiceManager) GetAvailableServices(uf string, env Environment, m
 func (wsm *WebServiceManager) initializeAuthorizers() {
 	// NFe Model 55 authorizers
 	wsm.authorizers["55"] = map[string]string{
-		"AC": "SVRS", "AL": "SVRS", "AP": "SVRS", "AM": "AM",   "BA": "BA",
-		"CE": "CE",   "DF": "SVRS", "ES": "SVRS", "GO": "GO",   "MA": "SVAN",
-		"MT": "MT",   "MS": "MS",   "MG": "MG",   "PA": "SVAN", "PB": "SVRS",
-		"PR": "PR",   "PE": "PE",   "PI": "SVAN", "RJ": "SVRS", "RN": "SVRS",
-		"RS": "RS",   "RO": "SVRS", "RR": "SVRS", "SC": "SVRS", "SP": "SP",
+		"AC": "SVRS", "AL": "SVRS", "AP": "SVRS", "AM": "AM", "BA": "BA",
+		"CE": "CE", "DF": "SVRS", "ES": "SVRS", "GO": "GO", "MA": "SVAN",
+		"MT": "MT", "MS": "MS", "MG": "MG", "PA": "SVAN", "PB": "SVRS",
+		"PR": "PR", "PE": "PE", "PI": "SVAN", "RJ": "SVRS", "RN": "SVRS",
+		"RS": "RS", "RO": "SVRS", "RR": "SVRS", "SC": "SVRS", "SP": "SP",
 		"SE": "SVRS", "TO": "TO",
 	}
-	
+
 	// NFCe Model 65 authorizers
 	wsm.authorizers["65"] = map[string]string{
-		"AC": "SVRS", "AL": "SVRS", "AP": "SVRS", "AM": "AM",   "BA": "BA",
-		"CE": "CE",   "DF": "SVRS", "ES": "SVRS", "GO": "GO",   "MA": "SVAN",
-		"MT": "MT",   "MS": "MS",   "MG": "MG",   "PA": "SVAN", "PB": "SVRS",
-		"PR": "PR",   "PE": "PE",   "PI": "SVAN", "RJ": "SVRS", "RN": "SVRS",
-		"RS": "RS",   "RO": "SVRS", "RR": "SVRS", "SC": "SVRS", "SP": "SP",
+		"AC": "SVRS", "AL": "SVRS", "AP": "SVRS", "AM": "AM", "BA": "BA",
+		"CE": "CE", "DF": "SVRS", "ES": "SVRS", "GO": "GO", "MA": "SVAN",
+		"MT": "MT", "MS": "MS", "MG": "MG", "PA": "SVAN", "PB": "SVRS",
+		"PR": "PR", "PE": "PE", "PI": "SVAN", "RJ": "SVRS", "RN": "SVRS",
+		"RS": "RS", "RO": "SVRS", "RR": "SVRS", "SC": "SVRS", "SP": "SP",
 		"SE": "SVRS", "TO": "TO",
 	}
 }
@@ -226,16 +226,16 @@ func (wsm *WebServiceManager) initializeAuthorizers() {
 func (wsm *WebServiceManager) initializeDefaultServices() {
 	// São Paulo (SP) - Production
 	wsm.initializeSPServices()
-	
+
 	// Rio de Janeiro / SVRS - Production
 	wsm.initializeSVRSServices()
-	
+
 	// Minas Gerais (MG) - Production
 	wsm.initializeMGServices()
-	
+
 	// Rio Grande do Sul (RS) - Production
 	wsm.initializeRSServices()
-	
+
 	// Ambiente Nacional (SVAN) - Production
 	wsm.initializeSVANServices()
 }
@@ -247,7 +247,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Homologacao: make(map[string]WebServiceInfo),
 		Producao:    make(map[string]WebServiceInfo),
 	}
-	
+
 	// Homologation services
 	sp.Homologacao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
@@ -256,7 +256,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	sp.Homologacao[string(NFeAutorizacao)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
 		Method:    "nfeAutorizacaoLote",
@@ -264,7 +264,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
 	}
-	
+
 	sp.Homologacao[string(NFeRetAutorizacao)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
 		Method:    "nfeRetAutorizacaoLote",
@@ -272,7 +272,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4/nfeRetAutorizacaoLote",
 	}
-	
+
 	sp.Homologacao[string(NFeConsultaProtocolo)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeconsultaprotocolo4.asmx",
 		Method:    "nfeConsultaNF",
@@ -280,7 +280,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4/nfeConsultaNF",
 	}
-	
+
 	sp.Homologacao[string(NFeInutilizacao)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeinutilizacao4.asmx",
 		Method:    "nfeInutilizacaoNF",
@@ -288,7 +288,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeInutilizacao4/nfeInutilizacaoNF",
 	}
-	
+
 	sp.Homologacao[string(NFeRecepcaoEvento)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/nferecepcaoevento4.asmx",
 		Method:    "nfeRecepcaoEvento",
@@ -296,7 +296,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento",
 	}
-	
+
 	sp.Homologacao[string(NFeConsultaCadastro)] = WebServiceInfo{
 		URL:       "https://homologacao.nfe.fazenda.sp.gov.br/ws/cadconsultacadastro4.asmx",
 		Method:    "consultaCadastro",
@@ -304,7 +304,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "2.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/CadConsultaCadastro4/consultaCadastro",
 	}
-	
+
 	// Production services (same structure with production URLs)
 	sp.Producao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
@@ -313,7 +313,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	sp.Producao[string(NFeAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
 		Method:    "nfeAutorizacaoLote",
@@ -321,7 +321,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
 	}
-	
+
 	sp.Producao[string(NFeRetAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
 		Method:    "nfeRetAutorizacaoLote",
@@ -329,7 +329,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4/nfeRetAutorizacaoLote",
 	}
-	
+
 	sp.Producao[string(NFeConsultaProtocolo)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/nfeconsultaprotocolo4.asmx",
 		Method:    "nfeConsultaNF",
@@ -337,7 +337,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4/nfeConsultaNF",
 	}
-	
+
 	sp.Producao[string(NFeInutilizacao)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/nfeinutilizacao4.asmx",
 		Method:    "nfeInutilizacaoNF",
@@ -345,7 +345,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeInutilizacao4/nfeInutilizacaoNF",
 	}
-	
+
 	sp.Producao[string(NFeRecepcaoEvento)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/nferecepcaoevento4.asmx",
 		Method:    "nfeRecepcaoEvento",
@@ -353,7 +353,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento",
 	}
-	
+
 	sp.Producao[string(NFeConsultaCadastro)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.sp.gov.br/ws/cadconsultacadastro4.asmx",
 		Method:    "consultaCadastro",
@@ -361,7 +361,7 @@ func (wsm *WebServiceManager) initializeSPServices() {
 		Version:   "2.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/CadConsultaCadastro4/consultaCadastro",
 	}
-	
+
 	wsm.services["SP"] = sp
 }
 
@@ -372,7 +372,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Homologacao: make(map[string]WebServiceInfo),
 		Producao:    make(map[string]WebServiceInfo),
 	}
-	
+
 	// Homologation services
 	svrs.Homologacao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
@@ -381,7 +381,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	svrs.Homologacao[string(NFeAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
 		Method:    "nfeAutorizacaoLote",
@@ -389,7 +389,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
 	}
-	
+
 	svrs.Homologacao[string(NFeRetAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
 		Method:    "nfeRetAutorizacaoLote",
@@ -397,7 +397,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4/nfeRetAutorizacaoLote",
 	}
-	
+
 	// Production services
 	svrs.Producao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
@@ -406,7 +406,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	svrs.Producao[string(NFeAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
 		Method:    "nfeAutorizacaoLote",
@@ -414,7 +414,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
 	}
-	
+
 	svrs.Producao[string(NFeRetAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
 		Method:    "nfeRetAutorizacaoLote",
@@ -422,7 +422,7 @@ func (wsm *WebServiceManager) initializeSVRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4/nfeRetAutorizacaoLote",
 	}
-	
+
 	wsm.services["SVRS"] = svrs
 }
 
@@ -433,7 +433,7 @@ func (wsm *WebServiceManager) initializeMGServices() {
 		Homologacao: make(map[string]WebServiceInfo),
 		Producao:    make(map[string]WebServiceInfo),
 	}
-	
+
 	// Homologation services
 	mg.Homologacao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
@@ -442,7 +442,7 @@ func (wsm *WebServiceManager) initializeMGServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	mg.Homologacao[string(NFeAutorizacao)] = WebServiceInfo{
 		URL:       "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
 		Method:    "nfeAutorizacaoLote",
@@ -450,7 +450,7 @@ func (wsm *WebServiceManager) initializeMGServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
 	}
-	
+
 	// Production services
 	mg.Producao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
@@ -459,7 +459,7 @@ func (wsm *WebServiceManager) initializeMGServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	mg.Producao[string(NFeAutorizacao)] = WebServiceInfo{
 		URL:       "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
 		Method:    "nfeAutorizacaoLote",
@@ -467,7 +467,7 @@ func (wsm *WebServiceManager) initializeMGServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
 	}
-	
+
 	wsm.services["MG"] = mg
 }
 
@@ -478,7 +478,7 @@ func (wsm *WebServiceManager) initializeRSServices() {
 		Homologacao: make(map[string]WebServiceInfo),
 		Producao:    make(map[string]WebServiceInfo),
 	}
-	
+
 	// Homologation services
 	rs.Homologacao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://nfe-homologacao.sefazrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
@@ -487,7 +487,7 @@ func (wsm *WebServiceManager) initializeRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	// Production services
 	rs.Producao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://nfe.sefazrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
@@ -496,7 +496,7 @@ func (wsm *WebServiceManager) initializeRSServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	wsm.services["RS"] = rs
 }
 
@@ -507,7 +507,7 @@ func (wsm *WebServiceManager) initializeSVANServices() {
 		Homologacao: make(map[string]WebServiceInfo),
 		Producao:    make(map[string]WebServiceInfo),
 	}
-	
+
 	// Homologation services
 	svan.Homologacao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://hom.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
@@ -516,7 +516,7 @@ func (wsm *WebServiceManager) initializeSVANServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	// Production services
 	svan.Producao[string(NFeStatusServico)] = WebServiceInfo{
 		URL:       "https://www.sefazvirtual.fazenda.gov.br/NFeStatusServico4/NFeStatusServico4.asmx",
@@ -525,7 +525,7 @@ func (wsm *WebServiceManager) initializeSVANServices() {
 		Version:   "4.00",
 		Action:    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4/nfeStatusServicoNF",
 	}
-	
+
 	wsm.services["SVAN"] = svan
 }
 
@@ -534,7 +534,7 @@ func (wsm *WebServiceManager) GetContingencyServices(uf string, contingencyType 
 	contingencyMap := map[string]map[string]string{
 		"EPEC": {
 			"SP": "SP",
-			"MG": "MG", 
+			"MG": "MG",
 			"RS": "RS",
 		},
 		"SVCRS": {
@@ -546,13 +546,13 @@ func (wsm *WebServiceManager) GetContingencyServices(uf string, contingencyType 
 			"MA": "SVAN", "PA": "SVAN", "PI": "SVAN",
 		},
 	}
-	
+
 	if typeMap, exists := contingencyMap[contingencyType]; exists {
 		if authorizer, exists := typeMap[uf]; exists {
 			return authorizer, nil
 		}
 	}
-	
+
 	return "", fmt.Errorf("contingency service %s not available for state %s", contingencyType, uf)
 }
 

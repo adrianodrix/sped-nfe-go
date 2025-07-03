@@ -9,10 +9,10 @@ type Ambiente = NFEEnvironment
 
 const (
 	EnvironmentProduction NFEEnvironment = iota + 1 // 1 - Produção
-	EnvironmentTesting                               // 2 - Homologação
-	
+	EnvironmentTesting                              // 2 - Homologação
+
 	// Aliases for webservices compatibility
-	AmbienteProducao   = EnvironmentProduction
+	AmbienteProducao    = EnvironmentProduction
 	AmbienteHomologacao = EnvironmentTesting
 )
 
@@ -37,7 +37,7 @@ type ModeloNFe = DocumentModel
 const (
 	ModelNFe  DocumentModel = 55 // Nota Fiscal Eletrônica
 	ModelNFCe DocumentModel = 65 // Nota Fiscal de Consumidor Eletrônica
-	
+
 	// Aliases for webservices compatibility
 	ModeloNFe55  = ModelNFe
 	ModeloNFCe65 = ModelNFCe
@@ -79,9 +79,9 @@ func (dt DocumentType) String() string {
 type OperationDestination int
 
 const (
-	DestinationInternal     OperationDestination = iota + 1 // 1 - Operação interna
-	DestinationInterstate                                   // 2 - Operação interestadual  
-	DestinationInternational                                // 3 - Operação exterior
+	DestinationInternal      OperationDestination = iota + 1 // 1 - Operação interna
+	DestinationInterstate                                    // 2 - Operação interestadual
+	DestinationInternational                                 // 3 - Operação exterior
 )
 
 // String returns the string representation of OperationDestination
@@ -102,12 +102,12 @@ func (od OperationDestination) String() string {
 type DANFEPrintType int
 
 const (
-	PrintTypeNone              DANFEPrintType = iota // 0 - Sem geração de DANFE
-	PrintTypePortrait                                // 1 - DANFE normal, Retrato
-	PrintTypeLandscape                               // 2 - DANFE normal, Paisagem
-	PrintTypeSimplifiedPortrait                      // 3 - DANFE Simplificado, Retrato
-	PrintTypeSimplifiedLandscape                     // 4 - DANFE Simplificado, Paisagem
-	PrintTypeNFCe                                    // 5 - DANFE NFCe
+	PrintTypeNone                DANFEPrintType = iota // 0 - Sem geração de DANFE
+	PrintTypePortrait                                  // 1 - DANFE normal, Retrato
+	PrintTypeLandscape                                 // 2 - DANFE normal, Paisagem
+	PrintTypeSimplifiedPortrait                        // 3 - DANFE Simplificado, Retrato
+	PrintTypeSimplifiedLandscape                       // 4 - DANFE Simplificado, Paisagem
+	PrintTypeNFCe                                      // 5 - DANFE NFCe
 )
 
 // String returns the string representation of DANFEPrintType
@@ -134,14 +134,14 @@ func (dpt DANFEPrintType) String() string {
 type EmissionType int
 
 const (
-	EmissionNormal        EmissionType = iota + 1 // 1 - Emissão normal
-	EmissionContingencyFS                         // 2 - Contingência FS-IA, com impressão do DANFE em formulário de segurança
-	EmissionContingencySCAN                       // 3 - Contingência SCAN
-	EmissionContingencyDPEC                       // 4 - Contingência DPEC
-	EmissionContingencyFSDA                       // 5 - Contingência FS-DA, com impressão do DANFE em formulário de segurança
-	EmissionContingencySVCAN                      // 6 - Contingência SVC-AN
-	EmissionContingencySVCRS                      // 7 - Contingência SVC-RS
-	EmissionOffline       EmissionType = 9        // 9 - Contingência off-line da NFCe
+	EmissionNormal           EmissionType = iota + 1 // 1 - Emissão normal
+	EmissionContingencyFS                            // 2 - Contingência FS-IA, com impressão do DANFE em formulário de segurança
+	EmissionContingencySCAN                          // 3 - Contingência SCAN
+	EmissionContingencyDPEC                          // 4 - Contingência DPEC
+	EmissionContingencyFSDA                          // 5 - Contingência FS-DA, com impressão do DANFE em formulário de segurança
+	EmissionContingencySVCAN                         // 6 - Contingência SVC-AN
+	EmissionContingencySVCRS                         // 7 - Contingência SVC-RS
+	EmissionOffline          EmissionType = 9        // 9 - Contingência off-line da NFCe
 )
 
 // String returns the string representation of EmissionType
@@ -172,10 +172,10 @@ func (et EmissionType) String() string {
 type DocumentPurpose int
 
 const (
-	PurposeNormal      DocumentPurpose = iota + 1 // 1 - NFe normal
-	PurposeComplementary                          // 2 - NFe complementar
-	PurposeAdjustment                             // 3 - NFe de ajuste
-	PurposeReturn                                 // 4 - Devolução de mercadoria
+	PurposeNormal        DocumentPurpose = iota + 1 // 1 - NFe normal
+	PurposeComplementary                            // 2 - NFe complementar
+	PurposeAdjustment                               // 3 - NFe de ajuste
+	PurposeReturn                                   // 4 - Devolução de mercadoria
 )
 
 // String returns the string representation of DocumentPurpose
@@ -218,13 +218,13 @@ func (fci FinalConsumerIndicator) String() string {
 type BuyerPresenceIndicator int
 
 const (
-	PresenceNotApplicable BuyerPresenceIndicator = iota // 0 - Não se aplica
-	PresencePhysical                                    // 1 - Operação presencial
-	PresenceInternet                                    // 2 - Operação não presencial, pela Internet
-	PresenceTelemarketing                               // 3 - Operação não presencial, Telemarketing
-	PresenceNFCeDelivery                                // 4 - NFCe em operação com entrega a domicílio
-	PresencePhysicalOutside                             // 5 - Operação presencial, fora do estabelecimento
-	PresenceOther         BuyerPresenceIndicator = 9    // 9 - Operação não presencial, outros
+	PresenceNotApplicable   BuyerPresenceIndicator = iota // 0 - Não se aplica
+	PresencePhysical                                      // 1 - Operação presencial
+	PresenceInternet                                      // 2 - Operação não presencial, pela Internet
+	PresenceTelemarketing                                 // 3 - Operação não presencial, Telemarketing
+	PresenceNFCeDelivery                                  // 4 - NFCe em operação com entrega a domicílio
+	PresencePhysicalOutside                               // 5 - Operação presencial, fora do estabelecimento
+	PresenceOther           BuyerPresenceIndicator = 9    // 9 - Operação não presencial, outros
 )
 
 // String returns the string representation of BuyerPresenceIndicator
@@ -279,9 +279,9 @@ func (pe ProcessEmission) String() string {
 type TaxRegime int
 
 const (
-	RegimeSimples TaxRegime = iota + 1 // 1 - Simples Nacional
-	RegimePSNormal                     // 2 - Simples Nacional, excesso sublimite de receita bruta
-	RegimeNormal                       // 3 - Regime Normal
+	RegimeSimples  TaxRegime = iota + 1 // 1 - Simples Nacional
+	RegimePSNormal                      // 2 - Simples Nacional, excesso sublimite de receita bruta
+	RegimeNormal                        // 3 - Regime Normal
 )
 
 // String returns the string representation of TaxRegime
@@ -304,7 +304,7 @@ type StateRegistrationIndicator int
 const (
 	IEContributor    StateRegistrationIndicator = iota + 1 // 1 - Contribuinte ICMS
 	IEExempt                                               // 2 - Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS
-	IENonContributor StateRegistrationIndicator = 9       // 9 - Não Contribuinte
+	IENonContributor StateRegistrationIndicator = 9        // 9 - Não Contribuinte
 )
 
 // String returns the string representation of StateRegistrationIndicator
@@ -325,10 +325,10 @@ func (sri StateRegistrationIndicator) String() string {
 type ICMSModality int
 
 const (
-	ICMSModalityMargin            ICMSModality = iota // 0 - Margem Valor Agregado (%)
-	ICMSModalityPauta                                 // 1 - Pauta (Valor)
-	ICMSModalityPrice                                 // 2 - Preço Tabelado Máx. (valor)
-	ICMSModalityOperationValue                        // 3 - Valor da operação
+	ICMSModalityMargin         ICMSModality = iota // 0 - Margem Valor Agregado (%)
+	ICMSModalityPauta                              // 1 - Pauta (Valor)
+	ICMSModalityPrice                              // 2 - Preço Tabelado Máx. (valor)
+	ICMSModalityOperationValue                     // 3 - Valor da operação
 )
 
 // String returns the string representation of ICMSModality
@@ -347,17 +347,17 @@ func (im ICMSModality) String() string {
 	}
 }
 
-// ST modality codes  
+// ST modality codes
 type STModality int
 
 const (
-	STModalityPriceList       STModality = iota // 0 - Preço tabelado ou máximo sugerido
-	STModalityNegativeList                      // 1 - Lista Negativa (valor)
-	STModalityPositiveList                      // 2 - Lista Positiva (valor)
-	STModalityNeutralList                       // 3 - Lista Neutra (valor)
-	STModalityMargin                            // 4 - Margem Valor Agregado (%)
-	STModalityPauta                             // 5 - Pauta (valor)
-	STModalityOperationValue                    // 6 - Valor da Operação
+	STModalityPriceList      STModality = iota // 0 - Preço tabelado ou máximo sugerido
+	STModalityNegativeList                     // 1 - Lista Negativa (valor)
+	STModalityPositiveList                     // 2 - Lista Positiva (valor)
+	STModalityNeutralList                      // 3 - Lista Neutra (valor)
+	STModalityMargin                           // 4 - Margem Valor Agregado (%)
+	STModalityPauta                            // 5 - Pauta (valor)
+	STModalityOperationValue                   // 6 - Valor da Operação
 )
 
 // String returns the string representation of STModality
@@ -419,7 +419,7 @@ var CommonCFOPs = map[string]string{
 	"5104": "Venda de mercadoria adquirida ou recebida de terceiros, efetuada fora do estabelecimento",
 	"5109": "Venda de produção do estabelecimento, não especificada nos códigos anteriores",
 	"5110": "Venda de mercadoria adquirida ou recebida de terceiros, não especificada nos códigos anteriores",
-	
+
 	// Vendas para outros estados
 	"6101": "Venda de produção do estabelecimento",
 	"6102": "Venda de mercadoria adquirida ou recebida de terceiros",
@@ -427,21 +427,21 @@ var CommonCFOPs = map[string]string{
 	"6104": "Venda de mercadoria adquirida ou recebida de terceiros, efetuada fora do estabelecimento",
 	"6109": "Venda de produção do estabelecimento, não especificada nos códigos anteriores",
 	"6110": "Venda de mercadoria adquirida ou recebida de terceiros, não especificada nos códigos anteriores",
-	
+
 	// Compras dentro do estado
 	"1102": "Compra para comercialização",
 	"1111": "Compra para industrialização",
 	"1116": "Compra para industrialização ou produção rural",
 	"1117": "Compra para comercialização",
 	"1118": "Compra pelo contribuinte do Simples Nacional",
-	
+
 	// Compras de outros estados
 	"2102": "Compra para comercialização",
 	"2111": "Compra para industrialização",
 	"2116": "Compra para industrialização ou produção rural",
 	"2117": "Compra para comercialização",
 	"2118": "Compra pelo contribuinte do Simples Nacional",
-	
+
 	// Devoluções
 	"1201": "Devolução de venda de produção do estabelecimento",
 	"1202": "Devolução de venda de mercadoria adquirida ou recebida de terceiros",
@@ -598,14 +598,14 @@ func ValidateCFOP(cfop string) bool {
 	if len(cfop) != 4 {
 		return false
 	}
-	
+
 	// Basic validation: CFOP must be 4 digits
 	for _, r := range cfop {
 		if r < '0' || r > '9' {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -614,13 +614,13 @@ func ValidateNCM(ncm string) bool {
 	if len(ncm) != 8 {
 		return false
 	}
-	
+
 	// Basic validation: NCM must be 8 digits
 	for _, r := range ncm {
 		if r < '0' || r > '9' {
 			return false
 		}
 	}
-	
+
 	return true
 }

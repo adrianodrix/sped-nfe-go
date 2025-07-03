@@ -62,7 +62,7 @@ func (p *Parser) loadStructure() error {
 	// Determine file name based on version and layout
 	ver := strings.Replace(p.version, ".", "", -1)
 	suffix := ""
-	
+
 	switch p.layout {
 	case LayoutSebrae:
 		suffix = "_sebrae"
@@ -91,22 +91,22 @@ func (p *Parser) loadStructure() error {
 // createBasicStructure creates a basic TXT structure for NFe 4.00
 func (p *Parser) createBasicStructure() map[string]string {
 	return map[string]string{
-		"A": "A|versao|Id|pk_nItem|",
-		"B": "B|cUF|cNF|natOp|mod|serie|nNF|dhEmi|dhSaiEnt|tpNF|idDest|cMunFG|tpImp|tpEmis|cDV|tpAmb|finNFe|indFinal|indPres|procEmi|verProc|dhCont|xJust|",
-		"C": "C|xNome|xFant|IE|IEST|IM|CNAE|CRT|",
-		"C02": "C02|CNPJ|",
+		"A":    "A|versao|Id|pk_nItem|",
+		"B":    "B|cUF|cNF|natOp|mod|serie|nNF|dhEmi|dhSaiEnt|tpNF|idDest|cMunFG|tpImp|tpEmis|cDV|tpAmb|finNFe|indFinal|indPres|procEmi|verProc|dhCont|xJust|",
+		"C":    "C|xNome|xFant|IE|IEST|IM|CNAE|CRT|",
+		"C02":  "C02|CNPJ|",
 		"C02a": "C02a|CPF|",
-		"C05": "C05|xLgr|nro|xCpl|xBairro|cMun|xMun|UF|CEP|cPais|xPais|fone|",
-		"E": "E|xNome|indIEDest|IE|ISUF|IM|email|",
-		"E02": "E02|CNPJ|",
-		"E03": "E03|CPF|",
+		"C05":  "C05|xLgr|nro|xCpl|xBairro|cMun|xMun|UF|CEP|cPais|xPais|fone|",
+		"E":    "E|xNome|indIEDest|IE|ISUF|IM|email|",
+		"E02":  "E02|CNPJ|",
+		"E03":  "E03|CPF|",
 		"E03a": "E03a|idEstrangeiro|",
-		"E05": "E05|xLgr|nro|xCpl|xBairro|cMun|xMun|UF|CEP|cPais|xPais|fone|",
-		"I": "I|nItem|infAdProd|",
-		"I02": "I02|cProd|cEAN|xProd|NCM|EXTIPI|CFOP|uCom|qCom|vUnCom|vProd|cEANTrib|uTrib|qTrib|vUnTrib|vFrete|vSeg|vDesc|vOutro|indTot|xPed|nItemPed|nFCI|",
-		"M": "M|vBC|vICMS|vICMSDeson|vFCPUFDest|vICMSUFDest|vICMSUFRemet|vFCP|vBCST|vST|vFCPST|vFCPSTRet|vProd|vFrete|vSeg|vDesc|vII|vIPI|vIPIDevol|vPIS|vCOFINS|vOutro|vNF|vTotTrib|",
-		"N": "N|orig|CST|modBC|vBC|pICMS|vICMS|pFCP|vFCP|",
-		"W": "W|vBC|vDespAdu|vII|vIOF|",
+		"E05":  "E05|xLgr|nro|xCpl|xBairro|cMun|xMun|UF|CEP|cPais|xPais|fone|",
+		"I":    "I|nItem|infAdProd|",
+		"I02":  "I02|cProd|cEAN|xProd|NCM|EXTIPI|CFOP|uCom|qCom|vUnCom|vProd|cEANTrib|uTrib|qTrib|vUnTrib|vFrete|vSeg|vDesc|vOutro|indTot|xPed|nItemPed|nFCI|",
+		"M":    "M|vBC|vICMS|vICMSDeson|vFCPUFDest|vICMSUFDest|vICMSUFRemet|vFCP|vBCST|vST|vFCPST|vFCPSTRet|vProd|vFrete|vSeg|vDesc|vII|vIPI|vIPIDevol|vPIS|vCOFINS|vOutro|vNF|vTotTrib|",
+		"N":    "N|orig|CST|modBC|vBC|pICMS|vICMS|pFCP|vFCP|",
+		"W":    "W|vBC|vDespAdu|vII|vIOF|",
 	}
 }
 
@@ -116,7 +116,7 @@ func (p *Parser) ParseTXT(txtData string) (map[string]interface{}, error) {
 	p.currentNFe = make(map[string]interface{})
 
 	lines := strings.Split(strings.ReplaceAll(txtData, "\r", ""), "\n")
-	
+
 	for lineNum, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -147,7 +147,7 @@ func (p *Parser) parseLine(line string, lineNum int) error {
 	}
 
 	tag := strings.ToUpper(fields[0])
-	
+
 	// Handle NOTAFISCAL header
 	if tag == "NOTAFISCAL" {
 		if len(fields) >= 2 {
@@ -173,7 +173,7 @@ func (p *Parser) parseLine(line string, lineNum int) error {
 
 	// Store the parsed data
 	p.storeTagData(tag, data)
-	
+
 	return nil
 }
 
@@ -185,7 +185,7 @@ func (p *Parser) parseFields(fields []string, structure string) (map[string]inte
 	// Check field count
 	expectedCount := len(structFields) - 1 // Exclude last empty field after final |
 	actualCount := len(fields) - 1         // Exclude last empty field after final |
-	
+
 	if actualCount != expectedCount {
 		return nil, fmt.Errorf("field count mismatch: expected %d, got %d", expectedCount, actualCount)
 	}
@@ -229,7 +229,7 @@ func (p *Parser) storeTagData(tag string, data map[string]interface{}) {
 			p.currentNFe["det"] = []map[string]interface{}{}
 		}
 		det := p.currentNFe["det"].([]map[string]interface{})
-		
+
 		// Create new item or update existing
 		itemIndex := len(det) - 1
 		if tag == "I" {
@@ -285,7 +285,7 @@ func (p *Parser) GetXML() (string, error) {
 	xml := `<?xml version="1.0" encoding="UTF-8"?>`
 	xml += `<NFe xmlns="http://www.portalfiscal.inf.br/nfe">`
 	xml += `<infNFe>`
-	
+
 	// Add IDE section
 	if ide, ok := p.currentNFe["ide"].(map[string]interface{}); ok {
 		xml += `<ide>`
@@ -322,7 +322,7 @@ func (p *Parser) GetXML() (string, error) {
 					xml += fmt.Sprintf("<%s>%v</%s>", k, v, k)
 				}
 			}
-			
+
 			// Add tax information
 			if imposto, ok := item["imposto"].(map[string]interface{}); ok {
 				xml += `<imposto>`

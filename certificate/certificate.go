@@ -16,34 +16,34 @@ import (
 type Certificate interface {
 	// Sign signs the given data using the certificate's private key
 	Sign(data []byte, algorithm crypto.Hash) ([]byte, error)
-	
+
 	// GetPublicKey returns the certificate's public key
 	GetPublicKey() crypto.PublicKey
-	
+
 	// GetPrivateKey returns the certificate's private key for TLS authentication
 	GetPrivateKey() crypto.PrivateKey
-	
+
 	// GetCertificate returns the X.509 certificate
 	GetCertificate() *x509.Certificate
-	
+
 	// IsValid checks if the certificate is currently valid (not expired)
 	IsValid() bool
-	
+
 	// GetSubject returns the certificate subject as a formatted string
 	GetSubject() string
-	
+
 	// GetIssuer returns the certificate issuer as a formatted string
 	GetIssuer() string
-	
+
 	// GetSerialNumber returns the certificate serial number as a string
 	GetSerialNumber() string
-	
+
 	// GetFingerprint returns the SHA-256 fingerprint of the certificate
 	GetFingerprint() string
-	
+
 	// GetValidityPeriod returns the certificate's not before and not after dates
 	GetValidityPeriod() (notBefore, notAfter time.Time)
-	
+
 	// Close releases any resources associated with the certificate
 	Close() error
 }
@@ -85,16 +85,16 @@ type CertificateInfo struct {
 type Config struct {
 	// ValidateChain enables certificate chain validation against ICP-Brasil root CAs
 	ValidateChain bool `json:"validateChain"`
-	
+
 	// AllowExpired allows loading of expired certificates (for testing)
 	AllowExpired bool `json:"allowExpired"`
-	
+
 	// CacheTimeout defines how long to cache certificate validation results
 	CacheTimeout time.Duration `json:"cacheTimeout"`
-	
+
 	// RequiredKeyUsage defines required key usage extensions
 	RequiredKeyUsage x509.KeyUsage `json:"requiredKeyUsage"`
-	
+
 	// RequiredEKU defines required extended key usage extensions
 	RequiredEKU []x509.ExtKeyUsage `json:"requiredEKU"`
 }
@@ -193,12 +193,12 @@ func getCertificateFingerprint(cert *x509.Certificate) string {
 	if cert == nil {
 		return ""
 	}
-	
+
 	// Use the same fingerprint calculation from soap/security.go
 	hash := crypto.SHA256.New()
 	hash.Write(cert.Raw)
 	fingerprint := hash.Sum(nil)
-	
+
 	// Format as uppercase hex with colons
 	result := make([]byte, 0, len(fingerprint)*3-1)
 	for i, b := range fingerprint {
@@ -208,7 +208,7 @@ func getCertificateFingerprint(cert *x509.Certificate) string {
 		result = append(result, "0123456789ABCDEF"[b>>4])
 		result = append(result, "0123456789ABCDEF"[b&15])
 	}
-	
+
 	return string(result)
 }
 
@@ -291,7 +291,7 @@ func ValidateForNFe(cert Certificate) error {
 	if cert == nil {
 		return errors.NewValidationError("certificate cannot be nil", "certificate", "")
 	}
-	
+
 	x509Cert := cert.GetCertificate()
 	return ValidateForNFeUse(x509Cert)
 }

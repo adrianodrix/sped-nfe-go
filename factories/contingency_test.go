@@ -48,9 +48,9 @@ func TestNewContingency(t *testing.T) {
 
 func TestContingency_Activate(t *testing.T) {
 	tests := []struct {
-		name        string
-		config      ContingencyConfig
-		expectError bool
+		name         string
+		config       ContingencyConfig
+		expectError  bool
 		expectedType ContingencyType
 	}{
 		{
@@ -147,7 +147,7 @@ func TestContingency_Activate(t *testing.T) {
 
 func TestContingency_Deactivate(t *testing.T) {
 	c, _ := NewContingency()
-	
+
 	// First activate
 	_, err := c.Activate(ContingencyConfig{
 		UF:     "SP",

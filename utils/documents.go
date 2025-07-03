@@ -18,35 +18,35 @@ import (
 func ValidateCNPJ(cnpj string) error {
 	// Remove non-numeric characters
 	cnpjClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(cnpj, "")
-	
+
 	// Check length
 	if len(cnpjClean) != 14 {
 		return errors.NewValidationError("CNPJ must have exactly 14 digits", "cnpj", cnpj)
 	}
-	
+
 	// Check if all digits are the same
 	if isAllSameDigits(cnpjClean) {
 		return errors.NewValidationError("CNPJ cannot have all same digits", "cnpj", cnpj)
 	}
-	
+
 	// Convert to int slice for calculation
 	digits := make([]int, 14)
 	for i, digit := range cnpjClean {
 		digits[i] = int(digit - '0')
 	}
-	
+
 	// Calculate first check digit
 	firstCheckDigit := calculateCNPJCheckDigit(digits[:12], []int{5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2})
 	if digits[12] != firstCheckDigit {
 		return errors.NewValidationError("invalid CNPJ check digits", "cnpj", cnpj)
 	}
-	
+
 	// Calculate second check digit
 	secondCheckDigit := calculateCNPJCheckDigit(digits[:13], []int{6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2})
 	if digits[13] != secondCheckDigit {
 		return errors.NewValidationError("invalid CNPJ check digits", "cnpj", cnpj)
 	}
-	
+
 	return nil
 }
 
@@ -55,23 +55,23 @@ func ValidateCNPJ(cnpj string) error {
 func ValidateCPF(cpf string) error {
 	// Remove non-numeric characters
 	cpfClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(cpf, "")
-	
+
 	// Check length
 	if len(cpfClean) != 11 {
 		return errors.NewValidationError("CPF must have exactly 11 digits", "cpf", cpf)
 	}
-	
+
 	// Check if all digits are the same
 	if isAllSameDigits(cpfClean) {
 		return errors.NewValidationError("CPF cannot have all same digits", "cpf", cpf)
 	}
-	
+
 	// Convert to int slice for calculation
 	digits := make([]int, 11)
 	for i, digit := range cpfClean {
 		digits[i] = int(digit - '0')
 	}
-	
+
 	// Calculate first check digit
 	sum := 0
 	for i := 0; i < 9; i++ {
@@ -82,11 +82,11 @@ func ValidateCPF(cpf string) error {
 	if remainder >= 2 {
 		firstCheckDigit = 11 - remainder
 	}
-	
+
 	if digits[9] != firstCheckDigit {
 		return errors.NewValidationError("invalid CPF check digits", "cpf", cpf)
 	}
-	
+
 	// Calculate second check digit
 	sum = 0
 	for i := 0; i < 10; i++ {
@@ -97,11 +97,11 @@ func ValidateCPF(cpf string) error {
 	if remainder >= 2 {
 		secondCheckDigit = 11 - remainder
 	}
-	
+
 	if digits[10] != secondCheckDigit {
 		return errors.NewValidationError("invalid CPF check digits", "cpf", cpf)
 	}
-	
+
 	return nil
 }
 
@@ -111,31 +111,31 @@ func ValidateIE(ie string, uf types.UF) error {
 	// Remove non-alphanumeric characters
 	ieClean := regexp.MustCompile(`[^A-Za-z0-9]`).ReplaceAllString(ie, "")
 	ieClean = strings.ToUpper(ieClean)
-	
+
 	// Check for exempt IE
 	if ieClean == "ISENTO" {
 		return nil
 	}
-	
+
 	// Basic length validation by UF (simplified)
 	expectedLengths := getIEExpectedLengths()
 	expectedLength, exists := expectedLengths[uf]
 	if !exists {
 		return errors.NewValidationError("UF not supported for IE validation", "uf", uf)
 	}
-	
+
 	if len(ieClean) != expectedLength {
 		return errors.NewValidationError(
 			fmt.Sprintf("IE for %s must have %d characters", uf.String(), expectedLength),
 			"ie", ie)
 	}
-	
+
 	// For now, just validate format and length
 	// Full IE validation would require implementing specific algorithms for each UF
 	if !regexp.MustCompile(`^[0-9A-Z]+$`).MatchString(ieClean) {
 		return errors.NewValidationError("IE contains invalid characters", "ie", ie)
 	}
-	
+
 	return nil
 }
 
@@ -145,7 +145,7 @@ func FormatCNPJ(cnpj string) (string, error) {
 	if err := ValidateCNPJ(cnpj); err != nil {
 		return "", err
 	}
-	
+
 	// Clean and format
 	cnpjClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(cnpj, "")
 	return fmt.Sprintf("%s.%s.%s/%s-%s",
@@ -158,7 +158,7 @@ func FormatCPF(cpf string) (string, error) {
 	if err := ValidateCPF(cpf); err != nil {
 		return "", err
 	}
-	
+
 	// Clean and format
 	cpfClean := regexp.MustCompile(`[^0-9]`).ReplaceAllString(cpf, "")
 	return fmt.Sprintf("%s.%s.%s-%s",
@@ -173,7 +173,7 @@ func CleanDocument(document string) string {
 // IsValidDocument validates either CPF or CNPJ automatically based on length
 func IsValidDocument(document string) error {
 	clean := CleanDocument(document)
-	
+
 	switch len(clean) {
 	case 11:
 		return ValidateCPF(document)

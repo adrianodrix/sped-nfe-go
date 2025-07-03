@@ -31,7 +31,7 @@ func demonstrateQRCode() {
 		CSC:     "CODIGO_SEGURANCA_CONTRIBUINTE_123456789",
 		CSCId:   "000001",
 	}
-	
+
 	qrCode := factories.NewQRCode(qrConfig)
 
 	// XML de NFCe de exemplo (simplificado)
@@ -91,13 +91,13 @@ func demonstrateQRCode() {
 	// Gerar QR Code e inserir no XML
 	urlConsulta := factories.GetStateConsultationURL("PR", 2) // Paraná, homologação
 	xmlWithQR, err := qrCode.PutQRTag([]byte(xmlNFCe), "TOKEN_SEFAZ", "000001", "4.00", urlConsulta, "https://consulta.sefaz.pr.gov.br")
-	
+
 	if err != nil {
 		log.Printf("Erro ao gerar QR Code: %v", err)
 	} else {
 		fmt.Printf("✓ QR Code versão %s gerado com sucesso!\n", qrCode.Version)
 		fmt.Printf("✓ URL de consulta: %s\n", urlConsulta)
-		
+
 		// Extrair QR Code do XML para visualização
 		qrCodeURL, err := qrCode.GetQRCodeFromXML(string(xmlWithQR))
 		if err == nil {
@@ -147,7 +147,7 @@ M|100.00|18.00||||||||100.00||||||||||100.00|||`
 		Version: "4.00",
 		Layout:  factories.LayoutLocal,
 	})
-	
+
 	if err != nil {
 		log.Printf("Erro ao criar parser: %v", err)
 		return
@@ -174,13 +174,13 @@ M|100.00|18.00||||||||100.00||||||||||100.00|||`
 	}
 
 	fmt.Printf("✓ TXT convertido para estrutura de dados (%d seções)\n", len(data))
-	
+
 	// Mostrar algumas informações extraídas
 	if infNFe, ok := data["infNFe"].(map[string]interface{}); ok {
 		fmt.Printf("  - Versão NFe: %v\n", infNFe["versao"])
 		fmt.Printf("  - ID: %v\n", infNFe["Id"])
 	}
-	
+
 	if ide, ok := data["ide"].(map[string]interface{}); ok {
 		fmt.Printf("  - UF: %v\n", ide["cUF"])
 		fmt.Printf("  - Modelo: %v\n", ide["mod"])

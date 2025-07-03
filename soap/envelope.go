@@ -32,34 +32,34 @@ const (
 	SOAP12EncodingNS = "http://www.w3.org/2003/05/soap-encoding"
 
 	// Common namespaces for NFe
-	XMLSchemaInstanceNS = "http://www.w3.org/2001/XMLSchema-instance"
-	XMLSchemaNS         = "http://www.w3.org/2001/XMLSchema"
-	WSSecurityNS        = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
-	WSUtilityNS         = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+	XMLSchemaInstanceNS   = "http://www.w3.org/2001/XMLSchema-instance"
+	XMLSchemaNS           = "http://www.w3.org/2001/XMLSchema"
+	WSSecurityNS          = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+	WSUtilityNS           = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
 	XMLDigitalSignatureNS = "http://www.w3.org/2000/09/xmldsig#"
 )
 
 // SOAPEnvelope represents a complete SOAP envelope
 type SOAPEnvelope struct {
-	XMLName xml.Name    `xml:"Envelope"`
-	XmlnsSoap string    `xml:"xmlns:soap,attr"`
-	XmlnsXsi  string    `xml:"xmlns:xsi,attr,omitempty"`
-	XmlnsXsd  string    `xml:"xmlns:xsd,attr,omitempty"`
+	XMLName   xml.Name    `xml:"Envelope"`
+	XmlnsSoap string      `xml:"xmlns:soap,attr"`
+	XmlnsXsi  string      `xml:"xmlns:xsi,attr,omitempty"`
+	XmlnsXsd  string      `xml:"xmlns:xsd,attr,omitempty"`
 	Header    *SOAPHeader `xml:"Header,omitempty"`
 	Body      *SOAPBody   `xml:"Body"`
 }
 
 // SOAPHeader represents the SOAP header section
 type SOAPHeader struct {
-	XMLName  xml.Name           `xml:"Header"`
-	Security *SecurityHeader    `xml:"Security,omitempty"`
+	XMLName  xml.Name              `xml:"Header"`
+	Security *SecurityHeader       `xml:"Security,omitempty"`
 	Custom   []CustomHeaderElement `xml:",omitempty"`
 }
 
 // SOAPBody represents the SOAP body section
 type SOAPBody struct {
-	XMLName xml.Name `xml:"Body"`
-	Content string   `xml:",innerxml"`
+	XMLName xml.Name   `xml:"Body"`
+	Content string     `xml:",innerxml"`
 	Fault   *SOAPFault `xml:"Fault,omitempty"`
 }
 
@@ -225,15 +225,15 @@ func (b *EnvelopeBuilder) ToXML() (string, error) {
 func (e *SOAPEnvelope) ToXML() (string, error) {
 	// Manually construct XML to avoid circular reference issues
 	var xmlBuilder strings.Builder
-	
+
 	// Start envelope with namespace
 	soapNS := e.XmlnsSoap
 	if soapNS == "" {
 		soapNS = SOAP11EnvelopeNS
 	}
-	
+
 	xmlBuilder.WriteString(fmt.Sprintf(`<soap:Envelope xmlns:soap="%s"`, soapNS))
-	
+
 	if e.XmlnsXsi != "" {
 		xmlBuilder.WriteString(fmt.Sprintf(` xmlns:xsi="%s"`, e.XmlnsXsi))
 	}
@@ -241,31 +241,31 @@ func (e *SOAPEnvelope) ToXML() (string, error) {
 		xmlBuilder.WriteString(fmt.Sprintf(` xmlns:xsd="%s"`, e.XmlnsXsd))
 	}
 	xmlBuilder.WriteString(">")
-	
+
 	// Add header if present
 	if e.Header != nil && (e.Header.Security != nil || len(e.Header.Custom) > 0) {
 		xmlBuilder.WriteString("<soap:Header>")
-		
+
 		if e.Header.Security != nil {
 			securityXML, err := xml.Marshal(e.Header.Security)
 			if err == nil {
 				xmlBuilder.Write(securityXML)
 			}
 		}
-		
+
 		for _, custom := range e.Header.Custom {
 			customXML, err := xml.Marshal(custom)
 			if err == nil {
 				xmlBuilder.Write(customXML)
 			}
 		}
-		
+
 		xmlBuilder.WriteString("</soap:Header>")
 	}
-	
+
 	// Add body
 	xmlBuilder.WriteString("<soap:Body>")
-	
+
 	if e.Body != nil {
 		if e.Body.Fault != nil {
 			faultXML, err := xml.Marshal(e.Body.Fault)
@@ -277,20 +277,20 @@ func (e *SOAPEnvelope) ToXML() (string, error) {
 			xmlBuilder.WriteString(e.Body.Content)
 		}
 	}
-	
+
 	xmlBuilder.WriteString("</soap:Body>")
 	xmlBuilder.WriteString("</soap:Envelope>")
-	
+
 	// Add XML declaration
 	xmlString := xml.Header + xmlBuilder.String()
-	
+
 	return xmlString, nil
 }
 
 // ParseSOAPEnvelope parses a SOAP envelope from XML string
 func ParseSOAPEnvelope(xmlData string) (*SOAPEnvelope, error) {
 	var envelope SOAPEnvelope
-	
+
 	// First try to parse normally
 	err := xml.Unmarshal([]byte(xmlData), &envelope)
 	if err != nil {
@@ -300,8 +300,8 @@ func ParseSOAPEnvelope(xmlData string) (*SOAPEnvelope, error) {
 	// Post-process to handle fault vs content correctly
 	if envelope.Body != nil {
 		// Check if we have a fault by looking for fault elements in the content
-		if strings.Contains(envelope.Body.Content, "<soap:Fault>") || 
-		   strings.Contains(envelope.Body.Content, "<faultcode>") {
+		if strings.Contains(envelope.Body.Content, "<soap:Fault>") ||
+			strings.Contains(envelope.Body.Content, "<faultcode>") {
 			// Parse fault separately if it wasn't parsed correctly
 			if envelope.Body.Fault == nil {
 				var faultBody struct {
@@ -391,7 +391,7 @@ func (e *SOAPEnvelope) ValidateTimestamp() error {
 // CreateNFeSOAPEnvelope creates a SOAP envelope specifically for NFe webservices
 func CreateNFeSOAPEnvelope(bodyContent string) (*SOAPEnvelope, error) {
 	builder := NewSOAP11EnvelopeBuilder()
-	
+
 	// Add NFe-specific namespaces if needed
 	builder.AddNamespace("wsse", WSSecurityNS)
 	builder.AddNamespace("wsu", WSUtilityNS)
@@ -456,10 +456,10 @@ func ExtractBodyContent(soapResponse string) (string, error) {
 
 // IsSOAPFaultResponse checks if a response contains a SOAP fault
 func IsSOAPFaultResponse(responseBody string) bool {
-	return strings.Contains(responseBody, "<soap:Fault>") || 
-		   strings.Contains(responseBody, "<Fault>") ||
-		   strings.Contains(responseBody, "faultcode") ||
-		   strings.Contains(responseBody, "faultstring")
+	return strings.Contains(responseBody, "<soap:Fault>") ||
+		strings.Contains(responseBody, "<Fault>") ||
+		strings.Contains(responseBody, "faultcode") ||
+		strings.Contains(responseBody, "faultstring")
 }
 
 // GetSOAPVersion detects the SOAP version from XML content

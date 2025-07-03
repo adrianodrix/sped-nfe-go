@@ -5,84 +5,84 @@ import "encoding/xml"
 
 // Transporte represents transport information for the NFe
 type Transporte struct {
-	XMLName     xml.Name       `xml:"transp"`
-	ModFrete    string         `xml:"modFrete" validate:"required,oneof=0 1 2 3 4 9"`  // Freight mode
-	Transporta  *Transportador `xml:"transporta,omitempty"`                            // Carrier
-	RetTransp   *RetTransp     `xml:"retTransp,omitempty"`                             // Transport withholding
-	VeicTransp  *VeicTransp    `xml:"veicTransp,omitempty"`                            // Transport vehicle
-	Reboque     []Reboque      `xml:"reboque,omitempty"`                               // Trailers
-	Vagao       string         `xml:"vagao,omitempty" validate:"omitempty,max=20"`     // Railway car
-	Balsa       string         `xml:"balsa,omitempty" validate:"omitempty,max=20"`     // Ferry
-	Vol         []Volume       `xml:"vol,omitempty"`                                   // Volumes
+	XMLName    xml.Name       `xml:"transp"`
+	ModFrete   string         `xml:"modFrete" validate:"required,oneof=0 1 2 3 4 9"` // Freight mode
+	Transporta *Transportador `xml:"transporta,omitempty"`                           // Carrier
+	RetTransp  *RetTransp     `xml:"retTransp,omitempty"`                            // Transport withholding
+	VeicTransp *VeicTransp    `xml:"veicTransp,omitempty"`                           // Transport vehicle
+	Reboque    []Reboque      `xml:"reboque,omitempty"`                              // Trailers
+	Vagao      string         `xml:"vagao,omitempty" validate:"omitempty,max=20"`    // Railway car
+	Balsa      string         `xml:"balsa,omitempty" validate:"omitempty,max=20"`    // Ferry
+	Vol        []Volume       `xml:"vol,omitempty"`                                  // Volumes
 }
 
 // Transportador represents carrier information
 type Transportador struct {
-	XMLName    xml.Name `xml:"transporta"`
-	CNPJ       string   `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`          // CNPJ (juridical person)
-	CPF        string   `xml:"CPF,omitempty" validate:"omitempty,len=11"`           // CPF (physical person)
-	XNome      string   `xml:"xNome,omitempty" validate:"omitempty,min=1,max=60"`   // Carrier name
-	IE         string   `xml:"IE,omitempty"`                                        // State registration
-	XEnder     string   `xml:"xEnder,omitempty" validate:"omitempty,min=1,max=60"`  // Address
-	XMun       string   `xml:"xMun,omitempty" validate:"omitempty,min=1,max=60"`    // Municipality
-	UF         string   `xml:"UF,omitempty" validate:"omitempty,len=2"`             // State
+	XMLName xml.Name `xml:"transporta"`
+	CNPJ    string   `xml:"CNPJ,omitempty" validate:"omitempty,len=14"`         // CNPJ (juridical person)
+	CPF     string   `xml:"CPF,omitempty" validate:"omitempty,len=11"`          // CPF (physical person)
+	XNome   string   `xml:"xNome,omitempty" validate:"omitempty,min=1,max=60"`  // Carrier name
+	IE      string   `xml:"IE,omitempty"`                                       // State registration
+	XEnder  string   `xml:"xEnder,omitempty" validate:"omitempty,min=1,max=60"` // Address
+	XMun    string   `xml:"xMun,omitempty" validate:"omitempty,min=1,max=60"`   // Municipality
+	UF      string   `xml:"UF,omitempty" validate:"omitempty,len=2"`            // State
 }
 
 // RetTransp represents transport withholding
 type RetTransp struct {
-	XMLName    xml.Name `xml:"retTransp"`
-	VServ      string   `xml:"vServ" validate:"required"`                           // Service value
-	VBCR       string   `xml:"vBCR" validate:"required"`                            // Withholding tax base
-	PICMSR     string   `xml:"pICMSR" validate:"required"`                          // ICMS withholding rate
-	VICMSR     string   `xml:"vICMSR" validate:"required"`                          // ICMS withholding value
-	CFOP       string   `xml:"CFOP" validate:"required,len=4"`                      // CFOP code
-	CMunFG     string   `xml:"cMunFG" validate:"required,len=7"`                    // Municipality code
+	XMLName xml.Name `xml:"retTransp"`
+	VServ   string   `xml:"vServ" validate:"required"`        // Service value
+	VBCR    string   `xml:"vBCR" validate:"required"`         // Withholding tax base
+	PICMSR  string   `xml:"pICMSR" validate:"required"`       // ICMS withholding rate
+	VICMSR  string   `xml:"vICMSR" validate:"required"`       // ICMS withholding value
+	CFOP    string   `xml:"CFOP" validate:"required,len=4"`   // CFOP code
+	CMunFG  string   `xml:"cMunFG" validate:"required,len=7"` // Municipality code
 }
 
 // VeicTransp represents transport vehicle
 type VeicTransp struct {
 	XMLName xml.Name `xml:"veicTransp"`
-	Placa   string   `xml:"placa" validate:"required,min=1,max=8"`                 // License plate
-	UF      string   `xml:"UF" validate:"required,len=2"`                          // State
-	RNTRC   string   `xml:"RNTRC,omitempty" validate:"omitempty,max=20"`           // RNTRC number
+	Placa   string   `xml:"placa" validate:"required,min=1,max=8"`       // License plate
+	UF      string   `xml:"UF" validate:"required,len=2"`                // State
+	RNTRC   string   `xml:"RNTRC,omitempty" validate:"omitempty,max=20"` // RNTRC number
 }
 
 // Reboque represents trailer information
 type Reboque struct {
 	XMLName xml.Name `xml:"reboque"`
-	Placa   string   `xml:"placa" validate:"required,min=1,max=8"`                 // License plate
-	UF      string   `xml:"UF" validate:"required,len=2"`                          // State
-	RNTRC   string   `xml:"RNTRC,omitempty" validate:"omitempty,max=20"`           // RNTRC number
+	Placa   string   `xml:"placa" validate:"required,min=1,max=8"`       // License plate
+	UF      string   `xml:"UF" validate:"required,len=2"`                // State
+	RNTRC   string   `xml:"RNTRC,omitempty" validate:"omitempty,max=20"` // RNTRC number
 }
 
 // Volume represents package/volume information
 type Volume struct {
 	XMLName xml.Name `xml:"vol"`
-	QVol    string   `xml:"qVol,omitempty"`                                        // Quantity of volumes
-	Esp     string   `xml:"esp,omitempty" validate:"omitempty,min=1,max=60"`       // Species
-	Marca   string   `xml:"marca,omitempty" validate:"omitempty,min=1,max=60"`     // Brand
-	NVol    string   `xml:"nVol,omitempty" validate:"omitempty,min=1,max=60"`      // Volume numbering
-	PesoL   string   `xml:"pesoL,omitempty"`                                       // Net weight (kg)
-	PesoB   string   `xml:"pesoB,omitempty"`                                       // Gross weight (kg)
-	Lacres  []Lacre  `xml:"lacres,omitempty"`                                      // Seals
+	QVol    string   `xml:"qVol,omitempty"`                                    // Quantity of volumes
+	Esp     string   `xml:"esp,omitempty" validate:"omitempty,min=1,max=60"`   // Species
+	Marca   string   `xml:"marca,omitempty" validate:"omitempty,min=1,max=60"` // Brand
+	NVol    string   `xml:"nVol,omitempty" validate:"omitempty,min=1,max=60"`  // Volume numbering
+	PesoL   string   `xml:"pesoL,omitempty"`                                   // Net weight (kg)
+	PesoB   string   `xml:"pesoB,omitempty"`                                   // Gross weight (kg)
+	Lacres  []Lacre  `xml:"lacres,omitempty"`                                  // Seals
 }
 
 // Lacre represents seal information
 type Lacre struct {
 	XMLName xml.Name `xml:"lacres"`
-	NLacre  string   `xml:"nLacre" validate:"required,min=1,max=60"`               // Seal number
+	NLacre  string   `xml:"nLacre" validate:"required,min=1,max=60"` // Seal number
 }
 
 // FreightMode represents freight responsibility codes
 type FreightMode int
 
 const (
-	FreightSenderResponsibility FreightMode = iota // 0 - Sender responsibility (CIF)
-	FreightReceiverResponsibility                  // 1 - Receiver responsibility (FOB)
-	FreightThirdPartyResponsibility                // 2 - Third party responsibility
-	FreightOwnSenderTransport                      // 3 - Own sender transport
-	FreightOwnReceiverTransport                    // 4 - Own receiver transport
-	FreightNoFreight                               // 9 - No freight
+	FreightSenderResponsibility     FreightMode = iota // 0 - Sender responsibility (CIF)
+	FreightReceiverResponsibility                      // 1 - Receiver responsibility (FOB)
+	FreightThirdPartyResponsibility                    // 2 - Third party responsibility
+	FreightOwnSenderTransport                          // 3 - Own sender transport
+	FreightOwnReceiverTransport                        // 4 - Own receiver transport
+	FreightNoFreight                                   // 9 - No freight
 )
 
 // String returns the string representation of FreightMode
@@ -237,7 +237,7 @@ func ValidateTransport(transport *Transporte) error {
 	// - Check carrier information consistency
 	// - Validate vehicle plates format
 	// - Check weight values format
-	
+
 	return nil
 }
 

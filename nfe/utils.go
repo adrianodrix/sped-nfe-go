@@ -41,10 +41,10 @@ func ParseValue(value string) (float64, error) {
 	if value == "" {
 		return 0.0, nil
 	}
-	
+
 	// Replace comma with dot for decimal separator
 	value = strings.Replace(value, ",", ".", -1)
-	
+
 	return strconv.ParseFloat(value, 64)
 }
 
@@ -53,7 +53,7 @@ func FormatCNPJ(cnpj string) string {
 	if len(cnpj) != 14 {
 		return cnpj
 	}
-	
+
 	return fmt.Sprintf("%s.%s.%s/%s-%s",
 		cnpj[0:2], cnpj[2:5], cnpj[5:8], cnpj[8:12], cnpj[12:14])
 }
@@ -63,7 +63,7 @@ func FormatCPF(cpf string) string {
 	if len(cpf) != 11 {
 		return cpf
 	}
-	
+
 	return fmt.Sprintf("%s.%s.%s-%s",
 		cpf[0:3], cpf[3:6], cpf[6:9], cpf[9:11])
 }
@@ -73,14 +73,14 @@ func FormatCEP(cep string) string {
 	if len(cep) != 8 {
 		return cep
 	}
-	
+
 	return fmt.Sprintf("%s-%s", cep[0:5], cep[5:8])
 }
 
 // FormatPhone formats phone number
 func FormatPhone(phone string) string {
 	phone = OnlyNumbers(phone)
-	
+
 	switch len(phone) {
 	case 10:
 		return fmt.Sprintf("(%s) %s-%s", phone[0:2], phone[2:6], phone[6:10])
@@ -133,7 +133,7 @@ func PadLeft(str string, length int, padChar rune) string {
 	if len(str) >= length {
 		return str
 	}
-	
+
 	padding := strings.Repeat(string(padChar), length-len(str))
 	return padding + str
 }
@@ -143,7 +143,7 @@ func PadRight(str string, length int, padChar rune) string {
 	if len(str) >= length {
 		return str
 	}
-	
+
 	padding := strings.Repeat(string(padChar), length-len(str))
 	return str + padding
 }
@@ -182,25 +182,25 @@ func ParseDateTime(dateTime string) (time.Time, error) {
 		"2006-01-02 15:04:05",
 		"2006-01-02",
 	}
-	
+
 	for _, format := range formats {
 		if t, err := time.Parse(format, dateTime); err == nil {
 			return t, nil
 		}
 	}
-	
+
 	return time.Time{}, fmt.Errorf("invalid datetime format: %s", dateTime)
 }
 
 // GenerateRandomCode generates a random numeric code
 func GenerateRandomCode(length int) string {
 	result := make([]byte, length)
-	
+
 	for i := range result {
 		num, _ := rand.Int(rand.Reader, big.NewInt(10))
 		result[i] = byte('0' + num.Int64())
 	}
-	
+
 	return string(result)
 }
 
@@ -208,7 +208,7 @@ func GenerateRandomCode(length int) string {
 func CalculateModulo11(number string) int {
 	sum := 0
 	weight := 2
-	
+
 	// Process from right to left
 	for i := len(number) - 1; i >= 0; i-- {
 		digit, _ := strconv.Atoi(string(number[i]))
@@ -218,7 +218,7 @@ func CalculateModulo11(number string) int {
 			weight = 2
 		}
 	}
-	
+
 	remainder := sum % 11
 	if remainder < 2 {
 		return 0
@@ -230,73 +230,73 @@ func CalculateModulo11(number string) int {
 func CalculateModulo10(number string) int {
 	sum := 0
 	alternate := false
-	
+
 	// Process from right to left
 	for i := len(number) - 1; i >= 0; i-- {
 		digit, _ := strconv.Atoi(string(number[i]))
-		
+
 		if alternate {
 			digit *= 2
 			if digit > 9 {
 				digit = digit/10 + digit%10
 			}
 		}
-		
+
 		sum += digit
 		alternate = !alternate
 	}
-	
+
 	return (10 - (sum % 10)) % 10
 }
 
 // ValidateCNPJ validates CNPJ format and check digits
 func ValidateCNPJ(cnpj string) bool {
 	cnpj = OnlyNumbers(cnpj)
-	
+
 	if len(cnpj) != 14 {
 		return false
 	}
-	
+
 	// Check for repeated digits
 	if cnpj == strings.Repeat(string(cnpj[0]), 14) {
 		return false
 	}
-	
+
 	// Validate first check digit
 	sum := 0
 	weights := []int{5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2}
-	
+
 	for i := 0; i < 12; i++ {
 		digit, _ := strconv.Atoi(string(cnpj[i]))
 		sum += digit * weights[i]
 	}
-	
+
 	remainder := sum % 11
 	firstDigit := 0
 	if remainder >= 2 {
 		firstDigit = 11 - remainder
 	}
-	
+
 	expectedFirst, _ := strconv.Atoi(string(cnpj[12]))
 	if firstDigit != expectedFirst {
 		return false
 	}
-	
+
 	// Validate second check digit
 	sum = 0
 	weights = []int{6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2}
-	
+
 	for i := 0; i < 13; i++ {
 		digit, _ := strconv.Atoi(string(cnpj[i]))
 		sum += digit * weights[i]
 	}
-	
+
 	remainder = sum % 11
 	secondDigit := 0
 	if remainder >= 2 {
 		secondDigit = 11 - remainder
 	}
-	
+
 	expectedSecond, _ := strconv.Atoi(string(cnpj[13]))
 	return secondDigit == expectedSecond
 }
@@ -304,47 +304,47 @@ func ValidateCNPJ(cnpj string) bool {
 // ValidateCPF validates CPF format and check digits
 func ValidateCPF(cpf string) bool {
 	cpf = OnlyNumbers(cpf)
-	
+
 	if len(cpf) != 11 {
 		return false
 	}
-	
+
 	// Check for repeated digits
 	if cpf == strings.Repeat(string(cpf[0]), 11) {
 		return false
 	}
-	
+
 	// Validate first check digit
 	sum := 0
 	for i := 0; i < 9; i++ {
 		digit, _ := strconv.Atoi(string(cpf[i]))
 		sum += digit * (10 - i)
 	}
-	
+
 	remainder := sum % 11
 	firstDigit := 0
 	if remainder >= 2 {
 		firstDigit = 11 - remainder
 	}
-	
+
 	expectedFirst, _ := strconv.Atoi(string(cpf[9]))
 	if firstDigit != expectedFirst {
 		return false
 	}
-	
+
 	// Validate second check digit
 	sum = 0
 	for i := 0; i < 10; i++ {
 		digit, _ := strconv.Atoi(string(cpf[i]))
 		sum += digit * (11 - i)
 	}
-	
+
 	remainder = sum % 11
 	secondDigit := 0
 	if remainder >= 2 {
 		secondDigit = 11 - remainder
 	}
-	
+
 	expectedSecond, _ := strconv.Atoi(string(cpf[10]))
 	return secondDigit == expectedSecond
 }
@@ -352,11 +352,11 @@ func ValidateCPF(cpf string) bool {
 // ValidateStateRegistration validates state registration (IE)
 func ValidateStateRegistration(ie, state string) bool {
 	ie = OnlyNumbers(ie)
-	
+
 	if ie == "" || ie == "ISENTO" {
 		return true
 	}
-	
+
 	// Basic validation - each state has its own rules
 	// This is a simplified version
 	switch state {
@@ -398,14 +398,14 @@ func CleanXMLString(str string) string {
 			cleanStr += string(r)
 		}
 	}
-	
+
 	// Replace XML special characters
 	cleanStr = strings.ReplaceAll(cleanStr, "&", "&amp;")
 	cleanStr = strings.ReplaceAll(cleanStr, "<", "&lt;")
 	cleanStr = strings.ReplaceAll(cleanStr, ">", "&gt;")
 	cleanStr = strings.ReplaceAll(cleanStr, "\"", "&quot;")
 	cleanStr = strings.ReplaceAll(cleanStr, "'", "&apos;")
-	
+
 	return cleanStr
 }
 
@@ -413,23 +413,23 @@ func CleanXMLString(str string) string {
 func NormalizeString(str string, removeAccents bool, maxLength int) string {
 	// Trim spaces
 	str = strings.TrimSpace(str)
-	
+
 	// Remove accents if requested
 	if removeAccents {
 		str = RemoveAccents(str)
 	}
-	
+
 	// Convert to uppercase
 	str = strings.ToUpper(str)
-	
+
 	// Remove extra spaces
 	str = regexp.MustCompile(`\s+`).ReplaceAllString(str, " ")
-	
+
 	// Truncate if necessary
 	if maxLength > 0 {
 		str = TruncateString(str, maxLength)
 	}
-	
+
 	return str
 }
 
@@ -439,7 +439,7 @@ func Round(value float64, decimals int) float64 {
 	for i := 0; i < decimals; i++ {
 		multiplier *= 10
 	}
-	
+
 	return float64(int(value*multiplier+0.5)) / multiplier
 }
 
@@ -458,9 +458,9 @@ func IsValidGTIN(gtin string) bool {
 	if gtin == "" || gtin == "SEM GTIN" {
 		return true
 	}
-	
+
 	gtin = OnlyNumbers(gtin)
-	
+
 	// GTIN can be 8, 12, 13, or 14 digits
 	validLengths := []int{8, 12, 13, 14}
 	valid := false
@@ -470,19 +470,19 @@ func IsValidGTIN(gtin string) bool {
 			break
 		}
 	}
-	
+
 	if !valid {
 		return false
 	}
-	
+
 	// Validate check digit using modulo 10
 	if len(gtin) < 2 {
 		return false
 	}
-	
+
 	checkDigit := CalculateModulo10(gtin[:len(gtin)-1])
 	expectedDigit, _ := strconv.Atoi(string(gtin[len(gtin)-1]))
-	
+
 	return checkDigit == expectedDigit
 }
 
@@ -517,10 +517,10 @@ func SanitizeXMLValue(value string) string {
 	if IsEmpty(value) {
 		return ""
 	}
-	
+
 	// Clean and normalize
 	value = CleanXMLString(value)
 	value = strings.TrimSpace(value)
-	
+
 	return value
 }

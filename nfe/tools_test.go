@@ -299,7 +299,7 @@ func TestHelperFunctions(t *testing.T) {
 		{"SP", "35"},
 		{"rj", "33"},
 		{"RJ", "33"},
-		{"", "35"},      // Default case
+		{"", "35"},        // Default case
 		{"INVALID", "35"}, // Default case
 	}
 

@@ -27,16 +27,16 @@ func RemoveAccents(s string) string {
 func NormalizeString(s string) string {
 	// Remove accents
 	normalized := RemoveAccents(s)
-	
+
 	// Convert to uppercase
 	normalized = strings.ToUpper(normalized)
-	
+
 	// Remove invalid XML characters
 	normalized = removeInvalidXMLChars(normalized)
-	
+
 	// Trim spaces
 	normalized = strings.TrimSpace(normalized)
-	
+
 	return normalized
 }
 
@@ -45,13 +45,13 @@ func removeInvalidXMLChars(s string) string {
 	// Valid XML characters according to XML 1.0 specification:
 	// #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 	var result strings.Builder
-	
+
 	for _, r := range s {
 		if isValidXMLChar(r) {
 			result.WriteRune(r)
 		}
 	}
-	
+
 	return result.String()
 }
 
@@ -73,13 +73,13 @@ func FormatMoney(value float64) string {
 // Uses up to 4 decimal places, removing trailing zeros
 func FormatQuantity(value float64) string {
 	formatted := strconv.FormatFloat(value, 'f', 4, 64)
-	
+
 	// Remove trailing zeros after decimal point
 	if strings.Contains(formatted, ".") {
 		formatted = strings.TrimRight(formatted, "0")
 		formatted = strings.TrimRight(formatted, ".")
 	}
-	
+
 	return formatted
 }
 
@@ -94,7 +94,7 @@ func PadLeft(s string, length int, padChar rune) string {
 	if len(s) >= length {
 		return s
 	}
-	
+
 	padding := strings.Repeat(string(padChar), length-len(s))
 	return padding + s
 }
@@ -104,7 +104,7 @@ func PadRight(s string, length int, padChar rune) string {
 	if len(s) >= length {
 		return s
 	}
-	
+
 	padding := strings.Repeat(string(padChar), length-len(s))
 	return s + padding
 }
@@ -114,13 +114,13 @@ func TruncateString(s string, maxLength int) string {
 	if len(s) <= maxLength {
 		return s
 	}
-	
+
 	// Count runes, not bytes, for proper Unicode handling
 	runes := []rune(s)
 	if len(runes) <= maxLength {
 		return s
 	}
-	
+
 	return string(runes[:maxLength])
 }
 
@@ -141,14 +141,14 @@ func CleanFileName(filename string) string {
 	// Remove invalid filename characters
 	re := regexp.MustCompile(`[<>:"/\\|?*]`)
 	clean := re.ReplaceAllString(filename, "_")
-	
+
 	// Remove control characters
 	re = regexp.MustCompile(`[\x00-\x1f\x7f]`)
 	clean = re.ReplaceAllString(clean, "")
-	
+
 	// Trim spaces and dots from the ends
 	clean = strings.Trim(clean, " .")
-	
+
 	return clean
 }
 
@@ -156,7 +156,7 @@ func CleanFileName(filename string) string {
 func NormalizeCEP(cep string) string {
 	// Extract only numbers
 	numbers := OnlyNumbers(cep)
-	
+
 	// Pad with zeros to 8 digits
 	return PadLeft(numbers, 8, '0')
 }
@@ -167,7 +167,7 @@ func FormatCEP(cep string) string {
 	if len(normalized) != 8 {
 		return cep // Return original if invalid
 	}
-	
+
 	return normalized[0:5] + "-" + normalized[5:8]
 }
 
@@ -175,19 +175,19 @@ func FormatCEP(cep string) string {
 func NormalizePhone(phone string) string {
 	// Extract only numbers
 	numbers := OnlyNumbers(phone)
-	
+
 	// Remove country code if present (55)
 	if len(numbers) >= 12 && numbers[0:2] == "55" {
 		numbers = numbers[2:]
 	}
-	
+
 	return numbers
 }
 
 // FormatPhone formats a Brazilian phone number with standard mask
 func FormatPhone(phone string) string {
 	normalized := NormalizePhone(phone)
-	
+
 	switch len(normalized) {
 	case 10: // Fixed line: (XX) XXXX-XXXX
 		return "(" + normalized[0:2] + ") " + normalized[2:6] + "-" + normalized[6:10]
@@ -220,13 +220,13 @@ func ContainsOnlyDigits(s string) bool {
 	if s == "" {
 		return false
 	}
-	
+
 	for _, r := range s {
 		if !unicode.IsDigit(r) {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -234,7 +234,7 @@ func ContainsOnlyDigits(s string) bool {
 func ToASCII(s string) string {
 	// First remove accents
 	noAccents := RemoveAccents(s)
-	
+
 	// Then keep only ASCII characters
 	var result strings.Builder
 	for _, r := range noAccents {
@@ -242,7 +242,7 @@ func ToASCII(s string) string {
 			result.WriteRune(r)
 		}
 	}
-	
+
 	return result.String()
 }
 
@@ -271,12 +271,12 @@ func UnescapeXML(s string) string {
 func FormatForXML(s string, maxLength int) string {
 	// Normalize the string
 	normalized := NormalizeString(s)
-	
+
 	// Truncate if necessary
 	if maxLength > 0 {
 		normalized = TruncateString(normalized, maxLength)
 	}
-	
+
 	// Escape XML characters
 	return EscapeXML(normalized)
 }

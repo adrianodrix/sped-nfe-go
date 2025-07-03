@@ -132,7 +132,7 @@ func TestIsServiceAvailable(t *testing.T) {
 	for _, test := range tests {
 		result := IsServiceAvailable(test.uf, test.ambiente, test.modelo, test.serviceType)
 		if result != test.expected {
-			t.Errorf("IsServiceAvailable(%s, %s, %d, %s) = %t, expected %t", 
+			t.Errorf("IsServiceAvailable(%s, %s, %d, %s) = %t, expected %t",
 				test.uf.String(), test.ambiente.String(), int(test.modelo), test.serviceType, result, test.expected)
 		}
 	}
@@ -230,7 +230,7 @@ func TestServiceTypes(t *testing.T) {
 func TestNFe55ConfigStructure(t *testing.T) {
 	// Test that NFe55Config has required states
 	requiredStates := []string{"AM", "AN", "BA", "SVRS"}
-	
+
 	for _, state := range requiredStates {
 		if _, exists := NFe55Config[state]; !exists {
 			t.Errorf("NFe55Config should contain state %s", state)
@@ -302,7 +302,7 @@ func TestGetServiceFromEnvironment(t *testing.T) {
 			t.Errorf("getServiceFromEnvironment should not panic with nil environment: %v", r)
 		}
 	}()
-	
+
 	service = getServiceFromEnvironment(nil, ServiceStatusServico)
 	if service != nil {
 		t.Error("Should return nil for nil environment")
@@ -311,12 +311,12 @@ func TestGetServiceFromEnvironment(t *testing.T) {
 
 // Helper function to check if string contains substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && 
-		   (s == substr || 
-		    len(s) > len(substr) && 
-		    (s[:len(substr)] == substr || 
-		     s[len(s)-len(substr):] == substr || 
-		     containsHelper(s, substr)))
+	return len(s) >= len(substr) &&
+		(s == substr ||
+			len(s) > len(substr) &&
+				(s[:len(substr)] == substr ||
+					s[len(s)-len(substr):] == substr ||
+					containsHelper(s, substr)))
 }
 
 func containsHelper(s, substr string) bool {

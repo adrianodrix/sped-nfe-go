@@ -29,7 +29,7 @@ func NewQRCode(config QRCodeConfig) *QRCode {
 	if config.Version == "" {
 		config.Version = "2.00" // Default to version 2.00
 	}
-	
+
 	return &QRCode{
 		Version: config.Version,
 		CSC:     config.CSC,
@@ -40,45 +40,45 @@ func NewQRCode(config QRCodeConfig) *QRCode {
 // PutQRTag inserts QR code tags into NFCe XML
 func (q *QRCode) PutQRTag(xml []byte, token, idToken, versao, urlqr, urichave string) ([]byte, error) {
 	xmlStr := string(xml)
-	
+
 	// Extract NFCe information from XML
 	chNFe, err := q.extractChaveNFe(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract chave NFe: %v", err)
 	}
-	
+
 	tpAmb, err := q.extractTpAmb(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract tpAmb: %v", err)
 	}
-	
+
 	dhEmi, err := q.extractDhEmi(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract dhEmi: %v", err)
 	}
-	
+
 	vNF, err := q.extractVNF(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract vNF: %v", err)
 	}
-	
+
 	vICMS, err := q.extractVICMS(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract vICMS: %v", err)
 	}
-	
+
 	digVal, err := q.extractDigVal(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract digVal: %v", err)
 	}
-	
+
 	cDest, _ := q.extractCDest(xmlStr) // Optional field
-	
+
 	tpEmis, err := q.extractTpEmis(xmlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract tpEmis: %v", err)
 	}
-	
+
 	// Generate QR code based on version
 	var qrCodeData string
 	switch q.Version {
@@ -91,23 +91,23 @@ func (q *QRCode) PutQRTag(xml []byte, token, idToken, versao, urlqr, urichave st
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract assinatura for v3.00: %v", err)
 		}
-		
+
 		idDest, err := q.extractIdDest(xmlStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract idDest: %v", err)
 		}
-		
+
 		qrCodeData = q.generate300(chNFe, urlqr, tpAmb, dhEmi, vNF, tpEmis, idDest, cDest, assinatura)
 	default:
 		return nil, fmt.Errorf("unsupported QR code version: %s", q.Version)
 	}
-	
+
 	// Insert QR code into XML
 	xmlWithQR, err := q.insertQRCodeIntoXML(xmlStr, qrCodeData, urichave)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert QR code into XML: %v", err)
 	}
-	
+
 	return []byte(xmlWithQR), nil
 }
 
@@ -122,11 +122,11 @@ func (q *QRCode) generate200(chNFe, url, tpAmb, dhEmi, vNF, vICMS, digVal, token
 	// Build base parameters
 	params := fmt.Sprintf("chNFe=%s&nVersao=200&tpAmb=%s&cDest=%s&dhEmi=%s&vNF=%s&vICMS=%s&digVal=%s&cIdToken=%s",
 		chNFe, tpAmb, cDest, q.str2Hex(dhEmi), vNF, vICMS, q.str2Hex(digVal), idToken)
-	
+
 	// Add CSC and generate hash
 	dataToHash := params + token
 	hash := q.generateSHA1Hash(dataToHash)
-	
+
 	// Build final URL
 	return fmt.Sprintf("%s?%s&cHashQRCode=%s", url, params, hash)
 }
@@ -158,7 +158,7 @@ func (q *QRCode) insertQRCodeIntoXML(xml, qrCodeData, urichave string) (string, 
 		// Replace existing QR code
 		re := regexp.MustCompile(`<qrCode>.*?</qrCode>`)
 		xml = re.ReplaceAllString(xml, fmt.Sprintf("<qrCode><![CDATA[%s]]></qrCode>", qrCodeData))
-		
+
 		if urichave != "" {
 			re = regexp.MustCompile(`<urlChave>.*?</urlChave>`)
 			xml = re.ReplaceAllString(xml, fmt.Sprintf("<urlChave>%s</urlChave>", urichave))
@@ -166,17 +166,17 @@ func (q *QRCode) insertQRCodeIntoXML(xml, qrCodeData, urichave string) (string, 
 	} else {
 		// Insert new infNFeSupl section
 		infNFeSupl := q.buildInfNFeSupl(qrCodeData, urichave)
-		
+
 		// Find insertion point (before </infNFe>)
 		insertPoint := strings.LastIndex(xml, "</infNFe>")
 		if insertPoint == -1 {
 			return "", fmt.Errorf("could not find </infNFe> tag in XML")
 		}
-		
+
 		// Insert infNFeSupl before </infNFe>
 		xml = xml[:insertPoint] + infNFeSupl + xml[insertPoint:]
 	}
-	
+
 	return xml, nil
 }
 
@@ -184,11 +184,11 @@ func (q *QRCode) insertQRCodeIntoXML(xml, qrCodeData, urichave string) (string, 
 func (q *QRCode) buildInfNFeSupl(qrCodeData, urichave string) string {
 	infNFeSupl := "<infNFeSupl>"
 	infNFeSupl += fmt.Sprintf("<qrCode><![CDATA[%s]]></qrCode>", qrCodeData)
-	
+
 	if urichave != "" {
 		infNFeSupl += fmt.Sprintf("<urlChave>%s</urlChave>", urichave)
 	}
-	
+
 	infNFeSupl += "</infNFeSupl>"
 	return infNFeSupl
 }
@@ -256,14 +256,14 @@ func (q *QRCode) extractCDest(xml string) (string, error) {
 	if len(matches) >= 2 {
 		return matches[1], nil
 	}
-	
+
 	// Try CPF
 	re = regexp.MustCompile(`<dest>.*?<CPF>([0-9]{11})</CPF>`)
 	matches = re.FindStringSubmatch(xml)
 	if len(matches) >= 2 {
 		return matches[1], nil
 	}
-	
+
 	// Return empty if no destination found (valid for NFCe)
 	return "", nil
 }
@@ -274,12 +274,12 @@ func (q *QRCode) extractTpEmis(xml string) (int, error) {
 	if len(matches) < 2 {
 		return 1, nil // Default to normal emission
 	}
-	
+
 	tpEmis, err := strconv.Atoi(matches[1])
 	if err != nil {
 		return 1, nil
 	}
-	
+
 	return tpEmis, nil
 }
 
@@ -289,12 +289,12 @@ func (q *QRCode) extractIdDest(xml string) (int, error) {
 	if len(matches) < 2 {
 		return 1, nil // Default to internal operation
 	}
-	
+
 	idDest, err := strconv.Atoi(matches[1])
 	if err != nil {
 		return 1, nil
 	}
-	
+
 	return idDest, nil
 }
 
@@ -323,12 +323,12 @@ func (q *QRCode) ValidateQRCode(qrCode string) error {
 	if qrCode == "" {
 		return fmt.Errorf("QR code cannot be empty")
 	}
-	
+
 	// Check if it's a valid URL
 	if !strings.HasPrefix(qrCode, "http://") && !strings.HasPrefix(qrCode, "https://") {
 		return fmt.Errorf("QR code must be a valid URL")
 	}
-	
+
 	// Check for required parameters based on version
 	if strings.Contains(qrCode, "nVersao=100") {
 		requiredParams := []string{"chNFe=", "tpAmb=", "dhEmi=", "vNF=", "digVal="}
@@ -352,7 +352,7 @@ func (q *QRCode) ValidateQRCode(qrCode string) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -378,13 +378,13 @@ func GetStateConsultationURL(uf string, environment int) string {
 		},
 		// Add more states as needed
 	}
-	
+
 	if stateURLs, exists := consultationURLs[strings.ToUpper(uf)]; exists {
 		if url, exists := stateURLs[environment]; exists {
 			return url
 		}
 	}
-	
+
 	// Default to SVRS if state not found
 	if environment == 1 {
 		return "https://www.sefaz.rs.gov.br/NFCE/NFCE-COM.aspx"
@@ -394,19 +394,19 @@ func GetStateConsultationURL(uf string, environment int) string {
 
 // QRCodeBuilder provides a fluent interface for QR code generation
 type QRCodeBuilder struct {
-	qrcode *QRCode
-	chNFe  string
-	url    string
-	tpAmb  string
-	dhEmi  string
-	vNF    string
-	vICMS  string
-	digVal string
-	cDest  string
-	token  string
-	idToken string
-	tpEmis int
-	idDest int
+	qrcode     *QRCode
+	chNFe      string
+	url        string
+	tpAmb      string
+	dhEmi      string
+	vNF        string
+	vICMS      string
+	digVal     string
+	cDest      string
+	token      string
+	idToken    string
+	tpEmis     int
+	idDest     int
 	assinatura string
 }
 
@@ -497,7 +497,7 @@ func (b *QRCodeBuilder) Build() (string, error) {
 	if b.chNFe == "" || b.url == "" {
 		return "", fmt.Errorf("chNFe and url are required")
 	}
-	
+
 	switch b.qrcode.Version {
 	case "1.00":
 		return b.qrcode.generate100(b.chNFe, b.url, b.tpAmb, b.dhEmi, b.vNF, b.digVal), nil

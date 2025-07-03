@@ -143,12 +143,12 @@ func GetCertificateType(cert *x509.Certificate) (CertificateType, error) {
 	// Check certificate policies to determine type
 	for _, policy := range cert.PolicyIdentifiers {
 		policyStr := policy.String()
-		
+
 		// ICP-Brasil A1 certificates typically have specific OIDs
 		if strings.Contains(policyStr, "2.16.76.1.2.1") {
 			return TypeA1, nil
 		}
-		
+
 		// ICP-Brasil A3 certificates typically have different OIDs
 		if strings.Contains(policyStr, "2.16.76.1.2.2") {
 			return TypeA3, nil
@@ -198,7 +198,7 @@ func ValidateForNFeUse(cert *x509.Certificate) error {
 			break
 		}
 	}
-	
+
 	if !hasClientAuth {
 		return errors.NewCertificateError("certificate must have client authentication extended key usage for NFe", nil)
 	}
@@ -213,7 +213,7 @@ func ExtractCNPJFromCertificate(cert *x509.Certificate) string {
 	}
 
 	subject := cert.Subject.String()
-	
+
 	// Look for CNPJ pattern in subject (14 digits)
 	// CNPJ is usually in the CN field in the format "Name:CNPJ"
 	if cert.Subject.CommonName != "" {
@@ -245,7 +245,7 @@ func ExtractCPFFromCertificate(cert *x509.Certificate) string {
 	}
 
 	subject := cert.Subject.String()
-	
+
 	// Look for CPF pattern in subject (11 digits)
 	parts := strings.Fields(subject)
 	for _, part := range parts {
@@ -272,7 +272,7 @@ func GetCertificateFingerprint(cert *x509.Certificate) string {
 	if cert == nil {
 		return ""
 	}
-	
+
 	// This is already implemented in the main certificate interface,
 	// but we provide it here for convenience
 	return fmt.Sprintf("%x", cert.Raw)

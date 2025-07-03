@@ -25,7 +25,7 @@ type A1Certificate struct {
 	chain       []*x509.Certificate
 	config      *Config
 	mutex       sync.RWMutex
-	
+
 	// Cache for validation results
 	lastValidation time.Time
 	isValidCached  bool
@@ -41,7 +41,7 @@ func NewA1CertificateLoader(config *Config) *A1CertificateLoader {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	return &A1CertificateLoader{
 		config: config,
 	}
@@ -71,14 +71,14 @@ func (loader *A1CertificateLoader) LoadFromBytes(p12Data []byte, password string
 	// Parse PKCS#12 data - try Decode first, fallback to ToPEM
 	privateKey, certificate, err := pkcs12.Decode(p12Data, password)
 	var caCerts []*x509.Certificate
-	
+
 	if err != nil {
 		// If Decode fails, try ToPEM method (works with more PKCS#12 structures)
 		blocks, pemErr := pkcs12.ToPEM(p12Data, password)
 		if pemErr != nil {
 			return nil, errors.NewCertificateError("failed to decode PKCS#12 certificate", err)
 		}
-		
+
 		// Extract certificate and private key from PEM blocks
 		for _, block := range blocks {
 			switch block.Type {
@@ -108,7 +108,7 @@ func (loader *A1CertificateLoader) LoadFromBytes(p12Data []byte, password string
 				}
 			}
 		}
-		
+
 		if certificate == nil || privateKey == nil {
 			return nil, errors.NewCertificateError("failed to extract certificate or private key from PKCS#12 data", err)
 		}
@@ -277,23 +277,23 @@ func (a1 *A1Certificate) GetCertificate() *x509.Certificate {
 // IsValid checks if the certificate is currently valid (not expired) and uses cache
 func (a1 *A1Certificate) IsValid() bool {
 	a1.mutex.RLock()
-	
+
 	// Check cache validity
 	if time.Since(a1.lastValidation) < a1.config.CacheTimeout {
 		result := a1.isValidCached
 		a1.mutex.RUnlock()
 		return result
 	}
-	
+
 	a1.mutex.RUnlock()
-	
+
 	// Update cache
 	a1.mutex.Lock()
 	defer a1.mutex.Unlock()
-	
+
 	a1.isValidCached = IsCertificateValidForSigning(a1.certificate)
 	a1.lastValidation = time.Now()
-	
+
 	return a1.isValidCached
 }
 
@@ -379,7 +379,7 @@ func (a1 *A1Certificate) Close() error {
 
 	a1.certificate = nil
 	a1.chain = nil
-	
+
 	return nil
 }
 
@@ -399,11 +399,11 @@ func (a1 *A1Certificate) ExportToPKCS12(password string) ([]byte, error) {
 
 	// Use software.sslmate.com/src/go-pkcs12 for encoding
 	// This library supports both decoding and encoding PKCS#12
-	
+
 	// Create a chain with the certificate and any intermediate certificates
 	var chain []*x509.Certificate
 	chain = append(chain, a1.certificate)
-	
+
 	// Add intermediate certificates if available
 	if a1.chain != nil && len(a1.chain) > 0 {
 		chain = append(chain, a1.chain...)
@@ -415,7 +415,7 @@ func (a1 *A1Certificate) ExportToPKCS12(password string) ([]byte, error) {
 	if len(chain) > 1 {
 		caCerts = chain[1:]
 	}
-	
+
 	p12Data, err := sslmatePkcs12.Encode(rand.Reader, a1.privateKey, a1.certificate, caCerts, password)
 	if err != nil {
 		return nil, errors.NewCertificateError("failed to encode PKCS#12", err)
@@ -443,7 +443,6 @@ func (a1 *A1Certificate) ValidateICPBrasilChain() error {
 	// Validate chain against ICP-Brasil root certificates
 	return ValidateICPBrasilCertificateChain(chain)
 }
-
 
 // IsICPBrasilCertificate checks if the certificate is from ICP-Brasil
 func (a1 *A1Certificate) IsICPBrasilCertificate() bool {

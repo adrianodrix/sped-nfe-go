@@ -57,7 +57,7 @@ const (
 	SE UF = 28 // Sergipe
 	SP UF = 35 // São Paulo
 	TO UF = 17 // Tocantins
-	
+
 	// Virtual SEFAZs and National Agencies
 	AN    UF = 91 // Ambiente Nacional
 	SVAN  UF = 92 // SEFAZ Virtual do Ambiente Nacional
@@ -69,39 +69,72 @@ const (
 // String returns the string representation of UF
 func (u UF) String() string {
 	switch u {
-	case AC: return "AC"
-	case AL: return "AL"
-	case AM: return "AM"
-	case AP: return "AP"
-	case BA: return "BA"
-	case CE: return "CE"
-	case DF: return "DF"
-	case ES: return "ES"
-	case GO: return "GO"
-	case MA: return "MA"
-	case MG: return "MG"
-	case MS: return "MS"
-	case MT: return "MT"
-	case PA: return "PA"
-	case PB: return "PB"
-	case PE: return "PE"
-	case PI: return "PI"
-	case PR: return "PR"
-	case RJ: return "RJ"
-	case RN: return "RN"
-	case RO: return "RO"
-	case RR: return "RR"
-	case RS: return "RS"
-	case SC: return "SC"
-	case SE: return "SE"
-	case SP: return "SP"
-	case TO: return "TO"
-	case AN: return "AN"
-	case SVAN: return "SVAN"
-	case SVRS: return "SVRS"
-	case SVCAN: return "SVCAN"
-	case SVCRS: return "SVCRS"
-	default: return "UNKNOWN"
+	case AC:
+		return "AC"
+	case AL:
+		return "AL"
+	case AM:
+		return "AM"
+	case AP:
+		return "AP"
+	case BA:
+		return "BA"
+	case CE:
+		return "CE"
+	case DF:
+		return "DF"
+	case ES:
+		return "ES"
+	case GO:
+		return "GO"
+	case MA:
+		return "MA"
+	case MG:
+		return "MG"
+	case MS:
+		return "MS"
+	case MT:
+		return "MT"
+	case PA:
+		return "PA"
+	case PB:
+		return "PB"
+	case PE:
+		return "PE"
+	case PI:
+		return "PI"
+	case PR:
+		return "PR"
+	case RJ:
+		return "RJ"
+	case RN:
+		return "RN"
+	case RO:
+		return "RO"
+	case RR:
+		return "RR"
+	case RS:
+		return "RS"
+	case SC:
+		return "SC"
+	case SE:
+		return "SE"
+	case SP:
+		return "SP"
+	case TO:
+		return "TO"
+	case AN:
+		return "AN"
+	case SVAN:
+		return "SVAN"
+	case SVRS:
+		return "SVRS"
+	case SVCAN:
+		return "SVCAN"
+	case SVCRS:
+		return "SVCRS"
+	default:
+		return "UNKNOWN"
 	}
 }
 

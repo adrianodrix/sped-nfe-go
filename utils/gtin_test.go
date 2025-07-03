@@ -105,8 +105,8 @@ func TestGetGTINType(t *testing.T) {
 		{"7891000100103", "EAN-13", false},
 		{"00036000291452", "GTIN-14", false},
 		{"123-456-789-012", "UPC-A", false}, // With separators
-		{"12345", "", true}, // Invalid length
-		{"123456789012345", "", true}, // Invalid length
+		{"12345", "", true},                 // Invalid length
+		{"123456789012345", "", true},       // Invalid length
 	}
 
 	for _, test := range tests {
@@ -128,15 +128,15 @@ func TestIsValidGTINCheckDigit(t *testing.T) {
 		gtin     string
 		expected bool
 	}{
-		{"7891000100103", true},  // Valid EAN-13
-		{"036000291452", true},   // Valid UPC-A
-		{"12345670", true},       // Valid EAN-8
-		{"00036000291452", true}, // Valid GTIN-14
-		{"7891000100104", false}, // Invalid EAN-13
-		{"123456789013", false},  // Invalid UPC-A
-		{"12345671", false},      // Invalid EAN-8
+		{"7891000100103", true},   // Valid EAN-13
+		{"036000291452", true},    // Valid UPC-A
+		{"12345670", true},        // Valid EAN-8
+		{"00036000291452", true},  // Valid GTIN-14
+		{"7891000100104", false},  // Invalid EAN-13
+		{"123456789013", false},   // Invalid UPC-A
+		{"12345671", false},       // Invalid EAN-8
 		{"01234567890129", false}, // Invalid GTIN-14
-		{"1234567", false},       // Too short
+		{"1234567", false},        // Too short
 	}
 
 	for _, test := range tests {
@@ -154,7 +154,7 @@ func TestCalculateGTINCheckDigit(t *testing.T) {
 	}{
 		{"789100010010", 3},  // EAN-13 partial
 		{"03600029145", 2},   // UPC-A partial
-		{"1234567", 0},      // EAN-8 partial
+		{"1234567", 0},       // EAN-8 partial
 		{"0003600029145", 2}, // GTIN-14 partial
 	}
 

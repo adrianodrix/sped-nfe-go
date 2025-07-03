@@ -20,12 +20,12 @@ import (
 
 // WSSecurityConfig holds configuration for WS-Security
 type WSSecurityConfig struct {
-	Certificate    *x509.Certificate `json:"-"`
-	PrivateKey     *rsa.PrivateKey   `json:"-"`
-	TimestampTTL   time.Duration     `json:"timestampTTL"`
-	IncludeToken   bool              `json:"includeToken"`
-	SignTimestamp  bool              `json:"signTimestamp"`
-	SignBody       bool              `json:"signBody"`
+	Certificate   *x509.Certificate `json:"-"`
+	PrivateKey    *rsa.PrivateKey   `json:"-"`
+	TimestampTTL  time.Duration     `json:"timestampTTL"`
+	IncludeToken  bool              `json:"includeToken"`
+	SignTimestamp bool              `json:"signTimestamp"`
+	SignBody      bool              `json:"signBody"`
 }
 
 // WSSecurityManager handles WS-Security operations
@@ -44,7 +44,7 @@ type BinarySecurityToken struct {
 
 // SecurityTokenReference represents a security token reference
 type SecurityTokenReference struct {
-	XMLName   xml.Name `xml:"wsse:SecurityTokenReference"`
+	XMLName   xml.Name  `xml:"wsse:SecurityTokenReference"`
 	Reference Reference `xml:"wsse:Reference"`
 }
 
@@ -120,17 +120,17 @@ type SignatureValue struct {
 
 // KeyInfo contains key information
 type KeyInfo struct {
-	XMLName                 xml.Name                 `xml:"ds:KeyInfo"`
-	SecurityTokenReference  *SecurityTokenReference  `xml:"wsse:SecurityTokenReference,omitempty"`
+	XMLName                xml.Name                `xml:"ds:KeyInfo"`
+	SecurityTokenReference *SecurityTokenReference `xml:"wsse:SecurityTokenReference,omitempty"`
 }
 
 // Enhanced SecurityHeader with signature support
 type EnhancedSecurityHeader struct {
-	XMLName              xml.Name             `xml:"wsse:Security"`
-	XmlnsWsse            string               `xml:"xmlns:wsse,attr"`
-	XmlnsWsu             string               `xml:"xmlns:wsu,attr"`
-	XmlnsDs              string               `xml:"xmlns:ds,attr,omitempty"`
-	BinarySecurityToken  *BinarySecurityToken `xml:"wsse:BinarySecurityToken,omitempty"`
+	XMLName             xml.Name             `xml:"wsse:Security"`
+	XmlnsWsse           string               `xml:"xmlns:wsse,attr"`
+	XmlnsWsu            string               `xml:"xmlns:wsu,attr"`
+	XmlnsDs             string               `xml:"xmlns:ds,attr,omitempty"`
+	BinarySecurityToken *BinarySecurityToken `xml:"wsse:BinarySecurityToken,omitempty"`
 	Timestamp           *Timestamp           `xml:"wsu:Timestamp,omitempty"`
 	Signature           *Signature           `xml:"ds:Signature,omitempty"`
 }
@@ -140,7 +140,7 @@ const (
 	RSAWithSHA256Algorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
 	SHA256DigestAlgorithm  = "http://www.w3.org/2001/04/xmlenc#sha256"
 	C14NAlgorithm          = "http://www.w3.org/2001/10/xml-exc-c14n#"
-	
+
 	// Token value types
 	X509TokenValueType = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"
 	Base64EncodingType = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary"
@@ -313,11 +313,11 @@ func (wsm *WSSecurityManager) createSignature(timestampID, tokenID string) (*Sig
 	// 2. Hash the canonicalized SignedInfo
 	// 3. Sign the hash with the private key
 	// 4. Base64 encode the signature
-	
+
 	// Simplified signature creation for demo purposes
 	signatureValueID := "SignatureValue-" + generateID()
 	signatureBytes := []byte("placeholder-signature-value") // In real implementation, compute actual signature
-	
+
 	signature.SignatureValue = SignatureValue{
 		ID:    signatureValueID,
 		Value: base64.StdEncoding.EncodeToString(signatureBytes),
@@ -458,7 +458,7 @@ func generateID() string {
 	// Generate random bytes
 	bytes := make([]byte, 16)
 	rand.Read(bytes)
-	
+
 	// Convert to hex string
 	return fmt.Sprintf("%x", bytes)
 }
@@ -513,7 +513,7 @@ func GetCertificateFingerprint(cert *x509.Certificate) string {
 	if cert == nil {
 		return ""
 	}
-	
+
 	hash := sha256.Sum256(cert.Raw)
 	return strings.ToUpper(fmt.Sprintf("%x", hash))
 }
@@ -523,7 +523,7 @@ func GetCertificateSubject(cert *x509.Certificate) string {
 	if cert == nil {
 		return ""
 	}
-	
+
 	return cert.Subject.String()
 }
 
@@ -532,7 +532,7 @@ func GetCertificateIssuer(cert *x509.Certificate) string {
 	if cert == nil {
 		return ""
 	}
-	
+
 	return cert.Issuer.String()
 }
 
@@ -541,7 +541,7 @@ func IsCertificateValid(cert *x509.Certificate) bool {
 	if cert == nil {
 		return false
 	}
-	
+
 	now := time.Now()
 	return now.After(cert.NotBefore) && now.Before(cert.NotAfter)
 }

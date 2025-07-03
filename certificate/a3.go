@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/adrianodrix/sped-nfe-go/errors"
 	"github.com/ThalesIgnite/crypto11"
+	"github.com/adrianodrix/sped-nfe-go/errors"
 )
 
 // A3Certificate represents a hardware-based certificate (A3 type) stored in PKCS#11 tokens
@@ -22,7 +22,7 @@ type A3Certificate struct {
 	tokenLabel  string
 	config      *Config
 	mutex       sync.RWMutex
-	
+
 	// Cache for validation results
 	lastValidation time.Time
 	isValidCached  bool
@@ -37,16 +37,16 @@ type A3CertificateLoader struct {
 type PKCS11Config struct {
 	// Path to the PKCS#11 library (.so/.dll file)
 	LibraryPath string `json:"libraryPath"`
-	
+
 	// Token label to use (empty to use first available)
 	TokenLabel string `json:"tokenLabel"`
-	
+
 	// Token PIN for authentication
 	PIN string `json:"pin"`
-	
+
 	// Slot number (optional, will search all slots if not specified)
 	Slot *uint `json:"slot,omitempty"`
-	
+
 	// Certificate label or ID to search for
 	CertificateLabel string `json:"certificateLabel"`
 	CertificateID    []byte `json:"certificateId"`
@@ -54,13 +54,13 @@ type PKCS11Config struct {
 
 // TokenInfo holds information about a PKCS#11 token
 type TokenInfo struct {
-	Slot        uint   `json:"slot"`
-	Label       string `json:"label"`
+	Slot         uint   `json:"slot"`
+	Label        string `json:"label"`
 	Manufacturer string `json:"manufacturer"`
-	Model       string `json:"model"`
+	Model        string `json:"model"`
 	SerialNumber string `json:"serialNumber"`
-	IsPresent   bool   `json:"isPresent"`
-	HasTokens   bool   `json:"hasTokens"`
+	IsPresent    bool   `json:"isPresent"`
+	HasTokens    bool   `json:"hasTokens"`
 }
 
 // NewA3CertificateLoader creates a new A3 certificate loader with the given configuration
@@ -68,7 +68,7 @@ func NewA3CertificateLoader(config *Config) *A3CertificateLoader {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	return &A3CertificateLoader{
 		config: config,
 	}
@@ -210,13 +210,13 @@ func ListTokens(libraryPath string) ([]TokenInfo, error) {
 	// In a real implementation, you would use the PKCS#11 API directly to get detailed token info
 	tokens := []TokenInfo{
 		{
-			Slot:        0,
-			Label:       "Token Slot 0",
+			Slot:         0,
+			Label:        "Token Slot 0",
 			Manufacturer: "Unknown",
-			Model:       "Unknown",
+			Model:        "Unknown",
 			SerialNumber: "Unknown",
-			IsPresent:   true,
-			HasTokens:   true,
+			IsPresent:    true,
+			HasTokens:    true,
 		},
 	}
 
@@ -281,23 +281,23 @@ func (a3 *A3Certificate) GetCertificate() *x509.Certificate {
 // IsValid checks if the certificate is currently valid (not expired) and uses cache
 func (a3 *A3Certificate) IsValid() bool {
 	a3.mutex.RLock()
-	
+
 	// Check cache validity
 	if time.Since(a3.lastValidation) < a3.config.CacheTimeout {
 		result := a3.isValidCached
 		a3.mutex.RUnlock()
 		return result
 	}
-	
+
 	a3.mutex.RUnlock()
-	
+
 	// Update cache
 	a3.mutex.Lock()
 	defer a3.mutex.Unlock()
-	
+
 	a3.isValidCached = IsCertificateValidForSigning(a3.certificate)
 	a3.lastValidation = time.Now()
-	
+
 	return a3.isValidCached
 }
 
@@ -380,7 +380,7 @@ func (a3 *A3Certificate) Close() error {
 	defer a3.mutex.Unlock()
 
 	var err error
-	
+
 	// Close PKCS#11 context
 	if a3.context != nil {
 		err = a3.context.Close()
@@ -390,7 +390,7 @@ func (a3 *A3Certificate) Close() error {
 	// Clear references (private key is handled by crypto11)
 	a3.certificate = nil
 	a3.privateKey = nil
-	
+
 	return err
 }
 
@@ -528,7 +528,7 @@ func GetCommonPKCS11Paths() []string {
 // FindPKCS11Library attempts to find a working PKCS#11 library automatically
 func FindPKCS11Library() (string, error) {
 	paths := GetCommonPKCS11Paths()
-	
+
 	for _, path := range paths {
 		// Try to load the library (simplified check)
 		config := &crypto11.Config{Path: path}
@@ -538,6 +538,6 @@ func FindPKCS11Library() (string, error) {
 			return path, nil
 		}
 	}
-	
+
 	return "", errors.NewCertificateError("no working PKCS#11 library found", nil)
 }

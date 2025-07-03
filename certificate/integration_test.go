@@ -99,7 +99,7 @@ func TestCertificateValidationIntegration(t *testing.T) {
 		t.Error("Certificate should be recognized as ICP-Brasil")
 	}
 
-	// Test NFe validation - note: since LoadA1FromFile returns *A1Certificate, 
+	// Test NFe validation - note: since LoadA1FromFile returns *A1Certificate,
 	// we need to cast to interface to use ValidateForNFe
 	var certInterface Certificate = cert
 	err = ValidateForNFe(certInterface)

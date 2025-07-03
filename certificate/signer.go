@@ -26,22 +26,22 @@ type XMLSigner struct {
 type SignerConfig struct {
 	// DigestAlgorithm specifies the digest algorithm for XML signing
 	DigestAlgorithm crypto.Hash `json:"digestAlgorithm"`
-	
+
 	// SignatureAlgorithm specifies the signature algorithm
 	SignatureAlgorithm string `json:"signatureAlgorithm"`
-	
+
 	// CanonicalizationAlgorithm for XML canonicalization
 	CanonicalizationAlgorithm string `json:"canonicalizationAlgorithm"`
-	
+
 	// IncludeCertificate determines if certificate should be included in signature
 	IncludeCertificate bool `json:"includeCertificate"`
-	
+
 	// SignatureElementID specifies the ID for the signature element
 	SignatureElementID string `json:"signatureElementId"`
-	
+
 	// AddTimestamp includes a timestamp in the signature
 	AddTimestamp bool `json:"addTimestamp"`
-	
+
 	// ValidateXML enables XML validation before signing
 	ValidateXML bool `json:"validateXml"`
 }
@@ -60,7 +60,7 @@ func NewXMLSigner(certificate Certificate, config *SignerConfig) *XMLSigner {
 	if config == nil {
 		config = DefaultSignerConfig()
 	}
-	
+
 	return &XMLSigner{
 		certificate: certificate,
 		config:      config,
@@ -136,7 +136,7 @@ func (signer *XMLSigner) SignXMLElement(xmlContent, elementID string) (string, *
 	if xmlContent == "" {
 		return "", nil, errors.NewValidationError("XML content cannot be empty", "xmlContent", "")
 	}
-	
+
 	if elementID == "" {
 		return "", nil, errors.NewValidationError("element ID cannot be empty", "elementID", "")
 	}
@@ -271,7 +271,7 @@ func (signer *XMLSigner) extractSignatureInfo(signedXML string) (*SignatureInfo,
 	// Find signature elements
 	sigValueElem := doc.FindElement(".//ds:SignatureValue")
 	digestValueElem := doc.FindElement(".//ds:DigestValue")
-	
+
 	info := &SignatureInfo{
 		Timestamp: time.Now(),
 		Algorithm: signer.config.SignatureAlgorithm,
@@ -340,7 +340,7 @@ func (signer *XMLSigner) createSignatureTemplate(referenceURI string, digest []b
 func (signer *XMLSigner) extractSignedInfo(template string) string {
 	doc := etree.NewDocument()
 	doc.ReadFromString(template)
-	
+
 	signedInfo := doc.FindElement(".//ds:SignedInfo")
 	if signedInfo == nil {
 		return ""
@@ -349,7 +349,7 @@ func (signer *XMLSigner) extractSignedInfo(template string) string {
 	doc2 := etree.NewDocument()
 	doc2.SetRoot(signedInfo.Copy())
 	result, _ := doc2.WriteToString()
-	
+
 	return result
 }
 
@@ -449,15 +449,15 @@ func (signer *XMLSigner) signXMLManually(xmlContent string) (string, error) {
 
 	// Create a basic signature element
 	signature := signer.createBasicSignatureElement(xmlContent)
-	
+
 	// Insert signature into the document
 	doc.Root().AddChild(signature)
-	
+
 	result, err := doc.WriteToString()
 	if err != nil {
 		return "", err
 	}
-	
+
 	return result, nil
 }
 
@@ -472,13 +472,13 @@ func (signer *XMLSigner) verifyXMLSignatureManually(signedXML string) error {
 	if err := doc.ReadFromString(signedXML); err != nil {
 		return err
 	}
-	
+
 	// Check if signature element exists
 	sigElement := doc.FindElement(".//ds:Signature")
 	if sigElement == nil {
 		return errors.NewCertificateError("no signature found in XML", nil)
 	}
-	
+
 	return nil
 }
 
@@ -486,24 +486,24 @@ func (signer *XMLSigner) verifyXMLSignatureManually(signedXML string) error {
 func (signer *XMLSigner) createBasicSignatureElement(xmlContent string) *etree.Element {
 	signature := etree.NewElement("ds:Signature")
 	signature.CreateAttr("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#")
-	
+
 	signedInfo := signature.CreateElement("ds:SignedInfo")
 	signedInfo.CreateElement("ds:CanonicalizationMethod").CreateAttr("Algorithm", signer.config.CanonicalizationAlgorithm)
 	signedInfo.CreateElement("ds:SignatureMethod").CreateAttr("Algorithm", signer.config.SignatureAlgorithm)
-	
+
 	reference := signedInfo.CreateElement("ds:Reference")
 	reference.CreateAttr("URI", "")
 	reference.CreateElement("ds:DigestMethod").CreateAttr("Algorithm", signer.getDigestMethodURI())
-	
+
 	// Calculate digest of the XML content
 	digest := signer.calculateDigest([]byte(xmlContent))
 	reference.CreateElement("ds:DigestValue").SetText(base64.StdEncoding.EncodeToString(digest))
-	
+
 	// Create signature value (simplified)
 	signedInfoBytes := []byte(signedInfo.Text())
 	signatureValue, _ := signer.certificate.Sign(signedInfoBytes, signer.config.DigestAlgorithm)
 	signature.CreateElement("ds:SignatureValue").SetText(base64.StdEncoding.EncodeToString(signatureValue))
-	
+
 	// Add certificate info if required
 	if signer.config.IncludeCertificate {
 		keyInfo := signature.CreateElement("ds:KeyInfo")
@@ -513,7 +513,7 @@ func (signer *XMLSigner) createBasicSignatureElement(xmlContent string) *etree.E
 			x509Data.CreateElement("ds:X509Certificate").SetText(base64.StdEncoding.EncodeToString(cert.Raw))
 		}
 	}
-	
+
 	return signature
 }
 
@@ -539,12 +539,12 @@ func ValidateXMLSignature(signedXML string) error {
 	if err := doc.ReadFromString(signedXML); err != nil {
 		return errors.NewCertificateError("failed to parse signed XML", err)
 	}
-	
+
 	// Check if signature element exists
 	sigElement := doc.FindElement(".//ds:Signature")
 	if sigElement == nil {
 		return errors.NewCertificateError("no signature found in XML", nil)
 	}
-	
+
 	return nil
 }

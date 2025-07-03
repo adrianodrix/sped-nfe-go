@@ -29,10 +29,10 @@ type CacheEntry struct {
 type CacheConfig struct {
 	// MaxSize is the maximum number of certificates to cache (0 = unlimited)
 	MaxSize int `json:"maxSize"`
-	
+
 	// TTL is the time-to-live for cached certificates
 	TTL time.Duration `json:"ttl"`
-	
+
 	// CleanupInterval is how often to run cache cleanup
 	CleanupInterval time.Duration `json:"cleanupInterval"`
 }

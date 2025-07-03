@@ -80,27 +80,27 @@ func TestIsValidXMLChar(t *testing.T) {
 		char     rune
 		expected bool
 	}{
-		{0x09, true},   // Tab
-		{0x0A, true},   // LF
-		{0x0D, true},   // CR
-		{0x20, true},   // Space
-		{0x7F, true},   // DEL
-		{0xD7FF, true}, // End of first valid range
-		{0xE000, true}, // Start of second valid range
-		{0xFFFD, true}, // End of second valid range
-		{0x10000, true}, // Start of third valid range
+		{0x09, true},     // Tab
+		{0x0A, true},     // LF
+		{0x0D, true},     // CR
+		{0x20, true},     // Space
+		{0x7F, true},     // DEL
+		{0xD7FF, true},   // End of first valid range
+		{0xE000, true},   // Start of second valid range
+		{0xFFFD, true},   // End of second valid range
+		{0x10000, true},  // Start of third valid range
 		{0x10FFFF, true}, // End of third valid range
-		{0x00, false},  // NULL
-		{0x01, false},  // Control char
-		{0x08, false},  // Backspace
-		{0x0B, false},  // Vertical tab
-		{0x0C, false},  // Form feed
-		{0x0E, false},  // Shift out
-		{0x1F, false},  // Unit separator
-		{0xD800, false}, // Surrogate
-		{0xDFFF, false}, // Surrogate
-		{0xFFFE, false}, // Invalid
-		{0xFFFF, false}, // Invalid
+		{0x00, false},    // NULL
+		{0x01, false},    // Control char
+		{0x08, false},    // Backspace
+		{0x0B, false},    // Vertical tab
+		{0x0C, false},    // Form feed
+		{0x0E, false},    // Shift out
+		{0x1F, false},    // Unit separator
+		{0xD800, false},  // Surrogate
+		{0xDFFF, false},  // Surrogate
+		{0xFFFE, false},  // Invalid
+		{0xFFFF, false},  // Invalid
 	}
 
 	for _, test := range tests {
@@ -230,8 +230,8 @@ func TestTruncateString(t *testing.T) {
 		{"Hello World", 5, "Hello"},
 		{"Test", 10, "Test"},
 		{"", 5, ""},
-		{"Café", 3, "Caf"}, // Unicode handling
-		{"测试", 1, "测"}, // Chinese characters
+		{"Café", 3, "Caf"},      // Unicode handling
+		{"测试", 1, "测"},          // Chinese characters
 		{"abcdef", 6, "abcdef"}, // Exact length
 	}
 
@@ -376,11 +376,11 @@ func TestFormatPhone(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"1134567890", "(11) 3456-7890"},      // Fixed line
-		{"11987654321", "(11) 98765-4321"},    // Mobile
-		{"123", "123"},                        // Invalid, return original
-		{"12345678901", "(12) 34567-8901"},        // 11 digits, format as mobile
-		{"(11) 3456-7890", "(11) 3456-7890"},  // Fixed line with formatting
+		{"1134567890", "(11) 3456-7890"},       // Fixed line
+		{"11987654321", "(11) 98765-4321"},     // Mobile
+		{"123", "123"},                         // Invalid, return original
+		{"12345678901", "(12) 34567-8901"},     // 11 digits, format as mobile
+		{"(11) 3456-7890", "(11) 3456-7890"},   // Fixed line with formatting
 		{"(11) 98765-4321", "(11) 98765-4321"}, // Mobile with formatting
 	}
 

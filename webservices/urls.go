@@ -20,23 +20,23 @@ type Service struct {
 
 // Environment represents either production or testing environment
 type Environment struct {
-	NfeStatusServico      *Service `json:"NfeStatusServico,omitempty"`
-	NfeAutorizacao        *Service `json:"NfeAutorizacao,omitempty"`
-	NfeConsultaProtocolo  *Service `json:"NfeConsultaProtocolo,omitempty"`
-	NfeInutilizacao       *Service `json:"NfeInutilizacao,omitempty"`
-	NfeRetAutorizacao     *Service `json:"NfeRetAutorizacao,omitempty"`
-	RecepcaoEvento        *Service `json:"RecepcaoEvento,omitempty"`
-	NfeConsultaCadastro   *Service `json:"NfeConsultaCadastro,omitempty"`
-	NfeDistribuicaoDFe    *Service `json:"NfeDistribuicaoDFe,omitempty"`
-	NfeConsultaDest       *Service `json:"NfeConsultaDest,omitempty"`
-	NfeDownloadNF         *Service `json:"NfeDownloadNF,omitempty"`
-	RecepcaoEPEC          *Service `json:"RecepcaoEPEC,omitempty"`
+	NfeStatusServico     *Service `json:"NfeStatusServico,omitempty"`
+	NfeAutorizacao       *Service `json:"NfeAutorizacao,omitempty"`
+	NfeConsultaProtocolo *Service `json:"NfeConsultaProtocolo,omitempty"`
+	NfeInutilizacao      *Service `json:"NfeInutilizacao,omitempty"`
+	NfeRetAutorizacao    *Service `json:"NfeRetAutorizacao,omitempty"`
+	RecepcaoEvento       *Service `json:"RecepcaoEvento,omitempty"`
+	NfeConsultaCadastro  *Service `json:"NfeConsultaCadastro,omitempty"`
+	NfeDistribuicaoDFe   *Service `json:"NfeDistribuicaoDFe,omitempty"`
+	NfeConsultaDest      *Service `json:"NfeConsultaDest,omitempty"`
+	NfeDownloadNF        *Service `json:"NfeDownloadNF,omitempty"`
+	RecepcaoEPEC         *Service `json:"RecepcaoEPEC,omitempty"`
 }
 
 // StateWebservices represents all webservices for a specific state
 type StateWebservices struct {
-	Producao     *Environment `json:"producao,omitempty"`
-	Homologacao  *Environment `json:"homologacao,omitempty"`
+	Producao    *Environment `json:"producao,omitempty"`
+	Homologacao *Environment `json:"homologacao,omitempty"`
 }
 
 // WebserviceConfig holds the complete webservice configuration
@@ -69,17 +69,17 @@ var AuthorizeMapping = map[types.ModeloNFe]map[types.UF]string{
 type ServiceType string
 
 const (
-	ServiceStatusServico      ServiceType = "NfeStatusServico"
-	ServiceAutorizacao        ServiceType = "NfeAutorizacao"
-	ServiceConsultaProtocolo  ServiceType = "NfeConsultaProtocolo"
-	ServiceInutilizacao       ServiceType = "NfeInutilizacao"
-	ServiceRetAutorizacao     ServiceType = "NfeRetAutorizacao"
-	ServiceRecepcaoEvento     ServiceType = "RecepcaoEvento"
-	ServiceConsultaCadastro   ServiceType = "NfeConsultaCadastro"
-	ServiceDistribuicaoDFe    ServiceType = "NfeDistribuicaoDFe"
-	ServiceConsultaDest       ServiceType = "NfeConsultaDest"
-	ServiceDownloadNF         ServiceType = "NfeDownloadNF"
-	ServiceRecepcaoEPEC       ServiceType = "RecepcaoEPEC"
+	ServiceStatusServico     ServiceType = "NfeStatusServico"
+	ServiceAutorizacao       ServiceType = "NfeAutorizacao"
+	ServiceConsultaProtocolo ServiceType = "NfeConsultaProtocolo"
+	ServiceInutilizacao      ServiceType = "NfeInutilizacao"
+	ServiceRetAutorizacao    ServiceType = "NfeRetAutorizacao"
+	ServiceRecepcaoEvento    ServiceType = "RecepcaoEvento"
+	ServiceConsultaCadastro  ServiceType = "NfeConsultaCadastro"
+	ServiceDistribuicaoDFe   ServiceType = "NfeDistribuicaoDFe"
+	ServiceConsultaDest      ServiceType = "NfeConsultaDest"
+	ServiceDownloadNF        ServiceType = "NfeDownloadNF"
+	ServiceRecepcaoEPEC      ServiceType = "RecepcaoEPEC"
 )
 
 // NFe 4.0 Model 55 Webservices Configuration
@@ -568,7 +568,7 @@ func getServiceFromEnvironment(env *Environment, serviceType ServiceType) *Servi
 	if env == nil {
 		return nil
 	}
-	
+
 	switch serviceType {
 	case ServiceStatusServico:
 		return env.NfeStatusServico

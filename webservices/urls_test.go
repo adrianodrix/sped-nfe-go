@@ -53,6 +53,15 @@ func TestGetWebserviceURL(t *testing.T) {
 		{types.AM, types.AmbienteProducao, types.ModeloNFe55, ServiceAutorizacao, false, "AM producao autorizacao"},
 		{types.AN, types.AmbienteHomologacao, types.ModeloNFe55, ServiceDistribuicaoDFe, false, "AN homologacao distribuicao"},
 		{types.SVRS, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "SVRS homologacao status"},
+		// Test previously failing states
+		{types.GO, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "GO homologacao status"},
+		{types.MA, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "MA via SVAN homologacao status"},
+		{types.MT, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "MT homologacao status"},
+		{types.MS, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "MS homologacao status"},
+		{types.MG, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "MG homologacao status"},
+		{types.PE, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "PE homologacao status"},
+		{types.SVAN, types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, false, "SVAN homologacao status"},
+		// Error cases
 		{types.UF(999), types.AmbienteHomologacao, types.ModeloNFe55, ServiceStatusServico, true, "invalid UF"},
 		{types.AM, types.AmbienteHomologacao, types.ModeloNFe55, ServiceType("InvalidService"), true, "invalid service"},
 	}

@@ -563,16 +563,11 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 	// 8. Sign the XML if certificate is available
 	if t.certificate != nil {
 		if cert, ok := t.certificate.(Certificate); ok && cert != nil {
-			fmt.Printf("[DEBUG] Certificado encontrado, iniciando assinatura XMLDSig...\n")
-			
 			// Convert request to XML for signing
 			requestXML, err := xml.Marshal(request)
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal request for signing: %v", err)
 			}
-			
-			fmt.Printf("[DEBUG] XML antes da assinatura: %s\n", string(requestXML))
-			fmt.Printf("[DEBUG] ID do elemento para assinar: %s\n", idInut)
 
 			// Sign the XML using XMLDSig with specific SEFAZ configuration
 			// For NFe/inutilization, the signature should be placed at the inutNFe level,
@@ -610,7 +605,6 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 
 			if err == nil {
 				// Ensure the Reference URI points to the correct ID
-				// Replace any empty URI with the correct reference
 				signedXML := signResult.SignedXML
 				if !strings.Contains(signedXML, fmt.Sprintf(`URI="#%s"`, idInut)) {
 					// Fix the Reference URI to point to the infInut ID
@@ -620,19 +614,9 @@ func (t *Tools) SefazInutilizaNumeros(ctx context.Context, nSerie, nIni, nFin in
 				}
 			}
 			
-			fmt.Printf("[DEBUG] XML após assinatura: %s\n", signResult.SignedXML)
-			
-			// Use the signed XML directly instead of unmarshaling/marshaling
-			// which would lose the signature
-			fmt.Printf("[DEBUG] Assinatura XMLDSig aplicada com sucesso!\n")
-			
 			// Call SefazInutiliza directly with signed XML string
 			return t.SefazInutilizaWithSignedXML(ctx, signResult.SignedXML)
-		} else {
-			fmt.Printf("[DEBUG] Certificado não é do tipo Certificate válido\n")
 		}
-	} else {
-		fmt.Printf("[DEBUG] Nenhum certificado configurado no Tools\n")
 	}
 
 	// 9. Call the base function (only reached if no certificate)

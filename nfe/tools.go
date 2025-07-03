@@ -766,9 +766,20 @@ type InfRec struct {
 	TMedResposta string `xml:"tMedResposta,omitempty"`
 }
 
-// ProtNFe represents NFe protocol information
+// ProcNFe represents the complete NFe with authorization protocol
+type ProcNFe struct {
+	XMLName xml.Name `xml:"nfeProc"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	Versao  string   `xml:"versao,attr"`
+	NFe     NFe      `xml:"NFe"`
+	ProtNFe ProtNFe  `xml:"protNFe"`
+}
+
+// ProtNFe represents the NFe authorization protocol
 type ProtNFe struct {
-	InfProt InfProt `xml:"infProt"`
+	XMLName xml.Name `xml:"protNFe"`
+	Versao  string   `xml:"versao,attr"`
+	InfProt InfProt  `xml:"infProt"`
 }
 
 // InfProt represents protocol information

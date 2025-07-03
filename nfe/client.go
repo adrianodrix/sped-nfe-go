@@ -12,6 +12,7 @@ import (
 	"github.com/adrianodrix/sped-nfe-go/common"
 	"github.com/adrianodrix/sped-nfe-go/factories"
 	"github.com/adrianodrix/sped-nfe-go/types"
+	"github.com/adrianodrix/sped-nfe-go/webservices"
 )
 
 // NFEClient is the main NFe client that provides a unified API for all NFe operations.
@@ -171,7 +172,10 @@ func NewClient(config ClientConfig) (*NFEClient, error) {
 // ensureTools ensures that the Tools instance is initialized
 func (c *NFEClient) ensureTools() error {
 	if c.tools == nil {
-		tools, err := NewTools(c.config)
+		// Create webservice resolver
+		resolver := webservices.NewResolver()
+		
+		tools, err := NewTools(c.config, resolver)
 		if err != nil {
 			return fmt.Errorf("failed to create tools: %v", err)
 		}
@@ -179,7 +183,9 @@ func (c *NFEClient) ensureTools() error {
 		
 		// Set certificate if already configured
 		if c.certificate != nil {
-			c.tools.SetCertificate(c.certificate)
+			if err := c.tools.SetCertificate(c.certificate); err != nil {
+				return fmt.Errorf("failed to configure certificate: %v", err)
+			}
 		}
 	}
 	return nil
@@ -193,7 +199,9 @@ func (c *NFEClient) SetCertificate(cert certificate.Certificate) error {
 
 	c.certificate = cert
 	if c.tools != nil {
-		c.tools.SetCertificate(cert)
+		if err := c.tools.SetCertificate(cert); err != nil {
+			return fmt.Errorf("failed to configure certificate in tools: %v", err)
+		}
 	}
 	return nil
 }
@@ -552,8 +560,21 @@ func (c *NFEClient) signIfNeeded(xml []byte) ([]byte, error) {
 		return xml, nil
 	}
 
-	// TODO: Implement XML signing
-	return xml, nil
+	// Check if certificate is available
+	if c.certificate == nil {
+		return nil, fmt.Errorf("certificate is required for XML signing")
+	}
+
+	// Create XML signer
+	signer := certificate.CreateXMLSigner(c.certificate)
+	
+	// Sign the XML
+	signedXML, _, err := signer.SignXML(string(xml))
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign XML: %v", err)
+	}
+
+	return []byte(signedXML), nil
 }
 
 func (c *NFEClient) convertToQueryResponse(response *ConsultaChaveResponse) *QueryResponse {

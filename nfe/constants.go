@@ -4,29 +4,43 @@ package nfe
 // NFEEnvironment represents the NFe environment
 type NFEEnvironment int
 
+// Ambiente is an alias for NFEEnvironment for backward compatibility
+type Ambiente = NFEEnvironment
+
 const (
 	EnvironmentProduction NFEEnvironment = iota + 1 // 1 - Produção
 	EnvironmentTesting                               // 2 - Homologação
+	
+	// Aliases for webservices compatibility
+	AmbienteProducao   = EnvironmentProduction
+	AmbienteHomologacao = EnvironmentTesting
 )
 
 // String returns the string representation of NFEEnvironment
 func (e NFEEnvironment) String() string {
 	switch e {
 	case EnvironmentProduction:
-		return "1"
+		return "Produção"
 	case EnvironmentTesting:
-		return "2"
+		return "Homologação"
 	default:
-		return "2"
+		return "Homologação"
 	}
 }
 
 // DocumentModel represents NFe document model
 type DocumentModel int
 
+// ModeloNFe is an alias for DocumentModel for backward compatibility
+type ModeloNFe = DocumentModel
+
 const (
 	ModelNFe  DocumentModel = 55 // Nota Fiscal Eletrônica
 	ModelNFCe DocumentModel = 65 // Nota Fiscal de Consumidor Eletrônica
+	
+	// Aliases for webservices compatibility
+	ModeloNFe55  = ModelNFe
+	ModeloNFCe65 = ModelNFCe
 )
 
 // String returns the string representation of DocumentModel
